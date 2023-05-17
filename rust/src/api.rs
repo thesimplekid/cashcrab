@@ -1,6 +1,5 @@
 use std::sync::Mutex as StdMutex;
 
-use allo_isolate::ffi::*;
 use anyhow::{anyhow, bail, Error, Result};
 use bitcoin::Amount;
 use cashu_crab::{
@@ -9,11 +8,10 @@ use cashu_crab::{
     error::Error as CashuCrabError,
     types::{Proofs, Token},
 };
-use flutter_rust_bridge::StreamSink;
 use lazy_static::lazy_static;
 use lightning_invoice::{Invoice, InvoiceDescription};
-use std::{collections::HashMap, ffi::CString, fmt, io, str::FromStr, sync::Arc};
-use tokio::runtime::{Builder, Runtime};
+use std::{collections::HashMap, fmt, io, str::FromStr, sync::Arc};
+use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
 use crate::database;
@@ -109,17 +107,20 @@ pub fn get_balances() -> Result<String> {
     rt.block_on(async {
         let proofs = database::get_all_proofs().await?;
 
+        // bail!("{:?}", proofs);
         let balances = proofs
             .iter()
             .map(|(mint, proofs)| {
                 let balance = proofs
                     .iter()
-                    .fold(0, |acc, proof| acc + proof.amount.to_sat());
+                    .fold(0, |acc, proof| acc + proof.amount.to_sat() as i64);
                 (mint.to_owned(), balance)
             })
             .collect::<HashMap<_, _>>();
 
         Ok(serde_json::to_string(&balances)?)
+
+        // Ok(balances)
     })
 }
 

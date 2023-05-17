@@ -11,7 +11,6 @@ class Send extends StatefulWidget {
   final int activeBalance;
   final Function decodeToken;
   final String? activeMint;
-  final Function setProofs;
   final Function setInvoices;
   final RustImpl cashu;
   final Map<String, int> wallets;
@@ -22,7 +21,6 @@ class Send extends StatefulWidget {
       required this.activeBalance,
       required this.decodeToken,
       required this.activeMint,
-      required this.setProofs,
       required this.setInvoices,
       required this.cashu,
       required this.wallets});
@@ -104,7 +102,6 @@ class SendState extends State<Send> {
                         activeMint: widget.activeMint,
                         cashu: widget.cashu,
                         mints: widget.wallets,
-                        setProofs: widget.setProofs,
                         setInvoices: widget.setInvoices,
                       ),
                     ),

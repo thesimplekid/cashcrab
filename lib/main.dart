@@ -15,13 +15,13 @@ import 'shared/models/transaction.dart';
 
 const base = "rust";
 final path = Platform.isWindows ? "$base.dll" : "lib$base.so";
-late final dylib = Platform.isIOS
+final dylib = Platform.isIOS
     ? DynamicLibrary.process()
     : Platform.isMacOS
         ? DynamicLibrary.executable()
         : DynamicLibrary.open(path);
 
-late final api = RustImpl(dylib);
+final api = RustImpl(dylib);
 
 void main() => runApp(const MyApp());
 
@@ -97,9 +97,9 @@ class MyHomePageState extends State<MyHomePage> {
     //_getActiveMint();
 
     // Set balances
-    // _getBalances();
+    _getBalances();
     // Set Balance
-    // _getBalance();
+    _getBalance();
   }
 
   _onItemTapped(int index) {
@@ -129,7 +129,6 @@ class MyHomePageState extends State<MyHomePage> {
       addMint: _addNewMint,
       checkTransactionStatus: _checkCashuTransactionStatus,
       checkLightningTransaction: _checkLightningTransactionStatus,
-      setProofs: _setProofs,
     );
 
     _settingsTab = Settings(
@@ -170,14 +169,11 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _getBalances() async {
-    print("getting balances");
     final gotBalances = await api.getBalances();
-    print("got balances" + gotBalances);
     Map<String, dynamic> bal = json.decode(gotBalances);
     setState(() {
       mints = bal.cast<String, int>();
     });
-    print("get balances mints" + mints.toString());
     _getBalance();
   }
 
@@ -185,7 +181,6 @@ class MyHomePageState extends State<MyHomePage> {
   void _getBalance() {
     int bal = mints.values.fold(0, (acc, value) => acc + value);
 
-    print("got balance" + bal.toString());
     setState(() {
       balance = bal;
       if (activeMint != null) {
@@ -245,7 +240,6 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   void receiveToken() async {
-    print("receive");
     if (tokenData?.encodedToken != null) {
       print("recevice: " + tokenData.toString());
       String proofs =
@@ -263,7 +257,6 @@ class MyHomePageState extends State<MyHomePage> {
       });
 
       await _saveCashuTransactions();
-      await _setProofs(proofs);
       await _getBalances();
     }
   }
@@ -319,27 +312,6 @@ class MyHomePageState extends State<MyHomePage> {
     setState(() {
       activeMint = newActiveMint;
     });
-    await _getBalances();
-    _getBalance();
-  }
-
-  // Get Proofs
-  Future<String> _getProofs() async {
-    final prefs = await SharedPreferences.getInstance();
-    return (prefs.getString('proofs') ?? "{}");
-  }
-
-  // Set proofs in storage
-  Future<void> _setProofs(String proofs) async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('proofs', proofs);
-    await _getBalances();
-    _getBalance();
-  }
-
-  /// Load Proofs  from disk into rust
-  Future<void> _loadProofs() async {
-    String proofs = await _getProofs();
     await _getBalances();
     _getBalance();
   }

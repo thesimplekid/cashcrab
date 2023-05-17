@@ -7,7 +7,6 @@ class PayInvoice extends StatefulWidget {
   final String? activeMint;
   final Map<String, int> mints;
   final RustImpl cashu;
-  final Function setProofs;
   final Function setInvoices;
 
   const PayInvoice(
@@ -15,7 +14,6 @@ class PayInvoice extends StatefulWidget {
       required this.activeMint,
       required this.cashu,
       required this.mints,
-      required this.setProofs,
       required this.setInvoices});
 
   @override

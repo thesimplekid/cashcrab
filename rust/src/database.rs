@@ -1,5 +1,5 @@
-use anyhow::{bail, Result};
-use cashu_crab::types::{Proofs, ProofsStatus};
+use anyhow::Result;
+use cashu_crab::types::Proofs;
 use lazy_static::lazy_static;
 use redb::{Database, MultimapTableDefinition, ReadableMultimapTable, TableDefinition};
 use std::{collections::HashMap, sync::Arc};
@@ -75,12 +75,13 @@ pub(crate) async fn add_proofs(mint: &str, proofs: Proofs) -> Result<(), CashuEr
     {
         let mut proof_table = write_txn.open_multimap_table(PROOFS)?;
 
-        for proof in proofs {
+        for proof in &proofs {
             proof_table.insert(mint, serde_json::to_string(&proof)?.as_str())?;
         }
     }
     write_txn.commit()?;
 
+    //Err(CashuError(format!("added Proofs: {:?}", proofs)))
     Ok(())
 }
 
@@ -119,25 +120,18 @@ pub(crate) async fn get_all_proofs() -> Result<HashMap<String, Proofs>, CashuErr
     let read_txn = db.begin_read()?;
     let table = read_txn.open_multimap_table(PROOFS)?;
 
-    let mut proofs = table.iter()?;
-    let mut proof_by_mint: HashMap<String, Proofs> = HashMap::new();
-    // return Err(CashuError("Before while".to_string()));
-    while let Some(Ok((mint, mut proofs))) = proofs.next() {
-        let mut mint_proofs = vec![];
+    let proofs = table.iter()?;
 
-        if let Some(proof) = proofs.next() {
-            mint_proofs.push(serde_json::from_str(proof.unwrap().value())?);
+    let proof_by_mint = proofs.into_iter().fold(HashMap::new(), |mut map, item| {
+        if let Ok((key, value)) = item {
+            let values: Proofs = value
+                .map(|v| serde_json::from_str(v.unwrap().value()).unwrap())
+                .collect();
+
+            map.insert(key.value().to_string(), values);
         }
-
-        proof_by_mint.insert(mint.value().to_string(), mint_proofs);
-        // let (k, mut values) = proofs.next().unwrap().unwrap();
-    }
-
-    // let tsk_proofs = get_proofs("https://dev-cashu.thesimplekid.com").await?;
-
-    // let mut proofs_by_mint = HashMap::new();
-
-    // proofs_by_mint.insert("httsp://dev-cashu.thesimplekid.com/", tsk_proofs);
+        map
+    });
 
     Ok(proof_by_mint)
 }
