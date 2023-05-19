@@ -213,6 +213,23 @@ pub(crate) async fn get_all_transactions() -> Result<Vec<Transaction>, CashuErro
     Ok(transactions)
 }
 
+/// Get all transactions
+pub(crate) async fn get_transactions(id: &str) -> Result<Option<Transaction>, CashuError> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+    let read_txn = db.begin_read()?;
+    let table = read_txn.open_table(TRANSACTIONS)?;
+
+    let transaction = match table.get(id)? {
+        Some(t) => Some(serde_json::from_str(t.value())?),
+        None => None,
+    };
+
+    Ok(transaction)
+}
+
 pub(crate) async fn update_transaction_status(transaction: &Transaction) -> Result<(), CashuError> {
     let db = DB.lock().await;
     let db = db

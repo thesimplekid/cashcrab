@@ -103,6 +103,8 @@ void wire_decode_invoice(int64_t port_, struct wire_uint_8_list *invoice);
 
 void wire_get_transactions(int64_t port_);
 
+void wire_get_transaction(int64_t port_, struct wire_uint_8_list *tid);
+
 void wire_get_mints(int64_t port_);
 
 void wire_get_active_mint(int64_t port_);
@@ -144,6 +146,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_melt);
     dummy_var ^= ((int64_t) (void*) wire_decode_invoice);
     dummy_var ^= ((int64_t) (void*) wire_get_transactions);
+    dummy_var ^= ((int64_t) (void*) wire_get_transaction);
     dummy_var ^= ((int64_t) (void*) wire_get_mints);
     dummy_var ^= ((int64_t) (void*) wire_get_active_mint);
     dummy_var ^= ((int64_t) (void*) wire_set_active_mint);

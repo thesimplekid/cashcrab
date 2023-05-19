@@ -296,6 +296,23 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Future<Transaction?> getTransaction({required String tid, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(tid);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_transaction(port_, arg0),
+      parseSuccessData: _wire2api_opt_box_autoadd_transaction,
+      constMeta: kGetTransactionConstMeta,
+      argValues: [tid],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetTransactionConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_transaction",
+        argNames: ["tid"],
+      );
+
   Future<List<Mint>> getMints({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_mints(port_),
@@ -391,6 +408,10 @@ class RustImpl implements Rust {
     return _wire2api_mint(raw);
   }
 
+  Transaction _wire2api_box_autoadd_transaction(dynamic raw) {
+    return _wire2api_transaction(raw);
+  }
+
   CashuTransaction _wire2api_cashu_transaction(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 6)
@@ -459,6 +480,10 @@ class RustImpl implements Rust {
 
   Mint? _wire2api_opt_box_autoadd_mint(dynamic raw) {
     return raw == null ? null : _wire2api_box_autoadd_mint(raw);
+  }
+
+  Transaction? _wire2api_opt_box_autoadd_transaction(dynamic raw) {
+    return raw == null ? null : _wire2api_box_autoadd_transaction(raw);
   }
 
   RequestMintInfo _wire2api_request_mint_info(dynamic raw) {
@@ -1015,6 +1040,23 @@ class RustWire implements FlutterRustBridgeWireBase {
           'wire_get_transactions');
   late final _wire_get_transactions =
       _wire_get_transactionsPtr.asFunction<void Function(int)>();
+
+  void wire_get_transaction(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> tid,
+  ) {
+    return _wire_get_transaction(
+      port_,
+      tid,
+    );
+  }
+
+  late final _wire_get_transactionPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_get_transaction');
+  late final _wire_get_transaction = _wire_get_transactionPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_mints(
     int port_,

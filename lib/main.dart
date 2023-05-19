@@ -196,13 +196,17 @@ class MyHomePageState extends State<MyHomePage> {
     final spendable = await api.checkSpendable(transaction: transaction);
 
     if (spendable == false) {
+      String id = transaction.field0 is LNTransaction
+          ? (transaction.field0 as LNTransaction).id!
+          : (transaction.field0 as CashuTransaction).id!;
+      Transaction? updatedTransaction = await api.getTransaction(tid: id);
       setState(() {
         String id = transaction.field0 is LNTransaction
             ? (transaction.field0 as LNTransaction).id!
             : (transaction.field0 as CashuTransaction).id!;
         pendingTransactions.remove(id);
 
-        transactions[id] = transaction;
+        transactions[id] = updatedTransaction!;
       });
     }
 
@@ -219,19 +223,15 @@ class MyHomePageState extends State<MyHomePage> {
 
   void receiveToken() async {
     if (tokenData?.encodedToken != null) {
-      print("recevice: " + tokenData.toString());
       Transaction transaction =
           await api.receiveToken(encodedToken: tokenData!.encodedToken);
       // REVIEW: how does this handle a failed token that shouldned be added
-      print(transaction.toString());
       String id = transaction.field0 is LNTransaction
           ? (transaction.field0 as LNTransaction).id!
           : (transaction.field0 as CashuTransaction).id!;
       setState(() {
         transactions[id] = transaction;
       });
-
-      print("added");
 
       await _getBalances();
     }

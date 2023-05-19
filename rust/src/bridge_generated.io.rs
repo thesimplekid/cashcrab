@@ -87,6 +87,11 @@ pub extern "C" fn wire_get_transactions(port_: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_get_transaction(port_: i64, tid: *mut wire_uint_8_list) {
+    wire_get_transaction_impl(port_, tid)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_get_mints(port_: i64) {
     wire_get_mints_impl(port_)
 }

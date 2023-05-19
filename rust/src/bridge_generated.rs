@@ -240,6 +240,19 @@ fn wire_get_transactions_impl(port_: MessagePort) {
         move || move |task_callback| get_transactions(),
     )
 }
+fn wire_get_transaction_impl(port_: MessagePort, tid: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_transaction",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_tid = tid.wire2api();
+            move |task_callback| get_transaction(api_tid)
+        },
+    )
+}
 fn wire_get_mints_impl(port_: MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {

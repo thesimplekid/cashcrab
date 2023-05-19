@@ -360,11 +360,16 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
         let proofs = database::get_proofs(&active_mint).await?;
 
         let (send_proofs, mut keep_proofs) = select_send_proofs(amount, &proofs);
-        let r = wallet.send(Amount::from_sat(amount), send_proofs).await?;
+        let r = wallet
+            .send(Amount::from_sat(amount), send_proofs.clone())
+            .await?;
         keep_proofs.extend(r.change_proofs.clone());
 
         // Set wallet proofs to change
         database::add_proofs(&active_mint, keep_proofs).await?;
+
+        // Remove sent proofs
+        database::remove_proofs(&active_mint, send_proofs).await?;
 
         // Add pending proofs
         // TODO: Remove this
@@ -471,6 +476,15 @@ pub fn decode_invoice(invoice: String) -> Result<InvoiceInfo> {
 pub fn get_transactions() -> Result<Vec<Transaction>> {
     let rt = lock_runtime!();
     let result = rt.block_on(async { Ok(database::get_all_transactions().await?) });
+
+    drop(rt);
+
+    result
+}
+
+pub fn get_transaction(tid: String) -> Result<Option<Transaction>> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async { Ok(database::get_transactions(&tid).await?) });
 
     drop(rt);
 

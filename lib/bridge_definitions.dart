@@ -89,6 +89,10 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kGetTransactionsConstMeta;
 
+  Future<Transaction?> getTransaction({required String tid, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetTransactionConstMeta;
+
   Future<List<Mint>> getMints({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetMintsConstMeta;
