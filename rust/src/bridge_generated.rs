@@ -21,6 +21,7 @@ use std::sync::Arc;
 
 use crate::types::CashuTransaction;
 use crate::types::LNTransaction;
+use crate::types::Mint;
 use crate::types::Transaction;
 use crate::types::TransactionStatus;
 
@@ -239,6 +240,16 @@ fn wire_get_transactions_impl(port_: MessagePort) {
         move || move |task_callback| get_transactions(),
     )
 }
+fn wire_get_mints_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_mints",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| get_mints(),
+    )
+}
 fn wire_decode_token_impl(port_: MessagePort, encoded_token: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -346,6 +357,18 @@ impl support::IntoDart for LNTransaction {
     }
 }
 impl support::IntoDartExceptPrimitive for LNTransaction {}
+
+impl support::IntoDart for Mint {
+    fn into_dart(self) -> support::DartAbi {
+        vec![
+            self.url.into_dart(),
+            self.active_keyset.into_dart(),
+            self.keysets.into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for Mint {}
 
 impl support::IntoDart for RequestMintInfo {
     fn into_dart(self) -> support::DartAbi {

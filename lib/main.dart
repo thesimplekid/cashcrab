@@ -330,36 +330,16 @@ class MyHomePageState extends State<MyHomePage> {
     return (prefs.getStringList('mints') ?? []);
   }
 
-  // Save mints to disk
-  Future<void> _setMints(Map<String, int> ms) async {
-    print("settings mints");
-    final prefs = await SharedPreferences.getInstance();
-    List<String> mintList = ms.keys.toList();
-    print("settings ms" + mintList.toString());
-    prefs.setStringList('mints', mintList);
-    print("set mitns in local");
-    await api.setMints(mints: mintList);
-    print("set mints in rust");
-
-    if (activeMint == null) {
-      if (mintList.isNotEmpty) {
-        await _setActiveMint(mintList[0]);
-      }
-    }
-
-    setState(() {
-      mints = ms;
-    });
-  }
-
   /// Load mints from disk into rust
   Future<void> _loadMints() async {
-    List<String> gotMints = await _getMints();
-    // _setMints(mints);
-    List<String> res = await api.setMints(mints: gotMints);
-    final zeroValues = List.filled(gotMints.length, 0);
+    List<Mint> gotMints = await api.getMints();
+
+    Map<String, int> _mints = {};
+    for (var mint in gotMints) {
+      _mints[mint.url] = 0;
+    }
     setState(() {
-      mints = Map.fromIterables(gotMints, zeroValues);
+      mints = _mints;
     });
   }
 
@@ -371,8 +351,7 @@ class MyHomePageState extends State<MyHomePage> {
       // Remove from rust
       // await api.deleteMint(mint: mintUrl);
       mints.remove(mintUrl);
-      await _setMints(mints);
-
+      await api.removeWallet(url: mintUrl);
       if (mintUrl == activeMint) {
         String? newActive;
 
@@ -390,8 +369,6 @@ class MyHomePageState extends State<MyHomePage> {
   Future<void> _addNewMint(String mintUrl) async {
     // TODO: Should handle error connecting to mint
     await api.createWallet(url: mintUrl);
-    print("created Wallet");
     mints[mintUrl] = 0;
-    await _setMints(mints);
   }
 }

@@ -16,7 +16,7 @@ use tokio::sync::Mutex;
 
 use crate::{
     database,
-    types::{CashuTransaction, Transaction, TransactionStatus},
+    types::{CashuTransaction, Mint, Transaction, TransactionStatus},
 };
 
 impl From<CashuError> for Error {
@@ -135,7 +135,7 @@ pub fn get_balances() -> Result<String> {
 }
 
 /// Create Wallet
-pub fn create_wallet(url: String) -> Result<String> {
+pub fn create_wallet(url: String) -> Result<()> {
     let rt = lock_runtime!();
 
     let result = rt.block_on(async {
@@ -147,7 +147,17 @@ pub fn create_wallet(url: String) -> Result<String> {
 
         WALLETS.lock().await.insert(url.to_string(), wallet.clone());
 
-        Ok("".to_string())
+        let mint = Mint {
+            url,
+            // TODO:
+            active_keyset: "".to_string(),
+            // TODO:
+            keysets: vec![],
+        };
+
+        database::add_mint(mint).await?;
+
+        Ok(())
     });
 
     drop(rt);
@@ -466,6 +476,16 @@ pub fn get_transactions() -> Result<Vec<Transaction>> {
 
     result
 }
+
+pub fn get_mints() -> Result<Vec<Mint>> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async { Ok(database::get_all_mints().await?) });
+
+    drop(rt);
+
+    result
+}
+
 pub struct InvoiceInfo {
     pub amount: u64,
     pub hash: String,

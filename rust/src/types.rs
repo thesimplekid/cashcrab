@@ -1,5 +1,7 @@
 use bitcoin_hashes::sha256;
 use bitcoin_hashes::Hash;
+pub use cashu_crab::types::MintInfo;
+use flutter_rust_bridge::frb;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
@@ -105,4 +107,18 @@ pub fn unix_time() -> u64 {
         .duration_since(SystemTime::UNIX_EPOCH)
         .map(|x| x.as_secs())
         .unwrap_or(0)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Mint {
+    pub url: String,
+    pub active_keyset: String,
+    pub keysets: Vec<String>,
+}
+
+impl Mint {
+    /// Get transaction as json string
+    pub fn as_json(&self) -> String {
+        serde_json::json!(self).to_string()
+    }
 }

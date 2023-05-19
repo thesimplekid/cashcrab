@@ -21,7 +21,7 @@ abstract class Rust {
   FlutterRustBridgeTaskConstMeta get kGetBalancesConstMeta;
 
   /// Create Wallet
-  Future<String> createWallet({required String url, dynamic hint});
+  Future<void> createWallet({required String url, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kCreateWalletConstMeta;
 
@@ -89,6 +89,10 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kGetTransactionsConstMeta;
 
+  Future<List<Mint>> getMints({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetMintsConstMeta;
+
   Future<TokenData> decodeToken({required String encodedToken, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kDecodeTokenConstMeta;
@@ -139,6 +143,18 @@ class LNTransaction {
     required this.amount,
     required this.mint,
     required this.bolt11,
+  });
+}
+
+class Mint {
+  final String url;
+  final String activeKeyset;
+  final List<String> keysets;
+
+  const Mint({
+    required this.url,
+    required this.activeKeyset,
+    required this.keysets,
   });
 }
 

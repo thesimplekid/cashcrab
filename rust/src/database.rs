@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use cashu_crab::types::Proofs;
+use cashu_crab::types::{MintInfo, Proofs};
 use lazy_static::lazy_static;
 use redb::{
     Database, MultimapTableDefinition, ReadableMultimapTable, ReadableTable, TableDefinition,
@@ -9,8 +9,10 @@ use tokio::sync::Mutex;
 
 use crate::{
     api::CashuError,
-    types::{Transaction, TransactionStatus},
+    types::{Mint, Transaction, TransactionStatus},
 };
+
+const CONFIG: TableDefinition<&str, &str> = TableDefinition::new("config");
 
 // Mint Info
 // Key: Mint Url
@@ -57,6 +59,7 @@ pub(crate) async fn init_db(path: &str) -> Result<String, CashuError> {
     if let Some(database) = database.as_ref() {
         let write_txn = database.begin_write()?;
         {
+            let _ = write_txn.open_table(CONFIG)?;
             let _ = write_txn.open_table(MINT_INFO)?;
             let _ = write_txn.open_table(MINT_KEYSETS)?;
             let _ = write_txn.open_table(KEYSETS)?;
@@ -229,4 +232,58 @@ pub(crate) async fn update_transaction_status(transaction: &Transaction) -> Resu
 
     write_txn.commit()?;
     Ok(())
+}
+
+pub(crate) async fn add_mint(mint: Mint) -> Result<()> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+
+    let write_txn = db.begin_write()?;
+    {
+        let mut mint_table = write_txn.open_table(MINT_INFO)?;
+        mint_table.insert(mint.url.as_str(), mint.as_json().as_str())?;
+    }
+    write_txn.commit()?;
+
+    Ok(())
+}
+
+/// Get all mints
+pub(crate) async fn get_all_mints() -> Result<Vec<Mint>, CashuError> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+    let read_txn = db.begin_read()?;
+    let table = read_txn.open_table(MINT_INFO)?;
+
+    let mints: Vec<Mint> = table.iter()?.fold(Vec::new(), |mut vec, item| {
+        if let Ok((_key, value)) = item {
+            if let Ok(transaction) = serde_json::from_str(value.value()) {
+                vec.push(transaction)
+            }
+        }
+        vec
+    });
+
+    // return Err(CashuError(format!("Transactions: {:?}", transactions)));
+
+    Ok(mints)
+}
+
+pub(crate) async fn get_mint(mint_url: &str) -> Result<Option<MintInfo>, CashuError> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+    let read_txn = db.begin_read()?;
+    let table = read_txn.open_table(MINT_INFO)?;
+
+    if let Some(mint_info) = table.get(mint_url)? {
+        return Ok(Some(serde_json::from_str(mint_info.value())?));
+    }
+
+    Ok(None)
 }

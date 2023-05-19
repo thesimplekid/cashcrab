@@ -58,11 +58,11 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
-  Future<String> createWallet({required String url, dynamic hint}) {
+  Future<void> createWallet({required String url, dynamic hint}) {
     var arg0 = _platform.api2wire_String(url);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_create_wallet(port_, arg0),
-      parseSuccessData: _wire2api_String,
+      parseSuccessData: _wire2api_unit,
       constMeta: kCreateWalletConstMeta,
       argValues: [url],
       hint: hint,
@@ -296,6 +296,22 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Future<List<Mint>> getMints({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_mints(port_),
+      parseSuccessData: _wire2api_list_mint,
+      constMeta: kGetMintsConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetMintsConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_mints",
+        argNames: [],
+      );
+
   Future<TokenData> decodeToken({required String encodedToken, dynamic hint}) {
     var arg0 = _platform.api2wire_String(encodedToken);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -367,6 +383,10 @@ class RustImpl implements Rust {
     );
   }
 
+  List<Mint> _wire2api_list_mint(dynamic raw) {
+    return (raw as List<dynamic>).map(_wire2api_mint).toList();
+  }
+
   List<Transaction> _wire2api_list_transaction(dynamic raw) {
     return (raw as List<dynamic>).map(_wire2api_transaction).toList();
   }
@@ -382,6 +402,17 @@ class RustImpl implements Rust {
       amount: _wire2api_u64(arr[3]),
       mint: _wire2api_String(arr[4]),
       bolt11: _wire2api_String(arr[5]),
+    );
+  }
+
+  Mint _wire2api_mint(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return Mint(
+      url: _wire2api_String(arr[0]),
+      activeKeyset: _wire2api_String(arr[1]),
+      keysets: _wire2api_StringList(arr[2]),
     );
   }
 
@@ -943,6 +974,20 @@ class RustWire implements FlutterRustBridgeWireBase {
           'wire_get_transactions');
   late final _wire_get_transactions =
       _wire_get_transactionsPtr.asFunction<void Function(int)>();
+
+  void wire_get_mints(
+    int port_,
+  ) {
+    return _wire_get_mints(
+      port_,
+    );
+  }
+
+  late final _wire_get_mintsPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_mints');
+  late final _wire_get_mints =
+      _wire_get_mintsPtr.asFunction<void Function(int)>();
 
   void wire_decode_token(
     int port_,
