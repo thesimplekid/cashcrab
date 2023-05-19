@@ -14,7 +14,10 @@ use std::{collections::HashMap, fmt, io, str::FromStr, sync::Arc};
 use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
-use crate::database;
+use crate::{
+    database,
+    types::{CashuTransaction, Transaction, TransactionStatus},
+};
 
 impl From<CashuError> for Error {
     fn from(err: CashuError) -> Self {
@@ -87,8 +90,8 @@ macro_rules! lock_runtime {
     () => {
         match RUNTIME.lock() {
             Ok(lock) => lock,
-            Err(_) => {
-                let err: anyhow::Error = anyhow!("Failed to lock the runtime mutex");
+            Err(err) => {
+                let err: anyhow::Error = anyhow!("Failed to lock the runtime mutex: {}", err);
                 return Err(err.into());
             }
         }
@@ -97,14 +100,18 @@ macro_rules! lock_runtime {
 
 pub fn init_db(path: String) -> Result<()> {
     let rt = lock_runtime!();
-    rt.block_on(async {
+    let result = rt.block_on(async {
         database::init_db(&path).await?;
         Ok(())
-    })
+    });
+
+    drop(rt);
+    result
 }
+
 pub fn get_balances() -> Result<String> {
     let rt = lock_runtime!();
-    rt.block_on(async {
+    let result = rt.block_on(async {
         let proofs = database::get_all_proofs().await?;
 
         // bail!("{:?}", proofs);
@@ -121,14 +128,17 @@ pub fn get_balances() -> Result<String> {
         Ok(serde_json::to_string(&balances)?)
 
         // Ok(balances)
-    })
+    });
+
+    drop(rt);
+    result
 }
 
 /// Create Wallet
 pub fn create_wallet(url: String) -> Result<String> {
     let rt = lock_runtime!();
 
-    rt.block_on(async {
+    let result = rt.block_on(async {
         let client = Client::new(&url)?;
         let wallet = match client.get_keys().await {
             Ok(keys) => Some(CashuWallet::new(client.clone(), keys)),
@@ -138,27 +148,38 @@ pub fn create_wallet(url: String) -> Result<String> {
         WALLETS.lock().await.insert(url.to_string(), wallet.clone());
 
         Ok("".to_string())
-    })
+    });
+
+    drop(rt);
+    result
 }
 
 pub fn get_wallets() -> Result<Vec<String>> {
     let rt = lock_runtime!();
-    rt.block_on(async {
+    let result = rt.block_on(async {
         Ok(WALLETS
             .lock()
             .await
             .iter()
             .map(|(k, _v)| k.to_owned())
             .collect())
-    })
+    });
+
+    drop(rt);
+    result
 }
 
+/// Remove wallet (mint)
 pub fn remove_wallet(url: String) -> Result<String> {
     let rt = lock_runtime!();
-    rt.block_on(async {
+    let result = rt.block_on(async {
         WALLETS.lock().await.remove(&url);
         Ok("".to_string())
-    })
+    });
+
+    drop(rt);
+
+    result
 }
 
 /// Check proofs for mints that should be added
@@ -197,18 +218,24 @@ pub async fn get_proofs() -> Result<String, CashuError> {
 }
 */
 
+/// Set mints (wallets)
 pub fn set_mints(mints: Vec<String>) -> Result<Vec<String>> {
     let rt = lock_runtime!();
 
-    rt.block_on(async {
+    let result = rt.block_on(async {
         add_new_wallets(mints)?;
 
         let m: Vec<String> = WALLETS.lock().await.keys().cloned().collect();
 
         Ok(m)
-    })
+    });
+
+    drop(rt);
+
+    result
 }
 
+/// Get wallet for uri
 async fn wallet_for_url(mint_url: &str) -> Result<CashuWallet> {
     let mut wallets = WALLETS.lock().await;
     let cashu_wallet = match wallets.get(mint_url) {
@@ -226,38 +253,74 @@ async fn wallet_for_url(mint_url: &str) -> Result<CashuWallet> {
     Ok(cashu_wallet)
 }
 
-pub fn check_spendable(encoded_token: String) -> Result<bool> {
+pub fn check_spendable(transaction: Transaction) -> Result<bool> {
     let rt = lock_runtime!();
-    let token = Token::from_str(&encoded_token)?;
-    rt.block_on(async {
-        let wallet = wallet_for_url(&token.token_info().1).await?;
+    let result = rt.block_on(async {
+        match &transaction {
+            Transaction::CashuTransaction(cashu_trans) => {
+                let token = Token::from_str(&cashu_trans.token)?;
+                let wallet = wallet_for_url(&cashu_trans.mint).await?;
 
-        let check_spent = wallet
-            .check_proofs_spent(token.token[0].clone().proofs)
-            .await?;
+                let check_spent = wallet
+                    .check_proofs_spent(token.token[0].clone().proofs)
+                    .await?;
 
-        // REVIEW: This is a fairly naive check on if a token is spendable
-        if check_spent.spendable.is_empty() {
-            return Ok(false);
-        } else {
-            return Ok(true);
+                // REVIEW: This is a fairly naive check on if a token is spendable
+                // this works in the way `check_spendable` is called now but is not techically correct
+                // As a spendable proof can be from a completed tranasction
+                if check_spent.spendable.is_empty() {
+                    let transaction = Transaction::CashuTransaction(CashuTransaction {
+                        id: Some(transaction.id()),
+                        status: TransactionStatus::Sent,
+                        time: cashu_trans.time,
+                        amount: cashu_trans.amount,
+                        mint: cashu_trans.mint.clone(),
+                        token: cashu_trans.token.clone(),
+                    });
+
+                    database::update_transaction_status(&transaction).await?;
+
+                    // Update Status
+                    return Ok(false);
+                } else {
+                    return Ok(true);
+                }
+            }
+            Transaction::LNTransaction(ln_trans) => (),
         }
-    })
+
+        return Ok(false);
+    });
+
+    drop(rt);
+    result
 }
 
-pub fn receive_token(encoded_token: String) -> Result<String> {
+/// Receive
+pub fn receive_token(encoded_token: String) -> Result<Transaction> {
     let rt = lock_runtime!();
     let token = Token::from_str(&encoded_token)?;
-    rt.block_on(async {
+    let result = rt.block_on(async {
         let wallet = wallet_for_url(&token.token_info().1).await?;
         let mint_url = wallet.client.mint_url.to_string();
         let received_proofs = wallet.receive(&encoded_token).await?;
 
         database::add_proofs(&mint_url, received_proofs.clone()).await?;
 
-        // let got = database::get_proofs(&mint_url).await?;
-        Ok(serde_json::to_string(&received_proofs)?)
-    })
+        let transaction = Transaction::CashuTransaction(CashuTransaction::new(
+            Some(TransactionStatus::Received),
+            token.token_info().0,
+            &mint_url,
+            &encoded_token,
+        ));
+
+        database::add_transaction(&transaction).await?;
+
+        Ok(transaction)
+    });
+
+    drop(rt);
+    result
 }
 
 // REVIEW: Naive coin selection
@@ -279,9 +342,9 @@ fn select_send_proofs(amount: u64, proofs: &Proofs) -> (Proofs, Proofs) {
     (send_proofs, keep_proofs)
 }
 
-pub fn send(amount: u64, active_mint: String) -> Result<String> {
+pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
     let rt = lock_runtime!();
-    rt.block_on(async {
+    let result = rt.block_on(async {
         let wallet = wallet_for_url(&active_mint).await?;
 
         let proofs = database::get_proofs(&active_mint).await?;
@@ -300,28 +363,43 @@ pub fn send(amount: u64, active_mint: String) -> Result<String> {
             .await
             .insert(active_mint.to_owned(), r.send_proofs.clone());
 
-        let token = wallet.proofs_to_token(r.send_proofs, None);
+        let token = wallet.proofs_to_token(r.send_proofs, None)?;
+        let transaction = CashuTransaction::new(
+            Some(TransactionStatus::Pending),
+            amount,
+            &active_mint,
+            &token,
+        );
+        let transaction = Transaction::CashuTransaction(transaction);
 
-        return Ok(token);
-    })
+        database::add_transaction(&transaction).await?;
+        return Ok(transaction);
+    });
+
+    drop(rt);
+
+    result
 }
 
 // TODO: Need to make sure wallet is in wallets
 pub fn request_mint(amount: u64, mint_url: String) -> Result<RequestMintInfo> {
     let rt = lock_runtime!();
-    rt.block_on(async {
+    let result = rt.block_on(async {
         let wallet = wallet_for_url(&mint_url).await?;
         let invoice = wallet.request_mint(Amount::from_sat(amount)).await?;
         Ok(RequestMintInfo {
             pr: invoice.pr.to_string(),
             hash: invoice.hash,
         })
-    })
+    });
+
+    drop(rt);
+    result
 }
 
 pub fn mint_token(amount: u64, hash: String, mint: String) -> Result<()> {
     let rt = lock_runtime!();
-    rt.block_on(async {
+    let result = rt.block_on(async {
         let wallets = WALLETS.lock().await;
         if let Some(Some(wallet)) = wallets.get(&mint) {
             let proofs = wallet.mint_token(Amount::from_sat(amount), &hash).await?;
@@ -331,13 +409,17 @@ pub fn mint_token(amount: u64, hash: String, mint: String) -> Result<()> {
             return Ok(());
         }
         bail!("Could not get invoice".to_string())
-    })
+    });
+
+    drop(rt);
+
+    result
 }
 
 // TODO: Melt, untested as legend.lnbits has LN issues
 pub fn melt(amount: u64, invoice: String, mint: String) -> Result<()> {
     let rt = lock_runtime!();
-    rt.block_on(async {
+    let result = rt.block_on(async {
         let wallet = wallet_for_url(&mint).await?;
 
         let invoice = str::parse::<Invoice>(&invoice)?;
@@ -353,7 +435,10 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<()> {
         database::remove_proofs(&mint, send_proofs).await?;
 
         Ok(())
-    })
+    });
+
+    drop(rt);
+    result
 }
 
 /// Decode invoice
@@ -373,6 +458,14 @@ pub fn decode_invoice(invoice: String) -> Result<InvoiceInfo> {
     })
 }
 
+pub fn get_transactions() -> Result<Vec<Transaction>> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async { Ok(database::get_all_transactions().await?) });
+
+    drop(rt);
+
+    result
+}
 pub struct InvoiceInfo {
     pub amount: u64,
     pub hash: String,

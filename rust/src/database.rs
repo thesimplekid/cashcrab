@@ -1,11 +1,16 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use cashu_crab::types::Proofs;
 use lazy_static::lazy_static;
-use redb::{Database, MultimapTableDefinition, ReadableMultimapTable, TableDefinition};
+use redb::{
+    Database, MultimapTableDefinition, ReadableMultimapTable, ReadableTable, TableDefinition,
+};
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 
-use crate::api::CashuError;
+use crate::{
+    api::CashuError,
+    types::{Transaction, TransactionStatus},
+};
 
 // Mint Info
 // Key: Mint Url
@@ -22,21 +27,22 @@ const MINT_KEYSETS: TableDefinition<&str, &str> = TableDefinition::new("mint_key
 /// Value: Serialized hashmap of mint public keys
 const KEYSETS: TableDefinition<&str, &str> = TableDefinition::new("keysets");
 
-// Cashu Transactions
+// Transactions
 // Key: Transaction Id
 // Value: Serialized transaction info
-const CASHU_TRANSACTIONS: TableDefinition<&str, &str> = TableDefinition::new("cashu_transactions");
+const PENDING_TRANSACTIONS: TableDefinition<&str, &str> =
+    TableDefinition::new("pendingtransactions");
+
+// Transactions
+// Key: Transaction Id
+// Value: Serialized transaction info
+const TRANSACTIONS: TableDefinition<&str, &str> = TableDefinition::new("transactions");
 
 // Proofs
 // Multimap Table
 // Key: MintUrl
 // Value: Serialized proof
 const PROOFS: MultimapTableDefinition<&str, &str> = MultimapTableDefinition::new("proofs");
-
-// Lightning Invoice
-// Key: payment hash
-// value: Serialized invoice info
-const LIGHTNING_INVOICES: TableDefinition<&str, &str> = TableDefinition::new("lightning_invoice");
 
 lazy_static! {
     static ref DB: Arc<Mutex<Option<Database>>> = Arc::new(Mutex::new(None));
@@ -54,9 +60,9 @@ pub(crate) async fn init_db(path: &str) -> Result<String, CashuError> {
             let _ = write_txn.open_table(MINT_INFO)?;
             let _ = write_txn.open_table(MINT_KEYSETS)?;
             let _ = write_txn.open_table(KEYSETS)?;
-            let _ = write_txn.open_table(CASHU_TRANSACTIONS)?;
+            let _ = write_txn.open_table(TRANSACTIONS)?;
+            let _ = write_txn.open_table(PENDING_TRANSACTIONS)?;
             let _ = write_txn.open_multimap_table(PROOFS)?;
-            let _ = write_txn.open_table(LIGHTNING_INVOICES)?;
         }
         write_txn.commit()?;
     }
@@ -152,5 +158,75 @@ pub(crate) async fn remove_proofs(mint: &str, proofs: Proofs) -> Result<(), Cash
     }
     write_txn.commit()?;
 
+    Ok(())
+}
+
+/// Add Transaction
+pub(crate) async fn add_transaction(transaction: &Transaction) -> Result<(), CashuError> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+
+    let write_txn = db.begin_write()?;
+    {
+        if transaction.status().eq(&TransactionStatus::Pending) {
+            let mut pending_transaction_table = write_txn.open_table(PENDING_TRANSACTIONS)?;
+
+            pending_transaction_table
+                .insert(transaction.id().as_str(), transaction.as_json().as_str())?;
+        } else {
+            let mut transaction_table = write_txn.open_table(TRANSACTIONS)?;
+
+            transaction_table.insert(transaction.id().as_str(), transaction.as_json().as_str())?;
+        }
+    }
+    write_txn.commit()?;
+
+    //Err(CashuError(format!("added Proofs: {:?}", proofs)))
+    Ok(())
+}
+
+/// Get all transactions
+pub(crate) async fn get_all_transactions() -> Result<Vec<Transaction>, CashuError> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+    let read_txn = db.begin_read()?;
+    let table = read_txn.open_table(TRANSACTIONS)?;
+
+    let transactions: Vec<Transaction> = table.iter()?.fold(Vec::new(), |mut vec, item| {
+        if let Ok((_key, value)) = item {
+            if let Ok(transaction) = serde_json::from_str(value.value()) {
+                vec.push(transaction)
+            }
+        }
+        vec
+    });
+
+    // return Err(CashuError(format!("Transactions: {:?}", transactions)));
+
+    Ok(transactions)
+}
+
+pub(crate) async fn update_transaction_status(transaction: &Transaction) -> Result<(), CashuError> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+
+    let write_txn = db.begin_write()?;
+
+    {
+        if transaction.status().ne(&TransactionStatus::Pending) {
+            let mut pending_transaction_table = write_txn.open_table(PENDING_TRANSACTIONS)?;
+            pending_transaction_table.remove(transaction.id().as_str())?;
+        }
+        let mut transactions_table = write_txn.open_table(TRANSACTIONS)?;
+        transactions_table.insert(transaction.id().as_str(), transaction.as_json().as_str())?;
+    }
+
+    write_txn.commit()?;
     Ok(())
 }

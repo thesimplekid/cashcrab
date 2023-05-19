@@ -19,6 +19,11 @@ use std::sync::Arc;
 
 // Section: imports
 
+use crate::types::CashuTransaction;
+use crate::types::LNTransaction;
+use crate::types::Transaction;
+use crate::types::TransactionStatus;
+
 // Section: wire functions
 
 fn wire_init_db_impl(port_: MessagePort, path: impl Wire2Api<String> + UnwindSafe) {
@@ -108,7 +113,7 @@ fn wire_set_mints_impl(port_: MessagePort, mints: impl Wire2Api<Vec<String>> + U
 }
 fn wire_check_spendable_impl(
     port_: MessagePort,
-    encoded_token: impl Wire2Api<String> + UnwindSafe,
+    transaction: impl Wire2Api<Transaction> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -117,8 +122,8 @@ fn wire_check_spendable_impl(
             mode: FfiCallMode::Normal,
         },
         move || {
-            let api_encoded_token = encoded_token.wire2api();
-            move |task_callback| check_spendable(api_encoded_token)
+            let api_transaction = transaction.wire2api();
+            move |task_callback| check_spendable(api_transaction)
         },
     )
 }
@@ -224,6 +229,16 @@ fn wire_decode_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> +
         },
     )
 }
+fn wire_get_transactions_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_transactions",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| get_transactions(),
+    )
+}
 fn wire_decode_token_impl(port_: MessagePort, encoded_token: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -260,6 +275,23 @@ where
     }
 }
 
+impl Wire2Api<i32> for i32 {
+    fn wire2api(self) -> i32 {
+        self
+    }
+}
+
+impl Wire2Api<TransactionStatus> for i32 {
+    fn wire2api(self) -> TransactionStatus {
+        match self {
+            0 => TransactionStatus::Sent,
+            1 => TransactionStatus::Received,
+            2 => TransactionStatus::Pending,
+            3 => TransactionStatus::Failed,
+            _ => unreachable!("Invalid variant for TransactionStatus: {}", self),
+        }
+    }
+}
 impl Wire2Api<u64> for u64 {
     fn wire2api(self) -> u64 {
         self
@@ -273,6 +305,21 @@ impl Wire2Api<u8> for u8 {
 
 // Section: impl IntoDart
 
+impl support::IntoDart for CashuTransaction {
+    fn into_dart(self) -> support::DartAbi {
+        vec![
+            self.id.into_dart(),
+            self.status.into_dart(),
+            self.time.into_dart(),
+            self.amount.into_dart(),
+            self.mint.into_dart(),
+            self.token.into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for CashuTransaction {}
+
 impl support::IntoDart for InvoiceInfo {
     fn into_dart(self) -> support::DartAbi {
         vec![
@@ -284,6 +331,21 @@ impl support::IntoDart for InvoiceInfo {
     }
 }
 impl support::IntoDartExceptPrimitive for InvoiceInfo {}
+
+impl support::IntoDart for LNTransaction {
+    fn into_dart(self) -> support::DartAbi {
+        vec![
+            self.id.into_dart(),
+            self.status.into_dart(),
+            self.time.into_dart(),
+            self.amount.into_dart(),
+            self.mint.into_dart(),
+            self.bolt11.into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for LNTransaction {}
 
 impl support::IntoDart for RequestMintInfo {
     fn into_dart(self) -> support::DartAbi {
@@ -304,6 +366,29 @@ impl support::IntoDart for TokenData {
     }
 }
 impl support::IntoDartExceptPrimitive for TokenData {}
+
+impl support::IntoDart for Transaction {
+    fn into_dart(self) -> support::DartAbi {
+        match self {
+            Self::CashuTransaction(field0) => vec![0.into_dart(), field0.into_dart()],
+            Self::LNTransaction(field0) => vec![1.into_dart(), field0.into_dart()],
+        }
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for Transaction {}
+impl support::IntoDart for TransactionStatus {
+    fn into_dart(self) -> support::DartAbi {
+        match self {
+            Self::Sent => 0,
+            Self::Received => 1,
+            Self::Pending => 2,
+            Self::Failed => 3,
+        }
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for TransactionStatus {}
 
 // Section: executor
 

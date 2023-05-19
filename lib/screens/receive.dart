@@ -4,30 +4,23 @@ import 'package:cashcrab/bridge_generated.dart';
 
 import '../shared/widgets/add_mint.dart';
 import '../screens/create_invoice.dart';
-import '../shared/models/transaction.dart';
 
 class ReceviceToken extends StatefulWidget {
   final Function decodeToken;
   final Function receiveToken;
   final Function addMint;
-  final Function setInvoices;
   final Map<String, int> mints;
   final RustImpl cashu;
   final String? activeWallet;
-  final List<LightningTransaction> pendingInvoices;
-  final List<LightningTransaction> invoices;
 
   const ReceviceToken({
     super.key,
     required this.decodeToken,
     required this.activeWallet,
-    required this.pendingInvoices,
     required this.receiveToken,
     required this.mints,
-    required this.invoices,
     required this.addMint,
     required this.cashu,
-    required this.setInvoices,
   });
 
   @override
@@ -108,9 +101,6 @@ class ReceiveTokenState extends State<ReceviceToken> {
                               cashu: widget.cashu,
                               mints: widget.mints,
                               activeMint: widget.activeWallet!,
-                              pendingInvoices: widget.pendingInvoices,
-                              invoices: widget.invoices,
-                              setInvoices: widget.setInvoices,
                             ),
                           ),
                         );

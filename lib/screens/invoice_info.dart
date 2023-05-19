@@ -4,25 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import '../shared/models/invoice.dart';
-import '../shared/models/transaction.dart';
 
 class InvoiceInfoScreen extends StatefulWidget {
   final int amount;
   final String mintUrl;
   final Invoice? invoice;
-  final List<LightningTransaction> invoices;
-  final List<LightningTransaction> pendingInvoices;
   final RustImpl cashu;
-  final Function setInvoices;
 
   const InvoiceInfoScreen(
       {super.key,
       required this.amount,
       required this.mintUrl,
-      required this.invoices,
-      required this.pendingInvoices,
       required this.cashu,
-      required this.setInvoices,
       this.invoice});
 
   @override
@@ -42,19 +35,18 @@ class InvoiceInfoState extends State<InvoiceInfoScreen> {
         amount: widget.amount,
         mintUrl: widget.mintUrl);
 
-    LightningTransaction newTransaction = LightningTransaction(
-        status: TransactionStatus.pending,
-        time: DateTime.now(),
-        mintUrl: widget.mintUrl,
+    LNTransaction newTransaction = LNTransaction(
+        status: TransactionStatus.Pending,
+        time: DateTime.now().millisecondsSinceEpoch,
+        mint: widget.mintUrl,
         amount: widget.amount,
-        invoice: newInvoice);
+        bolt11: newInvoice.invoice!);
 
     setState(() {
-      widget.pendingInvoices.add(newTransaction);
+      // TODO:
+      // 1 widget.pendingInvoices.add(newTransaction);
       displayInvoice = newInvoice;
     });
-
-    await widget.setInvoices(widget.pendingInvoices, widget.invoices);
   }
 
   @override

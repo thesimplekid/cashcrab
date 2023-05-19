@@ -7,6 +7,9 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:uuid/uuid.dart';
+import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
+
+part 'bridge_definitions.freezed.dart';
 
 abstract class Rust {
   Future<void> initDb({required String path, dynamic hint});
@@ -26,6 +29,7 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kGetWalletsConstMeta;
 
+  /// Remove wallet (mint)
   Future<String> removeWallet({required String url, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kRemoveWalletConstMeta;
@@ -35,19 +39,22 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kAddNewWalletsConstMeta;
 
+  /// Set mints (wallets)
   Future<List<String>> setMints({required List<String> mints, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kSetMintsConstMeta;
 
-  Future<bool> checkSpendable({required String encodedToken, dynamic hint});
+  Future<bool> checkSpendable({required Transaction transaction, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kCheckSpendableConstMeta;
 
-  Future<String> receiveToken({required String encodedToken, dynamic hint});
+  /// Receive
+  Future<Transaction> receiveToken(
+      {required String encodedToken, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kReceiveTokenConstMeta;
 
-  Future<String> send(
+  Future<Transaction> send(
       {required int amount, required String activeMint, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kSendConstMeta;
@@ -78,9 +85,31 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta;
 
+  Future<List<Transaction>> getTransactions({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetTransactionsConstMeta;
+
   Future<TokenData> decodeToken({required String encodedToken, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kDecodeTokenConstMeta;
+}
+
+class CashuTransaction {
+  final String? id;
+  final TransactionStatus status;
+  final int time;
+  final int amount;
+  final String mint;
+  final String token;
+
+  const CashuTransaction({
+    this.id,
+    required this.status,
+    required this.time,
+    required this.amount,
+    required this.mint,
+    required this.token,
+  });
 }
 
 class InvoiceInfo {
@@ -92,6 +121,24 @@ class InvoiceInfo {
     required this.amount,
     required this.hash,
     this.memo,
+  });
+}
+
+class LNTransaction {
+  final String? id;
+  final TransactionStatus status;
+  final int time;
+  final int amount;
+  final String mint;
+  final String bolt11;
+
+  const LNTransaction({
+    this.id,
+    required this.status,
+    required this.time,
+    required this.amount,
+    required this.mint,
+    required this.bolt11,
   });
 }
 
@@ -117,4 +164,21 @@ class TokenData {
     required this.amount,
     this.memo,
   });
+}
+
+@freezed
+class Transaction with _$Transaction {
+  const factory Transaction.cashuTransaction(
+    CashuTransaction field0,
+  ) = Transaction_CashuTransaction;
+  const factory Transaction.lnTransaction(
+    LNTransaction field0,
+  ) = Transaction_LNTransaction;
+}
+
+enum TransactionStatus {
+  Sent,
+  Received,
+  Pending,
+  Failed,
 }

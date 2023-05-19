@@ -142,13 +142,14 @@ class RustImpl implements Rust {
         argNames: ["mints"],
       );
 
-  Future<bool> checkSpendable({required String encodedToken, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(encodedToken);
+  Future<bool> checkSpendable(
+      {required Transaction transaction, dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_transaction(transaction);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_check_spendable(port_, arg0),
       parseSuccessData: _wire2api_bool,
       constMeta: kCheckSpendableConstMeta,
-      argValues: [encodedToken],
+      argValues: [transaction],
       hint: hint,
     ));
   }
@@ -156,14 +157,15 @@ class RustImpl implements Rust {
   FlutterRustBridgeTaskConstMeta get kCheckSpendableConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
         debugName: "check_spendable",
-        argNames: ["encodedToken"],
+        argNames: ["transaction"],
       );
 
-  Future<String> receiveToken({required String encodedToken, dynamic hint}) {
+  Future<Transaction> receiveToken(
+      {required String encodedToken, dynamic hint}) {
     var arg0 = _platform.api2wire_String(encodedToken);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_receive_token(port_, arg0),
-      parseSuccessData: _wire2api_String,
+      parseSuccessData: _wire2api_transaction,
       constMeta: kReceiveTokenConstMeta,
       argValues: [encodedToken],
       hint: hint,
@@ -176,13 +178,13 @@ class RustImpl implements Rust {
         argNames: ["encodedToken"],
       );
 
-  Future<String> send(
+  Future<Transaction> send(
       {required int amount, required String activeMint, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
     var arg1 = _platform.api2wire_String(activeMint);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_send(port_, arg0, arg1),
-      parseSuccessData: _wire2api_String,
+      parseSuccessData: _wire2api_transaction,
       constMeta: kSendConstMeta,
       argValues: [amount, activeMint],
       hint: hint,
@@ -278,6 +280,22 @@ class RustImpl implements Rust {
         argNames: ["invoice"],
       );
 
+  Future<List<Transaction>> getTransactions({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_transactions(port_),
+      parseSuccessData: _wire2api_list_transaction,
+      constMeta: kGetTransactionsConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetTransactionsConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_transactions",
+        argNames: [],
+      );
+
   Future<TokenData> decodeToken({required String encodedToken, dynamic hint}) {
     var arg0 = _platform.api2wire_String(encodedToken);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -312,6 +330,32 @@ class RustImpl implements Rust {
     return raw as bool;
   }
 
+  CashuTransaction _wire2api_box_autoadd_cashu_transaction(dynamic raw) {
+    return _wire2api_cashu_transaction(raw);
+  }
+
+  LNTransaction _wire2api_box_autoadd_ln_transaction(dynamic raw) {
+    return _wire2api_ln_transaction(raw);
+  }
+
+  CashuTransaction _wire2api_cashu_transaction(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return CashuTransaction(
+      id: _wire2api_opt_String(arr[0]),
+      status: _wire2api_transaction_status(arr[1]),
+      time: _wire2api_u64(arr[2]),
+      amount: _wire2api_u64(arr[3]),
+      mint: _wire2api_String(arr[4]),
+      token: _wire2api_String(arr[5]),
+    );
+  }
+
+  int _wire2api_i32(dynamic raw) {
+    return raw as int;
+  }
+
   InvoiceInfo _wire2api_invoice_info(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 3)
@@ -320,6 +364,24 @@ class RustImpl implements Rust {
       amount: _wire2api_u64(arr[0]),
       hash: _wire2api_String(arr[1]),
       memo: _wire2api_opt_String(arr[2]),
+    );
+  }
+
+  List<Transaction> _wire2api_list_transaction(dynamic raw) {
+    return (raw as List<dynamic>).map(_wire2api_transaction).toList();
+  }
+
+  LNTransaction _wire2api_ln_transaction(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return LNTransaction(
+      id: _wire2api_opt_String(arr[0]),
+      status: _wire2api_transaction_status(arr[1]),
+      time: _wire2api_u64(arr[2]),
+      amount: _wire2api_u64(arr[3]),
+      mint: _wire2api_String(arr[4]),
+      bolt11: _wire2api_String(arr[5]),
     );
   }
 
@@ -349,6 +411,25 @@ class RustImpl implements Rust {
     );
   }
 
+  Transaction _wire2api_transaction(dynamic raw) {
+    switch (raw[0]) {
+      case 0:
+        return Transaction_CashuTransaction(
+          _wire2api_box_autoadd_cashu_transaction(raw[1]),
+        );
+      case 1:
+        return Transaction_LNTransaction(
+          _wire2api_box_autoadd_ln_transaction(raw[1]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  TransactionStatus _wire2api_transaction_status(dynamic raw) {
+    return TransactionStatus.values[raw as int];
+  }
+
   int _wire2api_u64(dynamic raw) {
     return castInt(raw);
   }
@@ -367,6 +448,16 @@ class RustImpl implements Rust {
 }
 
 // Section: api2wire
+
+@protected
+int api2wire_i32(int raw) {
+  return raw;
+}
+
+@protected
+int api2wire_transaction_status(TransactionStatus raw) {
+  return api2wire_i32(raw.index);
+}
 
 @protected
 int api2wire_u8(int raw) {
@@ -395,6 +486,35 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
   }
 
   @protected
+  ffi.Pointer<wire_CashuTransaction> api2wire_box_autoadd_cashu_transaction(
+      CashuTransaction raw) {
+    final ptr = inner.new_box_autoadd_cashu_transaction_0();
+    _api_fill_to_wire_cashu_transaction(raw, ptr.ref);
+    return ptr;
+  }
+
+  @protected
+  ffi.Pointer<wire_LNTransaction> api2wire_box_autoadd_ln_transaction(
+      LNTransaction raw) {
+    final ptr = inner.new_box_autoadd_ln_transaction_0();
+    _api_fill_to_wire_ln_transaction(raw, ptr.ref);
+    return ptr;
+  }
+
+  @protected
+  ffi.Pointer<wire_Transaction> api2wire_box_autoadd_transaction(
+      Transaction raw) {
+    final ptr = inner.new_box_autoadd_transaction_0();
+    _api_fill_to_wire_transaction(raw, ptr.ref);
+    return ptr;
+  }
+
+  @protected
+  ffi.Pointer<wire_uint_8_list> api2wire_opt_String(String? raw) {
+    return raw == null ? ffi.nullptr : api2wire_String(raw);
+  }
+
+  @protected
   int api2wire_u64(int raw) {
     return raw;
   }
@@ -408,6 +528,59 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
 // Section: finalizer
 
 // Section: api_fill_to_wire
+
+  void _api_fill_to_wire_box_autoadd_cashu_transaction(
+      CashuTransaction apiObj, ffi.Pointer<wire_CashuTransaction> wireObj) {
+    _api_fill_to_wire_cashu_transaction(apiObj, wireObj.ref);
+  }
+
+  void _api_fill_to_wire_box_autoadd_ln_transaction(
+      LNTransaction apiObj, ffi.Pointer<wire_LNTransaction> wireObj) {
+    _api_fill_to_wire_ln_transaction(apiObj, wireObj.ref);
+  }
+
+  void _api_fill_to_wire_box_autoadd_transaction(
+      Transaction apiObj, ffi.Pointer<wire_Transaction> wireObj) {
+    _api_fill_to_wire_transaction(apiObj, wireObj.ref);
+  }
+
+  void _api_fill_to_wire_cashu_transaction(
+      CashuTransaction apiObj, wire_CashuTransaction wireObj) {
+    wireObj.id = api2wire_opt_String(apiObj.id);
+    wireObj.status = api2wire_transaction_status(apiObj.status);
+    wireObj.time = api2wire_u64(apiObj.time);
+    wireObj.amount = api2wire_u64(apiObj.amount);
+    wireObj.mint = api2wire_String(apiObj.mint);
+    wireObj.token = api2wire_String(apiObj.token);
+  }
+
+  void _api_fill_to_wire_ln_transaction(
+      LNTransaction apiObj, wire_LNTransaction wireObj) {
+    wireObj.id = api2wire_opt_String(apiObj.id);
+    wireObj.status = api2wire_transaction_status(apiObj.status);
+    wireObj.time = api2wire_u64(apiObj.time);
+    wireObj.amount = api2wire_u64(apiObj.amount);
+    wireObj.mint = api2wire_String(apiObj.mint);
+    wireObj.bolt11 = api2wire_String(apiObj.bolt11);
+  }
+
+  void _api_fill_to_wire_transaction(
+      Transaction apiObj, wire_Transaction wireObj) {
+    if (apiObj is Transaction_CashuTransaction) {
+      var pre_field0 = api2wire_box_autoadd_cashu_transaction(apiObj.field0);
+      wireObj.tag = 0;
+      wireObj.kind = inner.inflate_Transaction_CashuTransaction();
+      wireObj.kind.ref.CashuTransaction.ref.field0 = pre_field0;
+      return;
+    }
+    if (apiObj is Transaction_LNTransaction) {
+      var pre_field0 = api2wire_box_autoadd_ln_transaction(apiObj.field0);
+      wireObj.tag = 1;
+      wireObj.kind = inner.inflate_Transaction_LNTransaction();
+      wireObj.kind.ref.LNTransaction.ref.field0 = pre_field0;
+      return;
+    }
+  }
 }
 
 // ignore_for_file: camel_case_types, non_constant_identifier_names, avoid_positional_boolean_parameters, annotate_overrides, constant_identifier_names
@@ -620,20 +793,20 @@ class RustWire implements FlutterRustBridgeWireBase {
 
   void wire_check_spendable(
     int port_,
-    ffi.Pointer<wire_uint_8_list> encoded_token,
+    ffi.Pointer<wire_Transaction> transaction,
   ) {
     return _wire_check_spendable(
       port_,
-      encoded_token,
+      transaction,
     );
   }
 
   late final _wire_check_spendablePtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_check_spendable');
+              ffi.Pointer<wire_Transaction>)>>('wire_check_spendable');
   late final _wire_check_spendable = _wire_check_spendablePtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+      .asFunction<void Function(int, ffi.Pointer<wire_Transaction>)>();
 
   void wire_receive_token(
     int port_,
@@ -757,6 +930,20 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _wire_decode_invoice = _wire_decode_invoicePtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
+  void wire_get_transactions(
+    int port_,
+  ) {
+    return _wire_get_transactions(
+      port_,
+    );
+  }
+
+  late final _wire_get_transactionsPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_transactions');
+  late final _wire_get_transactions =
+      _wire_get_transactionsPtr.asFunction<void Function(int)>();
+
   void wire_decode_token(
     int port_,
     ffi.Pointer<wire_uint_8_list> encoded_token,
@@ -788,6 +975,38 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _new_StringList_0 = _new_StringList_0Ptr
       .asFunction<ffi.Pointer<wire_StringList> Function(int)>();
 
+  ffi.Pointer<wire_CashuTransaction> new_box_autoadd_cashu_transaction_0() {
+    return _new_box_autoadd_cashu_transaction_0();
+  }
+
+  late final _new_box_autoadd_cashu_transaction_0Ptr = _lookup<
+          ffi.NativeFunction<ffi.Pointer<wire_CashuTransaction> Function()>>(
+      'new_box_autoadd_cashu_transaction_0');
+  late final _new_box_autoadd_cashu_transaction_0 =
+      _new_box_autoadd_cashu_transaction_0Ptr
+          .asFunction<ffi.Pointer<wire_CashuTransaction> Function()>();
+
+  ffi.Pointer<wire_LNTransaction> new_box_autoadd_ln_transaction_0() {
+    return _new_box_autoadd_ln_transaction_0();
+  }
+
+  late final _new_box_autoadd_ln_transaction_0Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<wire_LNTransaction> Function()>>(
+          'new_box_autoadd_ln_transaction_0');
+  late final _new_box_autoadd_ln_transaction_0 =
+      _new_box_autoadd_ln_transaction_0Ptr
+          .asFunction<ffi.Pointer<wire_LNTransaction> Function()>();
+
+  ffi.Pointer<wire_Transaction> new_box_autoadd_transaction_0() {
+    return _new_box_autoadd_transaction_0();
+  }
+
+  late final _new_box_autoadd_transaction_0Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<wire_Transaction> Function()>>(
+          'new_box_autoadd_transaction_0');
+  late final _new_box_autoadd_transaction_0 = _new_box_autoadd_transaction_0Ptr
+      .asFunction<ffi.Pointer<wire_Transaction> Function()>();
+
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,
   ) {
@@ -802,6 +1021,28 @@ class RustWire implements FlutterRustBridgeWireBase {
               ffi.Int32)>>('new_uint_8_list_0');
   late final _new_uint_8_list_0 = _new_uint_8_list_0Ptr
       .asFunction<ffi.Pointer<wire_uint_8_list> Function(int)>();
+
+  ffi.Pointer<TransactionKind> inflate_Transaction_CashuTransaction() {
+    return _inflate_Transaction_CashuTransaction();
+  }
+
+  late final _inflate_Transaction_CashuTransactionPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<TransactionKind> Function()>>(
+          'inflate_Transaction_CashuTransaction');
+  late final _inflate_Transaction_CashuTransaction =
+      _inflate_Transaction_CashuTransactionPtr
+          .asFunction<ffi.Pointer<TransactionKind> Function()>();
+
+  ffi.Pointer<TransactionKind> inflate_Transaction_LNTransaction() {
+    return _inflate_Transaction_LNTransaction();
+  }
+
+  late final _inflate_Transaction_LNTransactionPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<TransactionKind> Function()>>(
+          'inflate_Transaction_LNTransaction');
+  late final _inflate_Transaction_LNTransaction =
+      _inflate_Transaction_LNTransactionPtr
+          .asFunction<ffi.Pointer<TransactionKind> Function()>();
 
   void free_WireSyncReturn(
     WireSyncReturn ptr,
@@ -832,6 +1073,61 @@ class wire_StringList extends ffi.Struct {
 
   @ffi.Int32()
   external int len;
+}
+
+class wire_CashuTransaction extends ffi.Struct {
+  external ffi.Pointer<wire_uint_8_list> id;
+
+  @ffi.Int32()
+  external int status;
+
+  @ffi.Uint64()
+  external int time;
+
+  @ffi.Uint64()
+  external int amount;
+
+  external ffi.Pointer<wire_uint_8_list> mint;
+
+  external ffi.Pointer<wire_uint_8_list> token;
+}
+
+class wire_Transaction_CashuTransaction extends ffi.Struct {
+  external ffi.Pointer<wire_CashuTransaction> field0;
+}
+
+class wire_LNTransaction extends ffi.Struct {
+  external ffi.Pointer<wire_uint_8_list> id;
+
+  @ffi.Int32()
+  external int status;
+
+  @ffi.Uint64()
+  external int time;
+
+  @ffi.Uint64()
+  external int amount;
+
+  external ffi.Pointer<wire_uint_8_list> mint;
+
+  external ffi.Pointer<wire_uint_8_list> bolt11;
+}
+
+class wire_Transaction_LNTransaction extends ffi.Struct {
+  external ffi.Pointer<wire_LNTransaction> field0;
+}
+
+class TransactionKind extends ffi.Union {
+  external ffi.Pointer<wire_Transaction_CashuTransaction> CashuTransaction;
+
+  external ffi.Pointer<wire_Transaction_LNTransaction> LNTransaction;
+}
+
+class wire_Transaction extends ffi.Struct {
+  @ffi.Int32()
+  external int tag;
+
+  external ffi.Pointer<TransactionKind> kind;
 }
 
 typedef DartPostCObjectFnType = ffi.Pointer<

@@ -11,7 +11,6 @@ import 'package:cashcrab/bridge_generated.dart';
 import 'color_schemes.g.dart';
 import 'screens/home.dart';
 import 'screens/settings.dart';
-import 'shared/models/transaction.dart';
 
 const base = "rust";
 final path = Platform.isWindows ? "$base.dll" : "lib$base.so";
@@ -61,12 +60,8 @@ class MyHomePageState extends State<MyHomePage> {
 
   TokenData? tokenData;
 
-  List<CashuTransaction> pendingCashuTransactions = List.empty(growable: true);
-  List<CashuTransaction> cashuTransactions = List.empty(growable: true);
-
-  List<LightningTransaction> pendingLightningTransactions =
-      List.empty(growable: true);
-  List<LightningTransaction> lightningTransactions = List.empty(growable: true);
+  Map<String, Transaction> pendingTransactions = {};
+  Map<String, Transaction> transactions = {};
 
   late List<Widget> _widgetOptions;
 
@@ -90,9 +85,8 @@ class MyHomePageState extends State<MyHomePage> {
     _loadMints();
 
     // Load transaction
-    _loadCashuTransactions();
+    _loadTransactions();
     // Load Invoices
-    _loadLightningTransactions();
 
     //_getActiveMint();
 
@@ -113,22 +107,18 @@ class MyHomePageState extends State<MyHomePage> {
     _homeTab = Home(
       cashu: api,
       balance: balance,
-      setInvoices: setLightningTransactions,
       activeBalance: activeBalance,
       activeMint: activeMint,
       tokenData: tokenData,
-      pendingCashuTransactions: pendingCashuTransactions,
-      cashuTransactions: cashuTransactions,
-      pendingLightningTransactions: pendingLightningTransactions,
-      lightningTransactions: lightningTransactions,
+      pendingTransactions: pendingTransactions,
+      transactions: transactions,
       mints: mints,
       decodeToken: _decodeToken,
       clearToken: clearToken,
       receiveToken: receiveToken,
       send: sendToken,
       addMint: _addNewMint,
-      checkTransactionStatus: _checkCashuTransactionStatus,
-      checkLightningTransaction: _checkLightningTransactionStatus,
+      checkTransactionStatus: _checkTransactionStatus,
     );
 
     _settingsTab = Settings(
@@ -202,35 +192,23 @@ class MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<bool> _checkCashuTransactionStatus(
-      CashuTransaction transaction) async {
-    final spendable = await api.checkSpendable(encodedToken: transaction.token);
+  Future<bool> _checkTransactionStatus(Transaction transaction) async {
+    final spendable = await api.checkSpendable(transaction: transaction);
 
     if (spendable == false) {
       setState(() {
-        pendingCashuTransactions
-            .removeWhere((t) => t.token == transaction.token);
-        if (!cashuTransactions.any((t) => t.token == transaction.token)) {
-          transaction.status = TransactionStatus.sent;
-          cashuTransactions.add(transaction);
-        }
+        String id = transaction.field0 is LNTransaction
+            ? (transaction.field0 as LNTransaction).id!
+            : (transaction.field0 as CashuTransaction).id!;
+        pendingTransactions.remove(id);
+
+        transactions[id] = transaction;
       });
     }
 
-    await _saveCashuTransactions();
-    await _loadCashuTransactions();
+    //await _saveCashuTransactions();
+    //await _loadCashuTransactions();
     return spendable;
-  }
-
-  Future<void> _checkLightningTransactionStatus(
-      LightningTransaction transaction) async {
-    await api.mintToken(
-        amount: transaction.amount,
-        hash: transaction.invoice.hash,
-        mint: transaction.mintUrl);
-
-    await _saveLightningTransactions();
-    await _loadLightningTransactions();
   }
 
   void clearToken() async {
@@ -242,21 +220,19 @@ class MyHomePageState extends State<MyHomePage> {
   void receiveToken() async {
     if (tokenData?.encodedToken != null) {
       print("recevice: " + tokenData.toString());
-      String proofs =
+      Transaction transaction =
           await api.receiveToken(encodedToken: tokenData!.encodedToken);
       // REVIEW: how does this handle a failed token that shouldned be added
-      print(proofs);
+      print(transaction.toString());
+      String id = transaction.field0 is LNTransaction
+          ? (transaction.field0 as LNTransaction).id!
+          : (transaction.field0 as CashuTransaction).id!;
       setState(() {
-        CashuTransaction transaction = CashuTransaction(
-            status: TransactionStatus.received,
-            time: DateTime.now(),
-            amount: tokenData!.amount,
-            mintUrl: tokenData!.mint,
-            token: tokenData!.encodedToken);
-        cashuTransactions.add(transaction);
+        transactions[id] = transaction;
       });
 
-      await _saveCashuTransactions();
+      print("added");
+
       await _getBalances();
     }
   }
@@ -266,24 +242,19 @@ class MyHomePageState extends State<MyHomePage> {
       return "";
     }
 
-    String token = await api.send(amount: amount, activeMint: activeMint!);
-    TokenData? tokenData = await _decodeToken(token);
-    setState(() {
-      CashuTransaction transaction = CashuTransaction(
-          status: TransactionStatus.pending,
-          time: DateTime.now(),
-          amount: tokenData!.amount,
-          mintUrl: tokenData.mint,
-          token: tokenData.encodedToken);
-      pendingCashuTransactions.add(transaction);
-    });
-    await _saveCashuTransactions();
+    Transaction transaction =
+        await api.send(amount: amount, activeMint: activeMint!);
+    CashuTransaction t = transaction.field0 as CashuTransaction;
+    String id = t.id!;
 
-    // Get Proofs from rust
-    // Since sending is handled by rust we dont know what proof(s) is spend directly
-    // So we just get the current list of proofs from rust and overwrite the proof list
+    setState(() {
+      pendingTransactions[id] = transaction;
+    });
+
+    // Recaulate balances
     await _getBalances();
-    return (token.toString());
+    _getBalance();
+    return (t.token);
   }
 
   // Get Proofs
@@ -316,94 +287,41 @@ class MyHomePageState extends State<MyHomePage> {
     _getBalance();
   }
 
-  Future<void> _loadCashuTransactions() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> transactionsJson = prefs.getStringList('transactions') ?? [];
+  Future<void> _loadTransactions() async {
+    List<Transaction> gotTransactions = await api.getTransactions();
 
-    List<CashuTransaction> loadedTransactions = transactionsJson
-        .map((jsonString) => json.decode(jsonString))
-        .map((jsonMap) => CashuTransaction.fromJson(jsonMap))
-        .toList();
+    Map<String, Transaction> loadedTransactions = {};
+    Map<String, Transaction> loadedPendingTransactions = {};
 
-    List<String> pendingTransactionsJson =
-        prefs.getStringList('pending_transactions') ?? [];
+    for (var transaction in gotTransactions) {
+      dynamic t = transaction.field0;
+      String id;
+      TransactionStatus status;
+      Transaction newTransaction;
+      if (t is CashuTransaction) {
+        CashuTransaction trans = t;
+        id = trans.id!;
+        status = trans.status;
+        newTransaction = Transaction.cashuTransaction(trans);
+      } else {
+        LNTransaction trans = t as LNTransaction;
 
-    List<CashuTransaction> loadedPendingTransactions = pendingTransactionsJson
-        .map((jsonString) => json.decode(jsonString))
-        .map((jsonMap) => CashuTransaction.fromJson(jsonMap))
-        .toList();
+        id = trans.id!;
+        status = trans.status;
+        newTransaction = Transaction.lnTransaction(trans);
+      }
 
-    setState(() {
-      cashuTransactions = loadedTransactions;
-      pendingCashuTransactions = loadedPendingTransactions;
-    });
-  }
-
-  Future<void> _saveCashuTransactions() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> transactionsJson = cashuTransactions
-        .map((transaction) => transaction.toJson())
-        .map((jsonMap) => json.encode(jsonMap))
-        .toList();
-
-    await prefs.setStringList('transactions', transactionsJson);
-
-    List<String> pendingTransactionsJson = pendingCashuTransactions
-        .map((transaction) => transaction.toJson())
-        .map((jsonMap) => json.encode(jsonMap))
-        .toList();
-
-    await prefs.setStringList('pending_transactions', pendingTransactionsJson);
-  }
-
-  void setLightningTransactions(
-      List<LightningTransaction> passedPendingTransactions,
-      List<LightningTransaction> passedTransactions) async {
-    setState(() {
-      lightningTransactions = passedTransactions;
-      pendingLightningTransactions = passedPendingTransactions;
-    });
-    await _saveLightningTransactions();
-  }
-
-  Future<void> _loadLightningTransactions() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> invoicesJson = prefs.getStringList('invoices') ?? [];
-
-    List<LightningTransaction> loadedInvoices = invoicesJson
-        .map((jsonString) => json.decode(jsonString))
-        .map((jsonMap) => LightningTransaction.fromJson(jsonMap))
-        .toList();
-
-    List<String> pendingInvoicesJson =
-        prefs.getStringList('pending_invoices') ?? [];
-
-    List<LightningTransaction> loadedPendingInvoices = pendingInvoicesJson
-        .map((jsonString) => json.decode(jsonString))
-        .map((jsonMap) => LightningTransaction.fromJson(jsonMap))
-        .toList();
+      if (status == TransactionStatus.Pending) {
+        loadedPendingTransactions[id] = newTransaction;
+      } else {
+        loadedTransactions[id] = newTransaction;
+      }
+    }
 
     setState(() {
-      lightningTransactions = loadedInvoices;
-      pendingLightningTransactions = loadedPendingInvoices;
+      transactions = loadedTransactions;
+      pendingTransactions = loadedPendingTransactions;
     });
-  }
-
-  Future<void> _saveLightningTransactions() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> invoicesJson = lightningTransactions
-        .map((invoice) => invoice.toJson())
-        .map((jsonMap) => json.encode(jsonMap))
-        .toList();
-
-    await prefs.setStringList('invoices', invoicesJson);
-
-    List<String> pendingInvoicesJson = pendingLightningTransactions
-        .map((invoice) => invoice.toJson())
-        .map((jsonMap) => json.encode(jsonMap))
-        .toList();
-
-    await prefs.setStringList('pending_invoices', pendingInvoicesJson);
   }
 
   /// Get Mints from disk

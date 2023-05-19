@@ -7,14 +7,13 @@ class PayInvoice extends StatefulWidget {
   final String? activeMint;
   final Map<String, int> mints;
   final RustImpl cashu;
-  final Function setInvoices;
 
-  const PayInvoice(
-      {super.key,
-      required this.activeMint,
-      required this.cashu,
-      required this.mints,
-      required this.setInvoices});
+  const PayInvoice({
+    super.key,
+    required this.activeMint,
+    required this.cashu,
+    required this.mints,
+  });
 
   @override
   PayInvoiceState createState() => PayInvoiceState();

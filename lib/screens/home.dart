@@ -6,7 +6,6 @@ import 'package:cashcrab/bridge_generated.dart';
 
 import '../screens/send.dart';
 import '../screens/receive.dart';
-import '../shared/models/transaction.dart';
 import '../shared/utils.dart';
 
 class Home extends StatefulWidget {
@@ -14,10 +13,8 @@ class Home extends StatefulWidget {
   final int activeBalance;
   final String? activeMint;
   final RustImpl cashu;
-  final List<CashuTransaction> pendingCashuTransactions;
-  final List<CashuTransaction> cashuTransactions;
-  final List<LightningTransaction> pendingLightningTransactions;
-  final List<LightningTransaction> lightningTransactions;
+  final Map<String, Transaction> pendingTransactions;
+  final Map<String, Transaction> transactions;
   final Map<String, int> mints;
   final TokenData? tokenData;
   final Function decodeToken;
@@ -26,19 +23,15 @@ class Home extends StatefulWidget {
   final Function send;
   final Function addMint;
   final Function checkTransactionStatus;
-  final Function checkLightningTransaction;
-  final Function setInvoices;
 
   const Home(
       {super.key,
       required this.balance,
       required this.activeBalance,
       required this.activeMint,
-      required this.pendingCashuTransactions,
-      required this.cashuTransactions,
+      required this.pendingTransactions,
+      required this.transactions,
       required this.cashu,
-      required this.pendingLightningTransactions,
-      required this.lightningTransactions,
       required this.mints,
       required this.decodeToken,
       required this.receiveToken,
@@ -46,8 +39,6 @@ class Home extends StatefulWidget {
       required this.send,
       required this.addMint,
       required this.checkTransactionStatus,
-      required this.checkLightningTransaction,
-      required this.setInvoices,
       this.tokenData});
 
   @override
@@ -65,18 +56,6 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    List<Transaction> transactions = [
-      ...widget.cashuTransactions,
-      ...widget.lightningTransactions
-    ];
-    transactions.sort((a, b) => a.time.compareTo(b.time));
-
-    List<Transaction> pendingTransactions = [
-      ...widget.pendingCashuTransactions,
-      ...widget.pendingLightningTransactions
-    ];
-    pendingTransactions.sort((a, b) => a.time.compareTo(b.time));
-
     return Scaffold(
       body: Column(
         children: [
@@ -151,7 +130,7 @@ class _HomeState extends State<Home> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (pendingTransactions.isNotEmpty)
+                if (widget.pendingTransactions.isNotEmpty)
                   // crossAxisAlignment: CrossAxisAlignment.start,
                   const Text(
                     "Pending Transactions",
@@ -159,12 +138,12 @@ class _HomeState extends State<Home> {
                       fontSize: 20.0,
                     ),
                   ),
-                if (pendingTransactions.isNotEmpty)
+                if (widget.pendingTransactions.isNotEmpty)
                   Flexible(
                     child: TransactionList(
-                      transactions: pendingTransactions,
+                      ptransactions: widget.pendingTransactions,
                       checkSpendable: widget.checkTransactionStatus,
-                      checkLightingPaid: widget.checkLightningTransaction,
+                      checkLightingPaid: widget.checkTransactionStatus,
                       sendToken: _sendTokenDialog,
                       lightningDialog: _createLightningDialog,
                     ),
@@ -178,7 +157,7 @@ class _HomeState extends State<Home> {
                 ),
                 Flexible(
                   child: TransactionList(
-                      transactions: transactions,
+                      ptransactions: widget.transactions,
                       checkSpendable: null,
                       lightningDialog: _createLightningDialog,
                       sendToken: _sendTokenDialog),
@@ -199,7 +178,6 @@ class _HomeState extends State<Home> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => Send(
-                          setInvoices: widget.setInvoices,
                           cashu: widget.cashu,
                           wallets: widget.mints,
                           decodeToken: widget.decodeToken,
@@ -226,9 +204,6 @@ class _HomeState extends State<Home> {
                         builder: (context) => ReceviceToken(
                           activeWallet: widget.activeMint,
                           cashu: widget.cashu,
-                          setInvoices: widget.setInvoices,
-                          invoices: widget.lightningTransactions,
-                          pendingInvoices: widget.pendingLightningTransactions,
                           decodeToken: widget.decodeToken,
                           receiveToken: widget.receiveToken,
                           mints: widget.mints,
@@ -247,8 +222,8 @@ class _HomeState extends State<Home> {
     );
   } // Build widget
 
-  void _createLightningDialog(int amount, String mintUrl,
-      LightningTransaction passedTransaction) async {
+  void _createLightningDialog(
+      int amount, String mintUrl, LNTransaction passedTransaction) async {
     if (context.mounted) {
       showDialog(
         context: context,
@@ -262,7 +237,7 @@ class _HomeState extends State<Home> {
                   SizedBox(
                     height: 50,
                     child: SingleChildScrollView(
-                      child: Text(passedTransaction.invoice.invoice!),
+                      child: Text(passedTransaction.bolt11),
                     ),
                   ),
                   Wrap(
@@ -279,7 +254,7 @@ class _HomeState extends State<Home> {
               TextButton(
                 onPressed: () async {
                   await Clipboard.setData(
-                      ClipboardData(text: passedTransaction.invoice.invoice));
+                      ClipboardData(text: passedTransaction.bolt11));
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -370,7 +345,7 @@ class _HomeState extends State<Home> {
 }
 
 class TransactionList extends StatelessWidget {
-  final List<Transaction> transactions;
+  final Map<String, Transaction> ptransactions;
   final Function? checkSpendable;
   final Function? checkLightingPaid;
   final Function sendToken;
@@ -378,7 +353,7 @@ class TransactionList extends StatelessWidget {
 
   const TransactionList(
       {super.key,
-      required this.transactions,
+      required this.ptransactions,
       this.checkSpendable,
       this.checkLightingPaid,
       required this.sendToken,
@@ -386,6 +361,7 @@ class TransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    List<Transaction> transactions = ptransactions.values.toList();
     return SingleChildScrollView(
       child: ListView.builder(
         reverse: true,
@@ -394,10 +370,14 @@ class TransactionList extends StatelessWidget {
         itemCount: transactions.length,
         itemBuilder: (BuildContext context, int index) {
           IconData statusIcon = Icons.pending;
-          Transaction transaction = transactions[index];
+          Transaction t = transactions[index];
+          dynamic transaction = t.field0 is LNTransaction
+              ? (t.field0 as LNTransaction)
+              : (t.field0 as CashuTransaction);
           Text amountText;
+          print(transaction.status);
           switch (transaction.status) {
-            case TransactionStatus.sent:
+            case TransactionStatus.Sent:
               statusIcon = Icons.call_made;
               amountText = Text(
                 "${transaction.amount} sats",
@@ -408,7 +388,7 @@ class TransactionList extends StatelessWidget {
                 ),
               );
               break;
-            case TransactionStatus.received:
+            case TransactionStatus.Received:
               statusIcon = Icons.call_received;
               amountText = Text(
                 "${transaction.amount} sats",
@@ -434,9 +414,9 @@ class TransactionList extends StatelessWidget {
             onTap: () {
               if (transaction is CashuTransaction) {
                 sendToken(transaction.amount, transaction.token);
-              } else if (transaction is LightningTransaction) {
+              } else if (transaction is LNTransaction) {
                 lightningDialog(
-                    transaction.amount, transaction.mintUrl, transaction);
+                    transaction.amount, transaction.mint, transaction);
               }
             },
             child: Row(
@@ -447,9 +427,12 @@ class TransactionList extends StatelessWidget {
                   GestureDetector(
                     onTap: () {
                       if (transaction is CashuTransaction) {
-                        checkSpendable!(transaction);
-                      } else if (transaction is LightningTransaction) {
-                        checkLightingPaid!(transaction);
+                        Transaction t =
+                            Transaction.cashuTransaction(transaction);
+                        checkSpendable!(t);
+                      } else if (transaction is LNTransaction) {
+                        Transaction t = Transaction.lnTransaction(transaction);
+                        checkLightingPaid!(t);
                       }
                     },
                     child: const Icon(Icons.refresh),
@@ -463,7 +446,8 @@ class TransactionList extends StatelessWidget {
                       style: TextStyle(fontSize: 20),
                     ),
                     Text(
-                      formatTimeAgo(transaction.time),
+                      formatTimeAgo(DateTime.fromMillisecondsSinceEpoch(
+                          transaction.time)),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w100,

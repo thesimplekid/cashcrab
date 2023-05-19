@@ -19,6 +19,42 @@ typedef struct wire_StringList {
   int32_t len;
 } wire_StringList;
 
+typedef struct wire_CashuTransaction {
+  struct wire_uint_8_list *id;
+  int32_t status;
+  uint64_t time;
+  uint64_t amount;
+  struct wire_uint_8_list *mint;
+  struct wire_uint_8_list *token;
+} wire_CashuTransaction;
+
+typedef struct wire_Transaction_CashuTransaction {
+  struct wire_CashuTransaction *field0;
+} wire_Transaction_CashuTransaction;
+
+typedef struct wire_LNTransaction {
+  struct wire_uint_8_list *id;
+  int32_t status;
+  uint64_t time;
+  uint64_t amount;
+  struct wire_uint_8_list *mint;
+  struct wire_uint_8_list *bolt11;
+} wire_LNTransaction;
+
+typedef struct wire_Transaction_LNTransaction {
+  struct wire_LNTransaction *field0;
+} wire_Transaction_LNTransaction;
+
+typedef union TransactionKind {
+  struct wire_Transaction_CashuTransaction *CashuTransaction;
+  struct wire_Transaction_LNTransaction *LNTransaction;
+} TransactionKind;
+
+typedef struct wire_Transaction {
+  int32_t tag;
+  union TransactionKind *kind;
+} wire_Transaction;
+
 typedef struct DartCObject *WireSyncReturn;
 
 void store_dart_post_cobject(DartPostCObjectFnType ptr);
@@ -45,7 +81,7 @@ void wire_add_new_wallets(int64_t port_, struct wire_StringList *_mints);
 
 void wire_set_mints(int64_t port_, struct wire_StringList *mints);
 
-void wire_check_spendable(int64_t port_, struct wire_uint_8_list *encoded_token);
+void wire_check_spendable(int64_t port_, struct wire_Transaction *transaction);
 
 void wire_receive_token(int64_t port_, struct wire_uint_8_list *encoded_token);
 
@@ -65,11 +101,23 @@ void wire_melt(int64_t port_,
 
 void wire_decode_invoice(int64_t port_, struct wire_uint_8_list *invoice);
 
+void wire_get_transactions(int64_t port_);
+
 void wire_decode_token(int64_t port_, struct wire_uint_8_list *encoded_token);
 
 struct wire_StringList *new_StringList_0(int32_t len);
 
+struct wire_CashuTransaction *new_box_autoadd_cashu_transaction_0(void);
+
+struct wire_LNTransaction *new_box_autoadd_ln_transaction_0(void);
+
+struct wire_Transaction *new_box_autoadd_transaction_0(void);
+
 struct wire_uint_8_list *new_uint_8_list_0(int32_t len);
+
+union TransactionKind *inflate_Transaction_CashuTransaction(void);
+
+union TransactionKind *inflate_Transaction_LNTransaction(void);
 
 void free_WireSyncReturn(WireSyncReturn ptr);
 
@@ -89,9 +137,15 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_mint_token);
     dummy_var ^= ((int64_t) (void*) wire_melt);
     dummy_var ^= ((int64_t) (void*) wire_decode_invoice);
+    dummy_var ^= ((int64_t) (void*) wire_get_transactions);
     dummy_var ^= ((int64_t) (void*) wire_decode_token);
     dummy_var ^= ((int64_t) (void*) new_StringList_0);
+    dummy_var ^= ((int64_t) (void*) new_box_autoadd_cashu_transaction_0);
+    dummy_var ^= ((int64_t) (void*) new_box_autoadd_ln_transaction_0);
+    dummy_var ^= ((int64_t) (void*) new_box_autoadd_transaction_0);
     dummy_var ^= ((int64_t) (void*) new_uint_8_list_0);
+    dummy_var ^= ((int64_t) (void*) inflate_Transaction_CashuTransaction);
+    dummy_var ^= ((int64_t) (void*) inflate_Transaction_LNTransaction);
     dummy_var ^= ((int64_t) (void*) free_WireSyncReturn);
     dummy_var ^= ((int64_t) (void*) store_dart_post_cobject);
     dummy_var ^= ((int64_t) (void*) get_dart_object);

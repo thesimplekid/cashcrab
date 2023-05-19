@@ -4,24 +4,17 @@ import 'package:flutter/material.dart';
 import '../bridge_generated.dart';
 import '../shared/widgets/numeric_input.dart';
 import '../screens/invoice_info.dart';
-import '../shared/models/transaction.dart';
 
 class CreateInvoice extends StatefulWidget {
   final RustImpl cashu;
   final Map<String, int> mints;
   final String activeMint;
-  final List<LightningTransaction> pendingInvoices;
-  final List<LightningTransaction> invoices;
-  final Function setInvoices;
 
   const CreateInvoice({
     super.key,
     required this.cashu,
     required this.mints,
     required this.activeMint,
-    required this.pendingInvoices,
-    required this.invoices,
-    required this.setInvoices,
   });
 
   @override
@@ -89,9 +82,6 @@ class CreateInvoiceState extends State<CreateInvoice> {
                   MaterialPageRoute(
                     builder: (context) => InvoiceInfoScreen(
                       cashu: widget.cashu,
-                      pendingInvoices: widget.pendingInvoices,
-                      invoices: widget.invoices,
-                      setInvoices: widget.setInvoices,
                       mintUrl: widget.activeMint,
                       amount: amountToSend,
                     ),

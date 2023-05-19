@@ -37,8 +37,8 @@ pub extern "C" fn wire_set_mints(port_: i64, mints: *mut wire_StringList) {
 }
 
 #[no_mangle]
-pub extern "C" fn wire_check_spendable(port_: i64, encoded_token: *mut wire_uint_8_list) {
-    wire_check_spendable_impl(port_, encoded_token)
+pub extern "C" fn wire_check_spendable(port_: i64, transaction: *mut wire_Transaction) {
+    wire_check_spendable_impl(port_, transaction)
 }
 
 #[no_mangle]
@@ -82,6 +82,11 @@ pub extern "C" fn wire_decode_invoice(port_: i64, invoice: *mut wire_uint_8_list
 }
 
 #[no_mangle]
+pub extern "C" fn wire_get_transactions(port_: i64) {
+    wire_get_transactions_impl(port_)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_decode_token(port_: i64, encoded_token: *mut wire_uint_8_list) {
     wire_decode_token_impl(port_, encoded_token)
 }
@@ -95,6 +100,21 @@ pub extern "C" fn new_StringList_0(len: i32) -> *mut wire_StringList {
         len,
     };
     support::new_leak_box_ptr(wrap)
+}
+
+#[no_mangle]
+pub extern "C" fn new_box_autoadd_cashu_transaction_0() -> *mut wire_CashuTransaction {
+    support::new_leak_box_ptr(wire_CashuTransaction::new_with_null_ptr())
+}
+
+#[no_mangle]
+pub extern "C" fn new_box_autoadd_ln_transaction_0() -> *mut wire_LNTransaction {
+    support::new_leak_box_ptr(wire_LNTransaction::new_with_null_ptr())
+}
+
+#[no_mangle]
+pub extern "C" fn new_box_autoadd_transaction_0() -> *mut wire_Transaction {
+    support::new_leak_box_ptr(wire_Transaction::new_with_null_ptr())
 }
 
 #[no_mangle]
@@ -125,6 +145,67 @@ impl Wire2Api<Vec<String>> for *mut wire_StringList {
         vec.into_iter().map(Wire2Api::wire2api).collect()
     }
 }
+impl Wire2Api<CashuTransaction> for *mut wire_CashuTransaction {
+    fn wire2api(self) -> CashuTransaction {
+        let wrap = unsafe { support::box_from_leak_ptr(self) };
+        Wire2Api::<CashuTransaction>::wire2api(*wrap).into()
+    }
+}
+impl Wire2Api<LNTransaction> for *mut wire_LNTransaction {
+    fn wire2api(self) -> LNTransaction {
+        let wrap = unsafe { support::box_from_leak_ptr(self) };
+        Wire2Api::<LNTransaction>::wire2api(*wrap).into()
+    }
+}
+impl Wire2Api<Transaction> for *mut wire_Transaction {
+    fn wire2api(self) -> Transaction {
+        let wrap = unsafe { support::box_from_leak_ptr(self) };
+        Wire2Api::<Transaction>::wire2api(*wrap).into()
+    }
+}
+impl Wire2Api<CashuTransaction> for wire_CashuTransaction {
+    fn wire2api(self) -> CashuTransaction {
+        CashuTransaction {
+            id: self.id.wire2api(),
+            status: self.status.wire2api(),
+            time: self.time.wire2api(),
+            amount: self.amount.wire2api(),
+            mint: self.mint.wire2api(),
+            token: self.token.wire2api(),
+        }
+    }
+}
+
+impl Wire2Api<LNTransaction> for wire_LNTransaction {
+    fn wire2api(self) -> LNTransaction {
+        LNTransaction {
+            id: self.id.wire2api(),
+            status: self.status.wire2api(),
+            time: self.time.wire2api(),
+            amount: self.amount.wire2api(),
+            mint: self.mint.wire2api(),
+            bolt11: self.bolt11.wire2api(),
+        }
+    }
+}
+
+impl Wire2Api<Transaction> for wire_Transaction {
+    fn wire2api(self) -> Transaction {
+        match self.tag {
+            0 => unsafe {
+                let ans = support::box_from_leak_ptr(self.kind);
+                let ans = support::box_from_leak_ptr(ans.CashuTransaction);
+                Transaction::CashuTransaction(ans.field0.wire2api())
+            },
+            1 => unsafe {
+                let ans = support::box_from_leak_ptr(self.kind);
+                let ans = support::box_from_leak_ptr(ans.LNTransaction);
+                Transaction::LNTransaction(ans.field0.wire2api())
+            },
+            _ => unreachable!(),
+        }
+    }
+}
 
 impl Wire2Api<Vec<u8>> for *mut wire_uint_8_list {
     fn wire2api(self) -> Vec<u8> {
@@ -145,9 +226,56 @@ pub struct wire_StringList {
 
 #[repr(C)]
 #[derive(Clone)]
+pub struct wire_CashuTransaction {
+    id: *mut wire_uint_8_list,
+    status: i32,
+    time: u64,
+    amount: u64,
+    mint: *mut wire_uint_8_list,
+    token: *mut wire_uint_8_list,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_LNTransaction {
+    id: *mut wire_uint_8_list,
+    status: i32,
+    time: u64,
+    amount: u64,
+    mint: *mut wire_uint_8_list,
+    bolt11: *mut wire_uint_8_list,
+}
+
+#[repr(C)]
+#[derive(Clone)]
 pub struct wire_uint_8_list {
     ptr: *mut u8,
     len: i32,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_Transaction {
+    tag: i32,
+    kind: *mut TransactionKind,
+}
+
+#[repr(C)]
+pub union TransactionKind {
+    CashuTransaction: *mut wire_Transaction_CashuTransaction,
+    LNTransaction: *mut wire_Transaction_LNTransaction,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_Transaction_CashuTransaction {
+    field0: *mut wire_CashuTransaction,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_Transaction_LNTransaction {
+    field0: *mut wire_LNTransaction,
 }
 
 // Section: impl NewWithNullPtr
@@ -160,6 +288,77 @@ impl<T> NewWithNullPtr for *mut T {
     fn new_with_null_ptr() -> Self {
         std::ptr::null_mut()
     }
+}
+
+impl NewWithNullPtr for wire_CashuTransaction {
+    fn new_with_null_ptr() -> Self {
+        Self {
+            id: core::ptr::null_mut(),
+            status: Default::default(),
+            time: Default::default(),
+            amount: Default::default(),
+            mint: core::ptr::null_mut(),
+            token: core::ptr::null_mut(),
+        }
+    }
+}
+
+impl Default for wire_CashuTransaction {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+
+impl NewWithNullPtr for wire_LNTransaction {
+    fn new_with_null_ptr() -> Self {
+        Self {
+            id: core::ptr::null_mut(),
+            status: Default::default(),
+            time: Default::default(),
+            amount: Default::default(),
+            mint: core::ptr::null_mut(),
+            bolt11: core::ptr::null_mut(),
+        }
+    }
+}
+
+impl Default for wire_LNTransaction {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+
+impl Default for wire_Transaction {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+
+impl NewWithNullPtr for wire_Transaction {
+    fn new_with_null_ptr() -> Self {
+        Self {
+            tag: -1,
+            kind: core::ptr::null_mut(),
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn inflate_Transaction_CashuTransaction() -> *mut TransactionKind {
+    support::new_leak_box_ptr(TransactionKind {
+        CashuTransaction: support::new_leak_box_ptr(wire_Transaction_CashuTransaction {
+            field0: core::ptr::null_mut(),
+        }),
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn inflate_Transaction_LNTransaction() -> *mut TransactionKind {
+    support::new_leak_box_ptr(TransactionKind {
+        LNTransaction: support::new_leak_box_ptr(wire_Transaction_LNTransaction {
+            field0: core::ptr::null_mut(),
+        }),
+    })
 }
 
 // Section: sync execution mode utility
