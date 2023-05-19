@@ -278,13 +278,13 @@ class _HomeState extends State<Home> {
     }
   }
 
-  void _sendTokenDialog(int amount, TokenData? token) async {
+  void _sendTokenDialog(int amount, String? token) async {
     late TokenData tokenData;
     if (token == null) {
       String result = await widget.send(amount);
       tokenData = await widget.decodeToken(result);
     } else {
-      tokenData = token;
+      tokenData = await widget.decodeToken(token);
     }
 
     if (context.mounted) {
@@ -375,7 +375,6 @@ class TransactionList extends StatelessWidget {
               ? (t.field0 as LNTransaction)
               : (t.field0 as CashuTransaction);
           Text amountText;
-          print(transaction.status);
           switch (transaction.status) {
             case TransactionStatus.Sent:
               statusIcon = Icons.call_made;
