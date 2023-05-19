@@ -80,9 +80,6 @@ impl From<lightning_invoice::ParseOrSemanticError> for CashuError {
 lazy_static! {
     static ref WALLETS: Arc<Mutex<HashMap<String, Option<CashuWallet>>>> =
         Arc::new(Mutex::new(HashMap::new()));
-    // static ref PROOFS: Arc<Mutex<HashMap<String, Proofs>>> = Arc::new(Mutex::new(HashMap::new()));
-    static ref PENDING_PROOFS: Arc<Mutex<HashMap<String, Proofs>>> =
-        Arc::new(Mutex::new(HashMap::new()));
     static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(Runtime::new().unwrap()));
 }
 
@@ -370,13 +367,6 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
 
         // Remove sent proofs
         database::remove_proofs(&active_mint, send_proofs).await?;
-
-        // Add pending proofs
-        // TODO: Remove this
-        PENDING_PROOFS
-            .lock()
-            .await
-            .insert(active_mint.to_owned(), r.send_proofs.clone());
 
         let token = wallet.proofs_to_token(r.send_proofs, None)?;
         let transaction = CashuTransaction::new(

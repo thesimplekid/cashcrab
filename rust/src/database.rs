@@ -199,7 +199,7 @@ pub(crate) async fn get_all_transactions() -> Result<Vec<Transaction>, CashuErro
     let read_txn = db.begin_read()?;
     let table = read_txn.open_table(TRANSACTIONS)?;
 
-    let transactions: Vec<Transaction> = table.iter()?.fold(Vec::new(), |mut vec, item| {
+    let mut transactions: Vec<Transaction> = table.iter()?.fold(Vec::new(), |mut vec, item| {
         if let Ok((_key, value)) = item {
             if let Ok(transaction) = serde_json::from_str(value.value()) {
                 vec.push(transaction)
@@ -207,6 +207,19 @@ pub(crate) async fn get_all_transactions() -> Result<Vec<Transaction>, CashuErro
         }
         vec
     });
+
+    // Get Pending Transactions
+    let table = read_txn.open_table(PENDING_TRANSACTIONS)?;
+    let pending_transactions: Vec<Transaction> = table.iter()?.fold(Vec::new(), |mut vec, item| {
+        if let Ok((_key, value)) = item {
+            if let Ok(transaction) = serde_json::from_str(value.value()) {
+                vec.push(transaction)
+            }
+        }
+        vec
+    });
+
+    transactions.extend(pending_transactions);
 
     // return Err(CashuError(format!("Transactions: {:?}", transactions)));
 
