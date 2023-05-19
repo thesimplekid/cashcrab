@@ -1,4 +1,5 @@
-String formatTimeAgo(DateTime dateTime) {
+String formatTimeAgo(int time) {
+  DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(time * 1000);
   Duration difference = DateTime.now().difference(dateTime);
   if (difference.inMinutes < 60) {
     if (difference.inMinutes == 1) {

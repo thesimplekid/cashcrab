@@ -445,8 +445,7 @@ class TransactionList extends StatelessWidget {
                       style: TextStyle(fontSize: 20),
                     ),
                     Text(
-                      formatTimeAgo(DateTime.fromMillisecondsSinceEpoch(
-                          transaction.time)),
+                      formatTimeAgo(transaction.time),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w100,
