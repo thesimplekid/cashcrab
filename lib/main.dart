@@ -174,7 +174,7 @@ class MyHomePageState extends State<MyHomePage> {
     setState(() {
       balance = bal;
       if (activeMint != null) {
-        activeBalance = mints[activeMint] ?? 0;
+        activeBalance = mints[activeMint?.url] ?? 0;
       }
     });
   }
