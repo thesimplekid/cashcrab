@@ -92,6 +92,16 @@ pub extern "C" fn wire_get_mints(port_: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_get_active_mint(port_: i64) {
+    wire_get_active_mint_impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_set_active_mint(port_: i64, mint_url: *mut wire_uint_8_list) {
+    wire_set_active_mint_impl(port_, mint_url)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_decode_token(port_: i64, encoded_token: *mut wire_uint_8_list) {
     wire_decode_token_impl(port_, encoded_token)
 }

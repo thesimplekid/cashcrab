@@ -55,7 +55,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   Map<String, int> mints = {};
   int balance = 0;
-  String? activeMint;
+  Mint? activeMint;
   int activeBalance = 0;
 
   TokenData? tokenData;
@@ -88,7 +88,7 @@ class MyHomePageState extends State<MyHomePage> {
     _loadTransactions();
     // Load Invoices
 
-    //_getActiveMint();
+    _getActiveMint();
 
     // Set balances
     _getBalances();
@@ -108,7 +108,7 @@ class MyHomePageState extends State<MyHomePage> {
       cashu: api,
       balance: balance,
       activeBalance: activeBalance,
-      activeMint: activeMint,
+      activeMint: activeMint?.url,
       tokenData: tokenData,
       pendingTransactions: pendingTransactions,
       transactions: transactions,
@@ -125,7 +125,7 @@ class MyHomePageState extends State<MyHomePage> {
       mints: mints,
       addMint: _addNewMint,
       removeMint: removeMint,
-      activeMint: activeMint,
+      activeMint: activeMint?.url,
       setActiveMint: _setActiveMint,
     );
 
@@ -243,7 +243,7 @@ class MyHomePageState extends State<MyHomePage> {
     }
 
     Transaction transaction =
-        await api.send(amount: amount, activeMint: activeMint!);
+        await api.send(amount: amount, activeMint: activeMint!.url);
     CashuTransaction t = transaction.field0 as CashuTransaction;
     String id = t.id!;
 
@@ -258,9 +258,8 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   // Get Proofs
-  Future<String?> _getActiveMint() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? mint = prefs.getString('active_mint');
+  Future<Mint?> _getActiveMint() async {
+    Mint? mint = await api.getActiveMint();
     setState(() {
       activeMint = mint;
     });
@@ -272,16 +271,11 @@ class MyHomePageState extends State<MyHomePage> {
 
   // Set active in storage
   Future<void> _setActiveMint(String? newActiveMint) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    if (activeMint == null) {
-      prefs.remove('active_mint');
-    } else {
-      prefs.setString('active_mint', newActiveMint!);
-    }
+    await api.setActiveMint(mintUrl: newActiveMint);
+    Mint? active = await api.getActiveMint();
 
     setState(() {
-      activeMint = newActiveMint;
+      activeMint = active;
     });
     await _getBalances();
     _getBalance();

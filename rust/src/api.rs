@@ -150,7 +150,7 @@ pub fn create_wallet(url: String) -> Result<()> {
         let mint = Mint {
             url,
             // TODO:
-            active_keyset: "".to_string(),
+            active_keyset: None,
             // TODO:
             keysets: vec![],
         };
@@ -484,6 +484,28 @@ pub fn get_mints() -> Result<Vec<Mint>> {
     drop(rt);
 
     result
+}
+
+pub fn get_active_mint() -> Result<Option<Mint>> {
+    let rt = lock_runtime!();
+
+    let result = rt.block_on(async { database::get_active_mint().await })?;
+
+    drop(rt);
+
+    Ok(result)
+}
+
+pub fn set_active_mint(mint_url: Option<String>) -> Result<()> {
+    let rt = lock_runtime!();
+
+    let result = rt.block_on(async { database::set_active_mint(mint_url).await });
+
+    drop(rt);
+
+    result?;
+
+    Ok(())
 }
 
 pub struct InvoiceInfo {

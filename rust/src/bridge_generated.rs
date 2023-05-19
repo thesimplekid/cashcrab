@@ -250,6 +250,32 @@ fn wire_get_mints_impl(port_: MessagePort) {
         move || move |task_callback| get_mints(),
     )
 }
+fn wire_get_active_mint_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_active_mint",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| get_active_mint(),
+    )
+}
+fn wire_set_active_mint_impl(
+    port_: MessagePort,
+    mint_url: impl Wire2Api<Option<String>> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "set_active_mint",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_mint_url = mint_url.wire2api();
+            move |task_callback| set_active_mint(api_mint_url)
+        },
+    )
+}
 fn wire_decode_token_impl(port_: MessagePort, encoded_token: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {

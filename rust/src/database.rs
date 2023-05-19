@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use cashu_crab::types::{MintInfo, Proofs};
 use lazy_static::lazy_static;
 use redb::{
@@ -284,6 +284,55 @@ pub(crate) async fn get_mint(mint_url: &str) -> Result<Option<MintInfo>, CashuEr
     if let Some(mint_info) = table.get(mint_url)? {
         return Ok(Some(serde_json::from_str(mint_info.value())?));
     }
+
+    Ok(None)
+}
+
+pub(crate) async fn set_active_mint(mint_url: Option<String>) -> Result<(), CashuError> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+
+    let write_txn = db.begin_write()?;
+    {
+        let mut config_table = write_txn.open_table(CONFIG)?;
+        match mint_url {
+            Some(url) => {
+                config_table.insert("active_mint", url.as_str())?;
+            }
+            None => {
+                config_table.remove("active_mint")?;
+            }
+        }
+    }
+    write_txn.commit()?;
+
+    Ok(())
+}
+
+pub(crate) async fn get_active_mint() -> Result<Option<Mint>, CashuError> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+    let read_txn = db.begin_read()?;
+    let table = read_txn.open_table(CONFIG)?;
+
+    if let Some(active_mint) = table.get("active_mint")? {
+        let active_mint = active_mint.value();
+        let mint_info_table = read_txn.open_table(MINT_INFO)?;
+        // TODO: Reafctor this without the returns
+        if let Some(mint_info) = mint_info_table.get(active_mint)? {
+            return Ok(Some(serde_json::from_str(mint_info.value())?));
+        };
+
+        return Ok(Some(Mint {
+            url: active_mint.to_string(),
+            active_keyset: None,
+            keysets: vec![],
+        }));
+    };
 
     Ok(None)
 }

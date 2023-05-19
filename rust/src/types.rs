@@ -112,7 +112,7 @@ pub fn unix_time() -> u64 {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Mint {
     pub url: String,
-    pub active_keyset: String,
+    pub active_keyset: Option<String>,
     pub keysets: Vec<String>,
 }
 

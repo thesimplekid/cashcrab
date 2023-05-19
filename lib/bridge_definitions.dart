@@ -93,6 +93,14 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kGetMintsConstMeta;
 
+  Future<Mint?> getActiveMint({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetActiveMintConstMeta;
+
+  Future<void> setActiveMint({String? mintUrl, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kSetActiveMintConstMeta;
+
   Future<TokenData> decodeToken({required String encodedToken, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kDecodeTokenConstMeta;
@@ -148,12 +156,12 @@ class LNTransaction {
 
 class Mint {
   final String url;
-  final String activeKeyset;
+  final String? activeKeyset;
   final List<String> keysets;
 
   const Mint({
     required this.url,
-    required this.activeKeyset,
+    this.activeKeyset,
     required this.keysets,
   });
 }

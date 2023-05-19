@@ -105,6 +105,10 @@ void wire_get_transactions(int64_t port_);
 
 void wire_get_mints(int64_t port_);
 
+void wire_get_active_mint(int64_t port_);
+
+void wire_set_active_mint(int64_t port_, struct wire_uint_8_list *mint_url);
+
 void wire_decode_token(int64_t port_, struct wire_uint_8_list *encoded_token);
 
 struct wire_StringList *new_StringList_0(int32_t len);
@@ -141,6 +145,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_decode_invoice);
     dummy_var ^= ((int64_t) (void*) wire_get_transactions);
     dummy_var ^= ((int64_t) (void*) wire_get_mints);
+    dummy_var ^= ((int64_t) (void*) wire_get_active_mint);
+    dummy_var ^= ((int64_t) (void*) wire_set_active_mint);
     dummy_var ^= ((int64_t) (void*) wire_decode_token);
     dummy_var ^= ((int64_t) (void*) new_StringList_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_cashu_transaction_0);

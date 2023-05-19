@@ -312,6 +312,39 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Future<Mint?> getActiveMint({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_active_mint(port_),
+      parseSuccessData: _wire2api_opt_box_autoadd_mint,
+      constMeta: kGetActiveMintConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetActiveMintConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_active_mint",
+        argNames: [],
+      );
+
+  Future<void> setActiveMint({String? mintUrl, dynamic hint}) {
+    var arg0 = _platform.api2wire_opt_String(mintUrl);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_set_active_mint(port_, arg0),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kSetActiveMintConstMeta,
+      argValues: [mintUrl],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kSetActiveMintConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "set_active_mint",
+        argNames: ["mintUrl"],
+      );
+
   Future<TokenData> decodeToken({required String encodedToken, dynamic hint}) {
     var arg0 = _platform.api2wire_String(encodedToken);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -352,6 +385,10 @@ class RustImpl implements Rust {
 
   LNTransaction _wire2api_box_autoadd_ln_transaction(dynamic raw) {
     return _wire2api_ln_transaction(raw);
+  }
+
+  Mint _wire2api_box_autoadd_mint(dynamic raw) {
+    return _wire2api_mint(raw);
   }
 
   CashuTransaction _wire2api_cashu_transaction(dynamic raw) {
@@ -411,13 +448,17 @@ class RustImpl implements Rust {
       throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
     return Mint(
       url: _wire2api_String(arr[0]),
-      activeKeyset: _wire2api_String(arr[1]),
+      activeKeyset: _wire2api_opt_String(arr[1]),
       keysets: _wire2api_StringList(arr[2]),
     );
   }
 
   String? _wire2api_opt_String(dynamic raw) {
     return raw == null ? null : _wire2api_String(raw);
+  }
+
+  Mint? _wire2api_opt_box_autoadd_mint(dynamic raw) {
+    return raw == null ? null : _wire2api_box_autoadd_mint(raw);
   }
 
   RequestMintInfo _wire2api_request_mint_info(dynamic raw) {
@@ -988,6 +1029,37 @@ class RustWire implements FlutterRustBridgeWireBase {
           'wire_get_mints');
   late final _wire_get_mints =
       _wire_get_mintsPtr.asFunction<void Function(int)>();
+
+  void wire_get_active_mint(
+    int port_,
+  ) {
+    return _wire_get_active_mint(
+      port_,
+    );
+  }
+
+  late final _wire_get_active_mintPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_active_mint');
+  late final _wire_get_active_mint =
+      _wire_get_active_mintPtr.asFunction<void Function(int)>();
+
+  void wire_set_active_mint(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> mint_url,
+  ) {
+    return _wire_set_active_mint(
+      port_,
+      mint_url,
+    );
+  }
+
+  late final _wire_set_active_mintPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_set_active_mint');
+  late final _wire_set_active_mint = _wire_set_active_mintPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_decode_token(
     int port_,
