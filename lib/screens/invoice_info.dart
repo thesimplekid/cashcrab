@@ -1,8 +1,9 @@
 import 'package:cashcrab/bridge_definitions.dart';
-import 'package:flutter/material.dart';
-
-import 'package:flutter/services.dart';
 import 'package:cashcrab/bridge_generated.dart';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import 'package:qr_flutter/qr_flutter.dart';
 
 class InvoiceInfoScreen extends StatefulWidget {
@@ -26,15 +27,11 @@ class InvoiceInfoState extends State<InvoiceInfoScreen> {
   LNTransaction? displayInvoice;
 
   void _createInvoice() async {
-    // TODO: Make a type for this
-
     if (widget.createInvoice != null) {
       LNTransaction createdTransaction =
           await widget.createInvoice!(widget.amount, widget.mintUrl);
 
       setState(() {
-        // TODO:
-        // 1 widget.pendingInvoices.add(newTransaction);
         displayInvoice = createdTransaction;
       });
     } // TODO: Else modela error
@@ -79,10 +76,11 @@ class InvoiceInfoState extends State<InvoiceInfoScreen> {
               child: Column(
                 children: [
                   QrImageView(
-                      data: displayInvoice!.bolt11,
-                      version: QrVersions.auto,
-                      size: 400.0,
-                      backgroundColor: Colors.white),
+                    data: displayInvoice!.bolt11.toUpperCase(),
+                    version: QrVersions.auto,
+                    size: 400.0,
+                    backgroundColor: Colors.white,
+                  ),
                   Text("Mint: ${displayInvoice!.mint}"),
                   Wrap(
                     children: [

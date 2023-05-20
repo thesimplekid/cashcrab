@@ -1,8 +1,7 @@
 import 'package:cashcrab/bridge_definitions.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 import 'package:cashcrab/bridge_generated.dart';
+
+import 'package:flutter/material.dart';
 
 import '../screens/send.dart';
 import '../screens/receive.dart';
