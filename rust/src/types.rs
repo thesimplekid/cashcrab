@@ -141,3 +141,36 @@ impl Mint {
         serde_json::json!(self).to_string()
     }
 }
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum TokenStatus {
+    Spendable,
+    Claimed,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum InvoiceStatus {
+    Paid,
+    Unpaid,
+    Expired,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Message {
+    Text {
+        time: u64,
+        content: String,
+    },
+    Invoice {
+        time: u64,
+        bolt11: String,
+        amount: Option<u64>,
+        status: InvoiceStatus,
+    },
+    Token {
+        time: u64,
+        token: String,
+        amount: Option<u64>,
+        status: TokenStatus,
+    },
+}

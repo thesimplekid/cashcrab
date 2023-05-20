@@ -109,7 +109,7 @@ pub fn init_db(path: String) -> Result<()> {
 pub fn get_balances() -> Result<String> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
-        let proofs = database::get_all_proofs().await?;
+        let proofs = database::cashu::get_all_proofs().await?;
 
         // bail!("{:?}", proofs);
         let balances = proofs
@@ -152,7 +152,7 @@ pub fn create_wallet(url: String) -> Result<()> {
             keysets: vec![],
         };
 
-        database::add_mint(mint).await?;
+        database::cashu::add_mint(mint).await?;
 
         Ok(())
     });
@@ -285,7 +285,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
                         token: cashu_trans.token.clone(),
                     });
 
-                    database::update_transaction_status(&transaction).await?;
+                    database::transactions::update_transaction_status(&transaction).await?;
 
                     // Update Status
                     return Ok(false);
@@ -300,7 +300,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
                     .mint_token(Amount::from_sat(ln_trans.amount), &ln_trans.hash)
                     .await?;
 
-                database::add_proofs(&ln_trans.mint, proofs.clone()).await?;
+                database::cashu::add_proofs(&ln_trans.mint, proofs.clone()).await?;
 
                 // REVIEW:
                 if proofs.len() > 0 {
@@ -312,7 +312,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
                         &ln_trans.hash,
                     );
 
-                    database::update_transaction_status(&Transaction::LNTransaction(
+                    database::transactions::update_transaction_status(&Transaction::LNTransaction(
                         updated_transaction,
                     ))
                     .await?;
@@ -340,7 +340,7 @@ pub fn receive_token(encoded_token: String) -> Result<Transaction> {
         let mint_url = wallet.client.mint_url.to_string();
         let received_proofs = wallet.receive(&encoded_token).await?;
 
-        database::add_proofs(&mint_url, received_proofs.clone()).await?;
+        database::cashu::add_proofs(&mint_url, received_proofs.clone()).await?;
 
         let transaction = Transaction::CashuTransaction(CashuTransaction::new(
             Some(TransactionStatus::Received),
@@ -349,7 +349,7 @@ pub fn receive_token(encoded_token: String) -> Result<Transaction> {
             &encoded_token,
         ));
 
-        database::add_transaction(&transaction).await?;
+        database::transactions::add_transaction(&transaction).await?;
 
         Ok(transaction)
     });
@@ -382,7 +382,7 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
     let result = rt.block_on(async {
         let wallet = wallet_for_url(&active_mint).await?;
 
-        let proofs = database::get_proofs(&active_mint).await?;
+        let proofs = database::cashu::get_proofs(&active_mint).await?;
 
         let (send_proofs, mut keep_proofs) = select_send_proofs(amount, &proofs);
         let r = wallet
@@ -391,10 +391,10 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
         keep_proofs.extend(r.change_proofs.clone());
 
         // Set wallet proofs to change
-        database::add_proofs(&active_mint, keep_proofs).await?;
+        database::cashu::add_proofs(&active_mint, keep_proofs).await?;
 
         // Remove sent proofs
-        database::remove_proofs(&active_mint, send_proofs).await?;
+        database::cashu::remove_proofs(&active_mint, send_proofs).await?;
 
         let token = wallet.proofs_to_token(r.send_proofs, None)?;
         let transaction = CashuTransaction::new(
@@ -405,7 +405,7 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
         );
         let transaction = Transaction::CashuTransaction(transaction);
 
-        database::add_transaction(&transaction).await?;
+        database::transactions::add_transaction(&transaction).await?;
         return Ok(transaction);
     });
 
@@ -430,7 +430,7 @@ pub fn request_mint(amount: u64, mint_url: String) -> Result<Transaction> {
         );
         let transaction = Transaction::LNTransaction(transaction);
 
-        database::add_transaction(&transaction).await?;
+        database::transactions::add_transaction(&transaction).await?;
 
         Ok(transaction)
     });
@@ -446,7 +446,7 @@ pub fn mint_token(amount: u64, hash: String, mint: String) -> Result<()> {
         if let Some(Some(wallet)) = wallets.get(&mint) {
             let proofs = wallet.mint_token(Amount::from_sat(amount), &hash).await?;
 
-            database::add_proofs(&mint, proofs).await?;
+            database::cashu::add_proofs(&mint, proofs).await?;
 
             return Ok(());
         }
@@ -465,7 +465,7 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<()> {
         let wallet = wallet_for_url(&mint).await?;
 
         let invoice = str::parse::<Invoice>(&invoice)?;
-        let proofs = database::get_proofs(&mint).await?;
+        let proofs = database::cashu::get_proofs(&mint).await?;
 
         let (send_proofs, mut keep_proofs) = select_send_proofs(amount, &proofs);
         let change = wallet.melt(invoice, send_proofs.clone()).await?;
@@ -474,7 +474,7 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<()> {
         }
 
         // Remove proofs to be sent
-        database::remove_proofs(&mint, send_proofs).await?;
+        database::cashu::remove_proofs(&mint, send_proofs).await?;
 
         Ok(())
     });
@@ -502,7 +502,7 @@ pub fn decode_invoice(invoice: String) -> Result<InvoiceInfo> {
 
 pub fn get_transactions() -> Result<Vec<Transaction>> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async { Ok(database::get_all_transactions().await?) });
+    let result = rt.block_on(async { Ok(database::transactions::get_all_transactions().await?) });
 
     drop(rt);
 
@@ -511,7 +511,7 @@ pub fn get_transactions() -> Result<Vec<Transaction>> {
 
 pub fn get_transaction(tid: String) -> Result<Option<Transaction>> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async { Ok(database::get_transactions(&tid).await?) });
+    let result = rt.block_on(async { Ok(database::transactions::get_transactions(&tid).await?) });
 
     drop(rt);
 
@@ -520,7 +520,7 @@ pub fn get_transaction(tid: String) -> Result<Option<Transaction>> {
 
 pub fn get_mints() -> Result<Vec<Mint>> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async { Ok(database::get_all_mints().await?) });
+    let result = rt.block_on(async { Ok(database::cashu::get_all_mints().await?) });
 
     drop(rt);
 
@@ -530,7 +530,7 @@ pub fn get_mints() -> Result<Vec<Mint>> {
 pub fn get_active_mint() -> Result<Option<Mint>> {
     let rt = lock_runtime!();
 
-    let result = rt.block_on(async { database::get_active_mint().await })?;
+    let result = rt.block_on(async { database::cashu::get_active_mint().await })?;
 
     drop(rt);
 
@@ -540,7 +540,7 @@ pub fn get_active_mint() -> Result<Option<Mint>> {
 pub fn set_active_mint(mint_url: Option<String>) -> Result<()> {
     let rt = lock_runtime!();
 
-    let result = rt.block_on(async { database::set_active_mint(mint_url).await });
+    let result = rt.block_on(async { database::cashu::set_active_mint(mint_url).await });
 
     drop(rt);
 
