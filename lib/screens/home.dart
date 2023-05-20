@@ -148,8 +148,6 @@ class _HomeState extends State<Home> {
                       ptransactions: widget.pendingTransactions,
                       checkSpendable: widget.checkTransactionStatus,
                       checkLightingPaid: widget.checkTransactionStatus,
-                      sendToken: _sendTokenDialog,
-                      lightningDialog: _createLightningDialog,
                     ),
                   ),
                 const Text(
@@ -161,10 +159,9 @@ class _HomeState extends State<Home> {
                 ),
                 Flexible(
                   child: TransactionList(
-                      ptransactions: widget.transactions,
-                      checkSpendable: null,
-                      lightningDialog: _createLightningDialog,
-                      sendToken: _sendTokenDialog),
+                    ptransactions: widget.transactions,
+                    checkSpendable: null,
+                  ),
                 ),
               ],
             ),
@@ -226,143 +223,19 @@ class _HomeState extends State<Home> {
       ), // Body column
     );
   } // Build widget
-
-  void _createLightningDialog(
-      int amount, String mintUrl, LNTransaction passedTransaction) async {
-    if (context.mounted) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Send'),
-            content: SizedBox(
-              height: 200,
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 50,
-                    child: SingleChildScrollView(
-                      child: Text(passedTransaction.bolt11),
-                    ),
-                  ),
-                  Wrap(
-                    children: [
-                      Text(
-                        "Invoice ${passedTransaction.amount.toString()}",
-                      ), // Mint Text
-                    ],
-                  ), // Wrap
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  await Clipboard.setData(
-                      ClipboardData(text: passedTransaction.bolt11));
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Copied to clipboard'),
-                      ),
-                    );
-                  }
-                },
-                child: const Text('Copy'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
-  void _sendTokenDialog(int amount, String? token) async {
-    late TokenData tokenData;
-    if (token == null) {
-      String result = await widget.send(amount);
-      tokenData = await widget.decodeToken(result);
-    } else {
-      tokenData = await widget.decodeToken(token);
-    }
-
-    if (context.mounted) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Send'),
-            content: SizedBox(
-              height: 200,
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 50,
-                    child: SingleChildScrollView(
-                      child: Text(tokenData.encodedToken),
-                    ),
-                  ),
-                  Wrap(
-                    children: [
-                      Text(
-                        "Mint: ${tokenData.mint}",
-                      ), // Mint Text
-                    ],
-                  ), // Wrap
-                  Text("Amount: ${tokenData.amount} sat(s)")
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  await Clipboard.setData(
-                    ClipboardData(text: tokenData.encodedToken),
-                  );
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Copied to clipboard'),
-                      ),
-                    );
-                  }
-                },
-                child: const Text('Copy'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
 }
 
 class TransactionList extends StatelessWidget {
   final Map<String, Transaction> ptransactions;
   final Function? checkSpendable;
   final Function? checkLightingPaid;
-  final Function sendToken;
-  final Function lightningDialog;
 
-  const TransactionList(
-      {super.key,
-      required this.ptransactions,
-      this.checkSpendable,
-      this.checkLightingPaid,
-      required this.sendToken,
-      required this.lightningDialog});
+  const TransactionList({
+    super.key,
+    required this.ptransactions,
+    this.checkSpendable,
+    this.checkLightingPaid,
+  });
 
   List<Transaction> sortTransactions(Map<String, Transaction> transactions) {
     List<Transaction> transactionsList = transactions.values.toList();
