@@ -246,9 +246,9 @@ class MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<String> sendToken(int amount) async {
+  Future<Transaction?> sendToken(int amount) async {
     if (activeMint == null) {
-      return "";
+      return null;
     }
 
     Transaction transaction =
@@ -263,7 +263,7 @@ class MyHomePageState extends State<MyHomePage> {
     // Recaulate balances
     await _getBalances();
     _getBalance();
-    return (t.token);
+    return (transaction);
   }
 
   // Get Proofs

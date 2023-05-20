@@ -7,6 +7,7 @@ import 'package:cashcrab/bridge_generated.dart';
 import '../screens/send.dart';
 import '../screens/receive.dart';
 import '../screens/invoice_info.dart';
+import '../screens/token_info.dart';
 import '../shared/utils.dart';
 
 class Home extends StatefulWidget {
@@ -439,7 +440,16 @@ class TransactionList extends StatelessWidget {
           return GestureDetector(
             onTap: () {
               if (transaction is CashuTransaction) {
-                sendToken(transaction.amount, transaction.token);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TokenInfo(
+                      amount: transaction.amount,
+                      mintUrl: transaction.mint,
+                      cashuTransaction: transaction,
+                    ),
+                  ),
+                );
               } else if (transaction is LNTransaction) {
                 Navigator.push(
                   context,

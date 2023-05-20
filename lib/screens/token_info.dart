@@ -1,47 +1,47 @@
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class TokenInfo extends StatefulWidget {
   final int amount;
   final String? mintUrl;
-  final TokenData? tokenData;
-  // final Cashu cashu;
-  final Function send;
-  final Function decodeToken;
+  final CashuTransaction? cashuTransaction;
+  final Function? send;
+  final Function? decodeToken;
 
   const TokenInfo(
       {super.key,
       required this.amount,
       required this.mintUrl,
-      required this.send,
-      required this.decodeToken,
-      //  required this.cashu,
-      this.tokenData});
+      this.send,
+      this.decodeToken,
+      this.cashuTransaction});
 
   @override
   TokenInfoState createState() => TokenInfoState();
 }
 
 class TokenInfoState extends State<TokenInfo> {
-  TokenData? displayToken;
+  CashuTransaction? displayToken;
 
   void _createToken() async {
-    String result = await widget.send(widget.amount);
-    TokenData tokenData = await widget.decodeToken(result);
+    if (widget.send != null && widget.decodeToken != null) {
+      Transaction? result = await widget.send!(widget.amount);
 
-    setState(() {
-      displayToken = tokenData;
-    });
+      setState(() {
+        displayToken = result?.field0 as CashuTransaction;
+      });
+    } // TODO: else modal error
   }
 
   @override
   void initState() {
     super.initState();
-    if (widget.tokenData == null) {
+    if (widget.cashuTransaction == null) {
       _createToken();
     } else {
-      displayToken = widget.tokenData;
+      displayToken = widget.cashuTransaction;
     }
   }
 
@@ -72,31 +72,27 @@ class TokenInfoState extends State<TokenInfo> {
           children: [
             Column(
               children: [
-                SizedBox(
-                  height: 400,
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 300,
-                        child: SingleChildScrollView(
-                          child: Text(displayToken!.encodedToken),
+                Column(
+                  children: [
+                    QrImageView(
+                        data: displayToken!.token,
+                        version: QrVersions.auto,
+                        size: 400.0,
+                        backgroundColor: Colors.white),
+                    Text("Mint: ${displayToken!.mint}"),
+                    Wrap(
+                      children: [
+                        Text(
+                          "Token amount: ${displayToken!.amount.toString()}",
                         ),
-                      ),
-                      Text("Mint: ${displayToken!.mint}"),
-                      Wrap(
-                        children: [
-                          Text(
-                            "Token amount: ${displayToken!.amount.toString()}",
-                          ),
-                        ],
-                      ), // Wrap
-                    ],
-                  ),
+                      ],
+                    ), // Wrap
+                  ],
                 ),
                 TextButton(
                   onPressed: () async {
                     await Clipboard.setData(
-                        ClipboardData(text: displayToken!.encodedToken));
+                        ClipboardData(text: displayToken!.token));
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
