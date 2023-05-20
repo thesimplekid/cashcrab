@@ -59,7 +59,7 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kSendConstMeta;
 
-  Future<RequestMintInfo> requestMint(
+  Future<Transaction> requestMint(
       {required int amount, required String mintUrl, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kRequestMintConstMeta;
@@ -147,6 +147,7 @@ class LNTransaction {
   final int amount;
   final String mint;
   final String bolt11;
+  final String hash;
 
   const LNTransaction({
     this.id,
@@ -155,6 +156,7 @@ class LNTransaction {
     required this.amount,
     required this.mint,
     required this.bolt11,
+    required this.hash,
   });
 }
 
@@ -167,16 +169,6 @@ class Mint {
     required this.url,
     this.activeKeyset,
     required this.keysets,
-  });
-}
-
-class RequestMintInfo {
-  final String pr;
-  final String hash;
-
-  const RequestMintInfo({
-    required this.pr,
-    required this.hash,
   });
 }
 

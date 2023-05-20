@@ -23,6 +23,7 @@ class Home extends StatefulWidget {
   final Function send;
   final Function addMint;
   final Function checkTransactionStatus;
+  final Function createInvoice;
 
   const Home(
       {super.key,
@@ -39,6 +40,7 @@ class Home extends StatefulWidget {
       required this.send,
       required this.addMint,
       required this.checkTransactionStatus,
+      required this.createInvoice,
       this.tokenData});
 
   @override
@@ -208,6 +210,7 @@ class _HomeState extends State<Home> {
                           receiveToken: widget.receiveToken,
                           mints: widget.mints,
                           addMint: widget.addMint,
+                          createInvoice: widget.createInvoice,
                         ),
                       ),
                     );

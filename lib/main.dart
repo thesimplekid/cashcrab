@@ -4,7 +4,6 @@ import 'dart:ffi';
 
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:cashcrab/bridge_generated.dart';
 
@@ -82,11 +81,11 @@ class MyHomePageState extends State<MyHomePage> {
 
   Future<void> _initDB() async {
     await api.initDb(path: await _localPath);
+
     _loadMints();
 
     // Load transaction
     _loadTransactions();
-    // Load Invoices
 
     _getActiveMint();
 
@@ -119,6 +118,7 @@ class MyHomePageState extends State<MyHomePage> {
       send: sendToken,
       addMint: _addNewMint,
       checkTransactionStatus: _checkTransactionStatus,
+      createInvoice: createInvoice,
     );
 
     _settingsTab = Settings(
@@ -156,6 +156,17 @@ class MyHomePageState extends State<MyHomePage> {
         onTap: _onItemTapped,
       ),
     );
+  }
+
+  Future<LNTransaction> createInvoice(int amount, String mint) async {
+    Transaction result = await api.requestMint(amount: amount, mintUrl: mint);
+
+    LNTransaction lnt = result.field0 as LNTransaction;
+    setState(() {
+      pendingTransactions[lnt.id!] = result;
+    });
+
+    return lnt;
   }
 
   Future<void> _getBalances() async {
@@ -210,8 +221,8 @@ class MyHomePageState extends State<MyHomePage> {
       });
     }
 
-    //await _saveCashuTransactions();
-    //await _loadCashuTransactions();
+    _getBalances();
+
     return spendable;
   }
 
@@ -318,12 +329,6 @@ class MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  /// Get Mints from disk
-  Future<List<String>> _getMints() async {
-    final prefs = await SharedPreferences.getInstance();
-    return (prefs.getStringList('mints') ?? []);
-  }
-
   /// Load mints from disk into rust
   Future<void> _loadMints() async {
     List<Mint> gotMints = await api.getMints();
@@ -332,6 +337,7 @@ class MyHomePageState extends State<MyHomePage> {
     for (var mint in gotMints) {
       _mints[mint.url] = 0;
     }
+
     setState(() {
       mints = _mints;
     });
@@ -346,7 +352,7 @@ class MyHomePageState extends State<MyHomePage> {
       // await api.deleteMint(mint: mintUrl);
       mints.remove(mintUrl);
       await api.removeWallet(url: mintUrl);
-      if (mintUrl == activeMint) {
+      if (activeMint != null && mintUrl == activeMint!.url) {
         String? newActive;
 
         List<String> mintUrls = mints.keys.toList();

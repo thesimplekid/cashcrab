@@ -16,7 +16,7 @@ use tokio::sync::Mutex;
 
 use crate::{
     database,
-    types::{CashuTransaction, Mint, Transaction, TransactionStatus},
+    types::{CashuTransaction, LNTransaction, Mint, Transaction, TransactionStatus},
 };
 
 impl From<CashuError> for Error {
@@ -293,10 +293,38 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
                     return Ok(true);
                 }
             }
-            Transaction::LNTransaction(ln_trans) => (),
-        }
+            Transaction::LNTransaction(ln_trans) => {
+                let wallet = wallet_for_url(&ln_trans.mint).await?;
 
-        return Ok(false);
+                let proofs = wallet
+                    .mint_token(Amount::from_sat(ln_trans.amount), &ln_trans.hash)
+                    .await?;
+
+                database::add_proofs(&ln_trans.mint, proofs.clone()).await?;
+
+                // REVIEW:
+                if proofs.len() > 0 {
+                    let updated_transaction = LNTransaction::new(
+                        Some(TransactionStatus::Received),
+                        ln_trans.amount,
+                        &ln_trans.mint,
+                        &ln_trans.bolt11,
+                        &ln_trans.hash,
+                    );
+
+                    database::update_transaction_status(&Transaction::LNTransaction(
+                        updated_transaction,
+                    ))
+                    .await?;
+                    // REVIEW: Change this trust falle to an enum.
+                    // It is backwards because if a cashu token is NOT spendable then it is spend
+                    // But the opposite is true for LN if it is paid it is recived
+                    return Ok(false);
+                } else {
+                    return Ok(true);
+                }
+            }
+        }
     });
 
     drop(rt);
@@ -387,15 +415,24 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
 }
 
 // TODO: Need to make sure wallet is in wallets
-pub fn request_mint(amount: u64, mint_url: String) -> Result<RequestMintInfo> {
+pub fn request_mint(amount: u64, mint_url: String) -> Result<Transaction> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
         let wallet = wallet_for_url(&mint_url).await?;
         let invoice = wallet.request_mint(Amount::from_sat(amount)).await?;
-        Ok(RequestMintInfo {
-            pr: invoice.pr.to_string(),
-            hash: invoice.hash,
-        })
+
+        let transaction = LNTransaction::new(
+            None,
+            amount,
+            &mint_url,
+            &invoice.pr.to_string(),
+            &invoice.hash,
+        );
+        let transaction = Transaction::LNTransaction(transaction);
+
+        database::add_transaction(&transaction).await?;
+
+        Ok(transaction)
     });
 
     drop(rt);
@@ -516,12 +553,6 @@ pub struct InvoiceInfo {
     pub amount: u64,
     pub hash: String,
     pub memo: Option<String>,
-}
-
-// REVIEW: Have to define this twice since its from another crate
-pub struct RequestMintInfo {
-    pub pr: String,
-    pub hash: String,
 }
 
 pub struct TokenData {

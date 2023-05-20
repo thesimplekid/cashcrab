@@ -391,6 +391,7 @@ impl support::IntoDart for LNTransaction {
             self.amount.into_dart(),
             self.mint.into_dart(),
             self.bolt11.into_dart(),
+            self.hash.into_dart(),
         ]
         .into_dart()
     }
@@ -408,13 +409,6 @@ impl support::IntoDart for Mint {
     }
 }
 impl support::IntoDartExceptPrimitive for Mint {}
-
-impl support::IntoDart for RequestMintInfo {
-    fn into_dart(self) -> support::DartAbi {
-        vec![self.pr.into_dart(), self.hash.into_dart()].into_dart()
-    }
-}
-impl support::IntoDartExceptPrimitive for RequestMintInfo {}
 
 impl support::IntoDart for TokenData {
     fn into_dart(self) -> support::DartAbi {

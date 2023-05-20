@@ -1,7 +1,6 @@
 use bitcoin_hashes::sha256;
 use bitcoin_hashes::Hash;
 pub use cashu_crab::types::MintInfo;
-use flutter_rust_bridge::frb;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
@@ -23,12 +22,6 @@ pub enum Transaction {
 pub enum TransactionKind {
     CashuTransaction,
     LNTransaction,
-}
-
-impl TransactionKind {
-    pub fn as_json(&self) -> String {
-        serde_json::json!(self).to_string()
-    }
 }
 
 impl Transaction {
@@ -56,7 +49,7 @@ impl Transaction {
     }
 
     /// Get Transaction Kind
-    pub fn kind(&self) -> TransactionKind {
+    pub fn _kind(&self) -> TransactionKind {
         match self {
             Transaction::CashuTransaction(_transaction) => TransactionKind::CashuTransaction,
             Transaction::LNTransaction(_transaction) => TransactionKind::LNTransaction,
@@ -100,6 +93,32 @@ pub struct LNTransaction {
     pub amount: u64,
     pub mint: String,
     pub bolt11: String,
+    pub hash: String,
+}
+
+impl LNTransaction {
+    pub fn new(
+        status: Option<TransactionStatus>,
+        amount: u64,
+        mint: &str,
+        bolt11: &str,
+        hash: &str,
+    ) -> Self {
+        let id = sha256::Hash::hash(bolt11.as_bytes()).to_string();
+        let status = match status {
+            Some(status) => status,
+            None => TransactionStatus::Pending,
+        };
+        Self {
+            id: Some(id),
+            status,
+            time: unix_time(),
+            amount,
+            mint: mint.to_string(),
+            bolt11: bolt11.to_string(),
+            hash: hash.to_string(),
+        }
+    }
 }
 
 pub fn unix_time() -> u64 {

@@ -39,6 +39,7 @@ typedef struct wire_LNTransaction {
   uint64_t amount;
   struct wire_uint_8_list *mint;
   struct wire_uint_8_list *bolt11;
+  struct wire_uint_8_list *hash;
 } wire_LNTransaction;
 
 typedef struct wire_Transaction_LNTransaction {

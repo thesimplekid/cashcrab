@@ -9,19 +9,20 @@ class ReceviceToken extends StatefulWidget {
   final Function decodeToken;
   final Function receiveToken;
   final Function addMint;
+  final Function createInvoice;
   final Map<String, int> mints;
   final RustImpl cashu;
   final String? activeWallet;
 
-  const ReceviceToken({
-    super.key,
-    required this.decodeToken,
-    required this.activeWallet,
-    required this.receiveToken,
-    required this.mints,
-    required this.addMint,
-    required this.cashu,
-  });
+  const ReceviceToken(
+      {super.key,
+      required this.decodeToken,
+      required this.activeWallet,
+      required this.receiveToken,
+      required this.mints,
+      required this.addMint,
+      required this.cashu,
+      required this.createInvoice});
 
   @override
   ReceiveTokenState createState() => ReceiveTokenState();
@@ -101,6 +102,7 @@ class ReceiveTokenState extends State<ReceviceToken> {
                               cashu: widget.cashu,
                               mints: widget.mints,
                               activeMint: widget.activeWallet!,
+                              createInvoice: widget.createInvoice,
                             ),
                           ),
                         );

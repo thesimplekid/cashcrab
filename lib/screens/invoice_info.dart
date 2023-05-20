@@ -8,14 +8,16 @@ import '../shared/models/invoice.dart';
 class InvoiceInfoScreen extends StatefulWidget {
   final int amount;
   final String mintUrl;
-  final Invoice? invoice;
+  final LNTransaction? invoice;
   final RustImpl cashu;
+  final Function createInvoice;
 
   const InvoiceInfoScreen(
       {super.key,
       required this.amount,
       required this.mintUrl,
       required this.cashu,
+      required this.createInvoice,
       this.invoice});
 
   @override
@@ -23,29 +25,18 @@ class InvoiceInfoScreen extends StatefulWidget {
 }
 
 class InvoiceInfoState extends State<InvoiceInfoScreen> {
-  Invoice? displayInvoice;
+  LNTransaction? displayInvoice;
 
   void _createInvoice() async {
     // TODO: Make a type for this
-    RequestMintInfo result = await widget.cashu
-        .requestMint(amount: widget.amount, mintUrl: widget.mintUrl);
-    Invoice newInvoice = Invoice(
-        invoice: result.pr,
-        hash: result.hash,
-        amount: widget.amount,
-        mintUrl: widget.mintUrl);
 
-    LNTransaction newTransaction = LNTransaction(
-        status: TransactionStatus.Pending,
-        time: DateTime.now().millisecondsSinceEpoch,
-        mint: widget.mintUrl,
-        amount: widget.amount,
-        bolt11: newInvoice.invoice!);
+    LNTransaction createdTransaction =
+        await widget.createInvoice(widget.amount, widget.mintUrl);
 
     setState(() {
       // TODO:
       // 1 widget.pendingInvoices.add(newTransaction);
-      displayInvoice = newInvoice;
+      displayInvoice = createdTransaction;
     });
   }
 
@@ -91,10 +82,10 @@ class InvoiceInfoState extends State<InvoiceInfoScreen> {
                   SizedBox(
                     height: 300,
                     child: SingleChildScrollView(
-                      child: Text(displayInvoice!.invoice!),
+                      child: Text(displayInvoice!.bolt11),
                     ),
                   ),
-                  Text("Mint: ${displayInvoice!.mintUrl}"),
+                  Text("Mint: ${displayInvoice!.mint}"),
                   Wrap(
                     children: [
                       Text(
@@ -107,7 +98,7 @@ class InvoiceInfoState extends State<InvoiceInfoScreen> {
             TextButton(
               onPressed: () async {
                 await Clipboard.setData(
-                    ClipboardData(text: displayInvoice!.invoice));
+                    ClipboardData(text: displayInvoice!.bolt11));
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

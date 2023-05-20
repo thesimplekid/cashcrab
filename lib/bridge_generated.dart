@@ -197,13 +197,13 @@ class RustImpl implements Rust {
         argNames: ["amount", "activeMint"],
       );
 
-  Future<RequestMintInfo> requestMint(
+  Future<Transaction> requestMint(
       {required int amount, required String mintUrl, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
     var arg1 = _platform.api2wire_String(mintUrl);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_request_mint(port_, arg0, arg1),
-      parseSuccessData: _wire2api_request_mint_info,
+      parseSuccessData: _wire2api_transaction,
       constMeta: kRequestMintConstMeta,
       argValues: [amount, mintUrl],
       hint: hint,
@@ -451,8 +451,8 @@ class RustImpl implements Rust {
 
   LNTransaction _wire2api_ln_transaction(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return LNTransaction(
       id: _wire2api_opt_String(arr[0]),
       status: _wire2api_transaction_status(arr[1]),
@@ -460,6 +460,7 @@ class RustImpl implements Rust {
       amount: _wire2api_u64(arr[3]),
       mint: _wire2api_String(arr[4]),
       bolt11: _wire2api_String(arr[5]),
+      hash: _wire2api_String(arr[6]),
     );
   }
 
@@ -484,16 +485,6 @@ class RustImpl implements Rust {
 
   Transaction? _wire2api_opt_box_autoadd_transaction(dynamic raw) {
     return raw == null ? null : _wire2api_box_autoadd_transaction(raw);
-  }
-
-  RequestMintInfo _wire2api_request_mint_info(dynamic raw) {
-    final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-    return RequestMintInfo(
-      pr: _wire2api_String(arr[0]),
-      hash: _wire2api_String(arr[1]),
-    );
   }
 
   TokenData _wire2api_token_data(dynamic raw) {
@@ -659,6 +650,7 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
     wireObj.amount = api2wire_u64(apiObj.amount);
     wireObj.mint = api2wire_String(apiObj.mint);
     wireObj.bolt11 = api2wire_String(apiObj.bolt11);
+    wireObj.hash = api2wire_String(apiObj.hash);
   }
 
   void _api_fill_to_wire_transaction(
@@ -1270,6 +1262,8 @@ class wire_LNTransaction extends ffi.Struct {
   external ffi.Pointer<wire_uint_8_list> mint;
 
   external ffi.Pointer<wire_uint_8_list> bolt11;
+
+  external ffi.Pointer<wire_uint_8_list> hash;
 }
 
 class wire_Transaction_LNTransaction extends ffi.Struct {

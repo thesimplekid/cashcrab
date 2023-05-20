@@ -9,12 +9,14 @@ class CreateInvoice extends StatefulWidget {
   final RustImpl cashu;
   final Map<String, int> mints;
   final String activeMint;
+  final Function createInvoice;
 
   const CreateInvoice({
     super.key,
     required this.cashu,
     required this.mints,
     required this.activeMint,
+    required this.createInvoice,
   });
 
   @override
@@ -84,6 +86,7 @@ class CreateInvoiceState extends State<CreateInvoice> {
                       cashu: widget.cashu,
                       mintUrl: widget.activeMint,
                       amount: amountToSend,
+                      createInvoice: widget.createInvoice,
                     ),
                   ),
                 );

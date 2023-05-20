@@ -205,6 +205,7 @@ impl Wire2Api<LNTransaction> for wire_LNTransaction {
             amount: self.amount.wire2api(),
             mint: self.mint.wire2api(),
             bolt11: self.bolt11.wire2api(),
+            hash: self.hash.wire2api(),
         }
     }
 }
@@ -264,6 +265,7 @@ pub struct wire_LNTransaction {
     amount: u64,
     mint: *mut wire_uint_8_list,
     bolt11: *mut wire_uint_8_list,
+    hash: *mut wire_uint_8_list,
 }
 
 #[repr(C)]
@@ -338,6 +340,7 @@ impl NewWithNullPtr for wire_LNTransaction {
             amount: Default::default(),
             mint: core::ptr::null_mut(),
             bolt11: core::ptr::null_mut(),
+            hash: core::ptr::null_mut(),
         }
     }
 }
