@@ -50,8 +50,6 @@ class MyHomePage extends StatefulWidget {
 class MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
-  // Cashu cashu = Cashu();
-
   Map<String, int> mints = {};
   int balance = 0;
   Mint? activeMint;
@@ -341,6 +339,8 @@ class MyHomePageState extends State<MyHomePage> {
     setState(() {
       mints = _mints;
     });
+
+    print("LoadedMint: " + mints.toString());
   }
 
   Future<void> removeMint(String mintUrl) async {

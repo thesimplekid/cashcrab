@@ -83,7 +83,6 @@ class CreateInvoiceState extends State<CreateInvoice> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => InvoiceInfoScreen(
-                      cashu: widget.cashu,
                       mintUrl: widget.activeMint,
                       amount: amountToSend,
                       createInvoice: widget.createInvoice,

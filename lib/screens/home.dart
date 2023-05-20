@@ -6,6 +6,7 @@ import 'package:cashcrab/bridge_generated.dart';
 
 import '../screens/send.dart';
 import '../screens/receive.dart';
+import '../screens/invoice_info.dart';
 import '../shared/utils.dart';
 
 class Home extends StatefulWidget {
@@ -440,8 +441,15 @@ class TransactionList extends StatelessWidget {
               if (transaction is CashuTransaction) {
                 sendToken(transaction.amount, transaction.token);
               } else if (transaction is LNTransaction) {
-                lightningDialog(
-                    transaction.amount, transaction.mint, transaction);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => InvoiceInfoScreen(
+                        mintUrl: transaction.mint,
+                        amount: transaction.amount,
+                        invoice: transaction),
+                  ),
+                );
               }
             },
             child: Row(

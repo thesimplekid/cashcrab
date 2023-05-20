@@ -3,21 +3,19 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter/services.dart';
 import 'package:cashcrab/bridge_generated.dart';
-import '../shared/models/invoice.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class InvoiceInfoScreen extends StatefulWidget {
   final int amount;
   final String mintUrl;
   final LNTransaction? invoice;
-  final RustImpl cashu;
-  final Function createInvoice;
+  final Function? createInvoice;
 
   const InvoiceInfoScreen(
       {super.key,
       required this.amount,
       required this.mintUrl,
-      required this.cashu,
-      required this.createInvoice,
+      this.createInvoice,
       this.invoice});
 
   @override
@@ -30,14 +28,16 @@ class InvoiceInfoState extends State<InvoiceInfoScreen> {
   void _createInvoice() async {
     // TODO: Make a type for this
 
-    LNTransaction createdTransaction =
-        await widget.createInvoice(widget.amount, widget.mintUrl);
+    if (widget.createInvoice != null) {
+      LNTransaction createdTransaction =
+          await widget.createInvoice!(widget.amount, widget.mintUrl);
 
-    setState(() {
-      // TODO:
-      // 1 widget.pendingInvoices.add(newTransaction);
-      displayInvoice = createdTransaction;
-    });
+      setState(() {
+        // TODO:
+        // 1 widget.pendingInvoices.add(newTransaction);
+        displayInvoice = createdTransaction;
+      });
+    } // TODO: Else modela error
   }
 
   @override
@@ -75,16 +75,14 @@ class InvoiceInfoState extends State<InvoiceInfoScreen> {
         ),
         body: Column(
           children: [
-            SizedBox(
-              height: 400,
+            Flexible(
               child: Column(
                 children: [
-                  SizedBox(
-                    height: 300,
-                    child: SingleChildScrollView(
-                      child: Text(displayInvoice!.bolt11),
-                    ),
-                  ),
+                  QrImageView(
+                      data: displayInvoice!.bolt11,
+                      version: QrVersions.auto,
+                      size: 400.0,
+                      backgroundColor: Colors.white),
                   Text("Mint: ${displayInvoice!.mint}"),
                   Wrap(
                     children: [

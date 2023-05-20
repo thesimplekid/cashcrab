@@ -31,6 +31,7 @@ class _SettingsState extends State<Settings> {
 
   @override
   Widget build(BuildContext context) {
+    print(widget.mints);
     List<String> mints = widget.mints.keys.toList();
     mints
         .sort((a, b) => (widget.mints[b] ?? 0).compareTo(widget.mints[a] ?? 0));
