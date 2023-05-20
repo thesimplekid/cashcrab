@@ -362,9 +362,32 @@ class TransactionList extends StatelessWidget {
       required this.sendToken,
       required this.lightningDialog});
 
+  List<Transaction> sortTransactions(Map<String, Transaction> transactions) {
+    List<Transaction> transactionsList = transactions.values.toList();
+
+    transactionsList.sort((a, b) {
+      int timeA, timeB;
+      if (a.field0 is CashuTransaction) {
+        timeA = (a.field0 as CashuTransaction).time;
+      } else {
+        timeA = (a.field0 as LNTransaction).time;
+      }
+
+      if (b.field0 is CashuTransaction) {
+        timeB = (b.field0 as CashuTransaction).time;
+      } else {
+        timeB = (b.field0 as LNTransaction).time;
+      }
+
+      return timeA.compareTo(timeB);
+    });
+
+    return transactionsList;
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<Transaction> transactions = ptransactions.values.toList();
+    List<Transaction> transactions = sortTransactions(ptransactions);
     return SingleChildScrollView(
       child: ListView.builder(
         reverse: true,
