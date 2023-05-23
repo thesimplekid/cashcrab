@@ -25,3 +25,5 @@ log = "0.4.17"
 simplelog = "0.12.1"
 serde = {version = "1.0.163", features=["derive"]}
 bitcoin_hashes = "0.12.0"
+nostr-sdk = {version = "0.22.0", default-features = false, features=["nip04", "nip19"]}
+hex = "0.4.3"

@@ -14,6 +14,40 @@ typedef struct wire_uint_8_list {
   int32_t len;
 } wire_uint_8_list;
 
+typedef struct wire_Message_Text {
+  int32_t direction;
+  uint64_t time;
+  struct wire_uint_8_list *content;
+} wire_Message_Text;
+
+typedef struct wire_Message_Invoice {
+  int32_t direction;
+  uint64_t time;
+  struct wire_uint_8_list *bolt11;
+  uint64_t *amount;
+  int32_t status;
+} wire_Message_Invoice;
+
+typedef struct wire_Message_Token {
+  int32_t direction;
+  uint64_t time;
+  struct wire_uint_8_list *token;
+  struct wire_uint_8_list *mint;
+  uint64_t *amount;
+  int32_t status;
+} wire_Message_Token;
+
+typedef union MessageKind {
+  struct wire_Message_Text *Text;
+  struct wire_Message_Invoice *Invoice;
+  struct wire_Message_Token *Token;
+} MessageKind;
+
+typedef struct wire_Message {
+  int32_t tag;
+  union MessageKind *kind;
+} wire_Message;
+
 typedef struct wire_StringList {
   struct wire_uint_8_list **ptr;
   int32_t len;
@@ -70,6 +104,18 @@ intptr_t init_frb_dart_api_dl(void *obj);
 
 void wire_init_db(int64_t port_, struct wire_uint_8_list *path);
 
+void wire_init_nostr(int64_t port_);
+
+void wire_add_contact(int64_t port_, struct wire_uint_8_list *pubkey);
+
+void wire_get_contacts(int64_t port_);
+
+void wire_send_message(int64_t port_,
+                       struct wire_uint_8_list *pubkey,
+                       struct wire_Message *message);
+
+void wire_get_messages(int64_t port_, struct wire_uint_8_list *pubkey);
+
 void wire_get_balances(int64_t port_);
 
 void wire_create_wallet(int64_t port_, struct wire_uint_8_list *url);
@@ -120,9 +166,19 @@ struct wire_CashuTransaction *new_box_autoadd_cashu_transaction_0(void);
 
 struct wire_LNTransaction *new_box_autoadd_ln_transaction_0(void);
 
+struct wire_Message *new_box_autoadd_message_0(void);
+
 struct wire_Transaction *new_box_autoadd_transaction_0(void);
 
+uint64_t *new_box_autoadd_u64_0(uint64_t value);
+
 struct wire_uint_8_list *new_uint_8_list_0(int32_t len);
+
+union MessageKind *inflate_Message_Text(void);
+
+union MessageKind *inflate_Message_Invoice(void);
+
+union MessageKind *inflate_Message_Token(void);
 
 union TransactionKind *inflate_Transaction_CashuTransaction(void);
 
@@ -133,6 +189,11 @@ void free_WireSyncReturn(WireSyncReturn ptr);
 static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;
     dummy_var ^= ((int64_t) (void*) wire_init_db);
+    dummy_var ^= ((int64_t) (void*) wire_init_nostr);
+    dummy_var ^= ((int64_t) (void*) wire_add_contact);
+    dummy_var ^= ((int64_t) (void*) wire_get_contacts);
+    dummy_var ^= ((int64_t) (void*) wire_send_message);
+    dummy_var ^= ((int64_t) (void*) wire_get_messages);
     dummy_var ^= ((int64_t) (void*) wire_get_balances);
     dummy_var ^= ((int64_t) (void*) wire_create_wallet);
     dummy_var ^= ((int64_t) (void*) wire_get_wallets);
@@ -155,8 +216,13 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) new_StringList_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_cashu_transaction_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_ln_transaction_0);
+    dummy_var ^= ((int64_t) (void*) new_box_autoadd_message_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_transaction_0);
+    dummy_var ^= ((int64_t) (void*) new_box_autoadd_u64_0);
     dummy_var ^= ((int64_t) (void*) new_uint_8_list_0);
+    dummy_var ^= ((int64_t) (void*) inflate_Message_Text);
+    dummy_var ^= ((int64_t) (void*) inflate_Message_Invoice);
+    dummy_var ^= ((int64_t) (void*) inflate_Message_Token);
     dummy_var ^= ((int64_t) (void*) inflate_Transaction_CashuTransaction);
     dummy_var ^= ((int64_t) (void*) inflate_Transaction_LNTransaction);
     dummy_var ^= ((int64_t) (void*) free_WireSyncReturn);

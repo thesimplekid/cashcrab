@@ -142,7 +142,7 @@ class ReceiveTokenState extends State<ReceviceToken> {
                                 null),
                           );
                         } else {
-                          widget.receiveToken();
+                          widget.receiveToken(tokenData?.encodedToken);
                           Navigator.of(context).pop();
                         }
                       }

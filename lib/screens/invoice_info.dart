@@ -1,5 +1,4 @@
 import 'package:cashcrab/bridge_definitions.dart';
-import 'package:cashcrab/bridge_generated.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

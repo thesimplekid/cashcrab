@@ -155,22 +155,61 @@ pub enum InvoiceStatus {
     Expired,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum Direction {
+    Sent,
+    Received,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Message {
     Text {
+        direction: Direction,
         time: u64,
         content: String,
     },
     Invoice {
+        direction: Direction,
         time: u64,
         bolt11: String,
         amount: Option<u64>,
         status: InvoiceStatus,
     },
     Token {
+        direction: Direction,
         time: u64,
         token: String,
+        mint: String,
         amount: Option<u64>,
         status: TokenStatus,
     },
+}
+
+impl Message {
+    /// Get contact as json string
+    pub fn as_json(&self) -> String {
+        serde_json::json!(self).to_string()
+    }
+    pub fn content(&self) -> String {
+        match self {
+            Self::Text { content, .. } => content.to_owned(),
+            Self::Invoice { bolt11, .. } => bolt11.to_owned(),
+            Self::Token { token, .. } => token.to_owned(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Contact {
+    pub npub: String,
+    pub name: Option<String>,
+    pub picture: Option<String>,
+    pub lud16: Option<String>,
+}
+
+impl Contact {
+    /// Get contact as json string
+    pub fn as_json(&self) -> String {
+        serde_json::json!(self).to_string()
+    }
 }

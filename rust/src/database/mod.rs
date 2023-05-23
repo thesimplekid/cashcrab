@@ -4,9 +4,8 @@ use redb::{Database, MultimapTableDefinition, TableDefinition};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use crate::api::CashuError;
-
 pub(crate) mod cashu;
+pub(crate) mod message;
 pub(crate) mod transactions;
 
 const CONFIG: TableDefinition<&str, &str> = TableDefinition::new("config");
@@ -49,12 +48,18 @@ const PROOFS: MultimapTableDefinition<&str, &str> = MultimapTableDefinition::new
 // Value: Serialized Message
 const MESSAGES: MultimapTableDefinition<&str, &str> = MultimapTableDefinition::new("messages");
 
+// Contacts
+// Table
+// Key: Nostr hex pubkey
+// Value: Serialized Contact Info
+const CONTACTS: TableDefinition<&str, &str> = TableDefinition::new("constacts");
+
 lazy_static! {
     static ref DB: Arc<Mutex<Option<Database>>> = Arc::new(Mutex::new(None));
 }
 
 /// Init Database
-pub(crate) async fn init_db(path: &str) -> Result<String, CashuError> {
+pub(crate) async fn init_db(path: &str) -> Result<()> {
     let db = Database::create(format!("{path}/cashu.redb"))?;
     let mut database = DB.lock().await;
     *database = Some(db);
@@ -68,11 +73,12 @@ pub(crate) async fn init_db(path: &str) -> Result<String, CashuError> {
             let _ = write_txn.open_table(KEYSETS)?;
             let _ = write_txn.open_table(TRANSACTIONS)?;
             let _ = write_txn.open_table(PENDING_TRANSACTIONS)?;
+            let _ = write_txn.open_table(CONTACTS)?;
             let _ = write_txn.open_multimap_table(PROOFS)?;
             let _ = write_txn.open_multimap_table(MESSAGES)?;
         }
         write_txn.commit()?;
     }
 
-    Ok("".to_string())
+    Ok(())
 }

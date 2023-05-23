@@ -20,8 +20,13 @@ use std::sync::Arc;
 // Section: imports
 
 use crate::types::CashuTransaction;
+use crate::types::Contact;
+use crate::types::Direction;
+use crate::types::InvoiceStatus;
 use crate::types::LNTransaction;
+use crate::types::Message;
 use crate::types::Mint;
+use crate::types::TokenStatus;
 use crate::types::Transaction;
 use crate::types::TransactionStatus;
 
@@ -37,6 +42,70 @@ fn wire_init_db_impl(port_: MessagePort, path: impl Wire2Api<String> + UnwindSaf
         move || {
             let api_path = path.wire2api();
             move |task_callback| init_db(api_path)
+        },
+    )
+}
+fn wire_init_nostr_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "init_nostr",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| init_nostr(),
+    )
+}
+fn wire_add_contact_impl(port_: MessagePort, pubkey: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "add_contact",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_pubkey = pubkey.wire2api();
+            move |task_callback| add_contact(api_pubkey)
+        },
+    )
+}
+fn wire_get_contacts_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_contacts",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| get_contacts(),
+    )
+}
+fn wire_send_message_impl(
+    port_: MessagePort,
+    pubkey: impl Wire2Api<String> + UnwindSafe,
+    message: impl Wire2Api<Message> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "send_message",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_pubkey = pubkey.wire2api();
+            let api_message = message.wire2api();
+            move |task_callback| send_message(api_pubkey, api_message)
+        },
+    )
+}
+fn wire_get_messages_impl(port_: MessagePort, pubkey: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_messages",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_pubkey = pubkey.wire2api();
+            move |task_callback| get_messages(api_pubkey)
         },
     )
 }
@@ -325,9 +394,38 @@ where
     }
 }
 
+impl Wire2Api<Direction> for i32 {
+    fn wire2api(self) -> Direction {
+        match self {
+            0 => Direction::Sent,
+            1 => Direction::Received,
+            _ => unreachable!("Invalid variant for Direction: {}", self),
+        }
+    }
+}
 impl Wire2Api<i32> for i32 {
     fn wire2api(self) -> i32 {
         self
+    }
+}
+impl Wire2Api<InvoiceStatus> for i32 {
+    fn wire2api(self) -> InvoiceStatus {
+        match self {
+            0 => InvoiceStatus::Paid,
+            1 => InvoiceStatus::Unpaid,
+            2 => InvoiceStatus::Expired,
+            _ => unreachable!("Invalid variant for InvoiceStatus: {}", self),
+        }
+    }
+}
+
+impl Wire2Api<TokenStatus> for i32 {
+    fn wire2api(self) -> TokenStatus {
+        match self {
+            0 => TokenStatus::Spendable,
+            1 => TokenStatus::Claimed,
+            _ => unreachable!("Invalid variant for TokenStatus: {}", self),
+        }
     }
 }
 
@@ -370,6 +468,30 @@ impl support::IntoDart for CashuTransaction {
 }
 impl support::IntoDartExceptPrimitive for CashuTransaction {}
 
+impl support::IntoDart for Contact {
+    fn into_dart(self) -> support::DartAbi {
+        vec![
+            self.npub.into_dart(),
+            self.name.into_dart(),
+            self.picture.into_dart(),
+            self.lud16.into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for Contact {}
+
+impl support::IntoDart for Direction {
+    fn into_dart(self) -> support::DartAbi {
+        match self {
+            Self::Sent => 0,
+            Self::Received => 1,
+        }
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for Direction {}
+
 impl support::IntoDart for InvoiceInfo {
     fn into_dart(self) -> support::DartAbi {
         vec![
@@ -381,6 +503,18 @@ impl support::IntoDart for InvoiceInfo {
     }
 }
 impl support::IntoDartExceptPrimitive for InvoiceInfo {}
+
+impl support::IntoDart for InvoiceStatus {
+    fn into_dart(self) -> support::DartAbi {
+        match self {
+            Self::Paid => 0,
+            Self::Unpaid => 1,
+            Self::Expired => 2,
+        }
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for InvoiceStatus {}
 
 impl support::IntoDart for LNTransaction {
     fn into_dart(self) -> support::DartAbi {
@@ -398,6 +532,54 @@ impl support::IntoDart for LNTransaction {
 }
 impl support::IntoDartExceptPrimitive for LNTransaction {}
 
+impl support::IntoDart for Message {
+    fn into_dart(self) -> support::DartAbi {
+        match self {
+            Self::Text {
+                direction,
+                time,
+                content,
+            } => vec![
+                0.into_dart(),
+                direction.into_dart(),
+                time.into_dart(),
+                content.into_dart(),
+            ],
+            Self::Invoice {
+                direction,
+                time,
+                bolt11,
+                amount,
+                status,
+            } => vec![
+                1.into_dart(),
+                direction.into_dart(),
+                time.into_dart(),
+                bolt11.into_dart(),
+                amount.into_dart(),
+                status.into_dart(),
+            ],
+            Self::Token {
+                direction,
+                time,
+                token,
+                mint,
+                amount,
+                status,
+            } => vec![
+                2.into_dart(),
+                direction.into_dart(),
+                time.into_dart(),
+                token.into_dart(),
+                mint.into_dart(),
+                amount.into_dart(),
+                status.into_dart(),
+            ],
+        }
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for Message {}
 impl support::IntoDart for Mint {
     fn into_dart(self) -> support::DartAbi {
         vec![
@@ -423,6 +605,16 @@ impl support::IntoDart for TokenData {
 }
 impl support::IntoDartExceptPrimitive for TokenData {}
 
+impl support::IntoDart for TokenStatus {
+    fn into_dart(self) -> support::DartAbi {
+        match self {
+            Self::Spendable => 0,
+            Self::Claimed => 1,
+        }
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for TokenStatus {}
 impl support::IntoDart for Transaction {
     fn into_dart(self) -> support::DartAbi {
         match self {

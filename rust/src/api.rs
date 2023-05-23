@@ -1,7 +1,7 @@
 use std::sync::Mutex as StdMutex;
 
 use anyhow::{anyhow, bail, Error, Result};
-use bitcoin::Amount;
+use bitcoin::{secp256k1::XOnlyPublicKey, Amount};
 use cashu_crab::{
     cashu_wallet::CashuWallet,
     client::Client,
@@ -10,13 +10,17 @@ use cashu_crab::{
 };
 use lazy_static::lazy_static;
 use lightning_invoice::{Invoice, InvoiceDescription};
+use nostr_sdk::prelude::{FromBech32, PREFIX_BECH32_PUBLIC_KEY};
 use std::{collections::HashMap, fmt, io, str::FromStr, sync::Arc};
 use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
 use crate::{
     database,
-    types::{CashuTransaction, LNTransaction, Mint, Transaction, TransactionStatus},
+    nostr::{self, init_client},
+    types::{
+        CashuTransaction, Contact, LNTransaction, Message, Mint, Transaction, TransactionStatus,
+    },
 };
 
 impl From<CashuError> for Error {
@@ -100,6 +104,78 @@ pub fn init_db(path: String) -> Result<()> {
     let result = rt.block_on(async {
         database::init_db(&path).await?;
         Ok(())
+    });
+
+    drop(rt);
+    result
+}
+
+pub fn init_nostr() -> Result<()> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        let key = database::message::get_key().await?;
+        // TODO: get relays
+        init_client(key, vec!["wss://thesimplekid.space/".to_string()]).await?;
+        Ok(())
+    });
+
+    drop(rt);
+    result
+}
+
+pub fn add_contact(pubkey: String) -> Result<()> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        let x_pubkey = match pubkey.starts_with(PREFIX_BECH32_PUBLIC_KEY) {
+            true => XOnlyPublicKey::from_bech32(&pubkey)?,
+            false => XOnlyPublicKey::from_str(&pubkey)?,
+        };
+        nostr::get_metadata(&x_pubkey).await?;
+        Ok(())
+    });
+
+    drop(rt);
+    result
+}
+
+pub fn get_contacts() -> Result<Vec<Contact>> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        let contacts = database::message::get_contacts().await?;
+        // TODO: get relays
+        Ok(contacts)
+    });
+
+    drop(rt);
+    result
+}
+
+pub fn send_message(pubkey: String, message: Message) -> Result<Message> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        let x_pubkey = match pubkey.starts_with(PREFIX_BECH32_PUBLIC_KEY) {
+            true => XOnlyPublicKey::from_bech32(&pubkey)?,
+            false => XOnlyPublicKey::from_str(&pubkey)?,
+        };
+
+        nostr::send_message(x_pubkey, &message).await?;
+        database::message::add_message(x_pubkey, &message).await?;
+        Ok(message)
+    });
+
+    drop(rt);
+    result
+}
+
+pub fn get_messages(pubkey: String) -> Result<Vec<Message>> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        let x_pubkey = match pubkey.starts_with(PREFIX_BECH32_PUBLIC_KEY) {
+            true => XOnlyPublicKey::from_bech32(&pubkey)?,
+            false => XOnlyPublicKey::from_str(&pubkey)?,
+        };
+        let messages = database::message::get_messages(&x_pubkey).await?;
+        Ok(messages)
     });
 
     drop(rt);
@@ -574,12 +650,3 @@ pub fn decode_token(encoded_token: String) -> Result<TokenData> {
         memo: token.memo,
     })
 }
-
-/*
-pub async fn create_client(url: &str) -> Result<String, CashuError> {
-    let client = Client::new(url)?;
-
-    let client = Cashu { mints: vec![] };
-    Ok(url.to_string())
-}
-*/

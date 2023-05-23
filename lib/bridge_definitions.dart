@@ -16,6 +16,27 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kInitDbConstMeta;
 
+  Future<void> initNostr({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kInitNostrConstMeta;
+
+  Future<void> addContact({required String pubkey, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kAddContactConstMeta;
+
+  Future<List<Contact>> getContacts({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetContactsConstMeta;
+
+  Future<Message> sendMessage(
+      {required String pubkey, required Message message, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kSendMessageConstMeta;
+
+  Future<List<Message>> getMessages({required String pubkey, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetMessagesConstMeta;
+
   Future<String> getBalances({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetBalancesConstMeta;
@@ -128,6 +149,25 @@ class CashuTransaction {
   });
 }
 
+class Contact {
+  final String npub;
+  final String? name;
+  final String? picture;
+  final String? lud16;
+
+  const Contact({
+    required this.npub,
+    this.name,
+    this.picture,
+    this.lud16,
+  });
+}
+
+enum Direction {
+  Sent,
+  Received,
+}
+
 class InvoiceInfo {
   final int amount;
   final String hash;
@@ -138,6 +178,12 @@ class InvoiceInfo {
     required this.hash,
     this.memo,
   });
+}
+
+enum InvoiceStatus {
+  Paid,
+  Unpaid,
+  Expired,
 }
 
 class LNTransaction {
@@ -158,6 +204,30 @@ class LNTransaction {
     required this.bolt11,
     required this.hash,
   });
+}
+
+@freezed
+class Message with _$Message {
+  const factory Message.text({
+    required Direction direction,
+    required int time,
+    required String content,
+  }) = Message_Text;
+  const factory Message.invoice({
+    required Direction direction,
+    required int time,
+    required String bolt11,
+    int? amount,
+    required InvoiceStatus status,
+  }) = Message_Invoice;
+  const factory Message.token({
+    required Direction direction,
+    required int time,
+    required String token,
+    required String mint,
+    int? amount,
+    required TokenStatus status,
+  }) = Message_Token;
 }
 
 class Mint {
@@ -184,6 +254,11 @@ class TokenData {
     required this.amount,
     this.memo,
   });
+}
+
+enum TokenStatus {
+  Spendable,
+  Claimed,
 }
 
 @freezed

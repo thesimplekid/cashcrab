@@ -42,6 +42,91 @@ class RustImpl implements Rust {
         argNames: ["path"],
       );
 
+  Future<void> initNostr({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_init_nostr(port_),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kInitNostrConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kInitNostrConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "init_nostr",
+        argNames: [],
+      );
+
+  Future<void> addContact({required String pubkey, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(pubkey);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_add_contact(port_, arg0),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kAddContactConstMeta,
+      argValues: [pubkey],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kAddContactConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "add_contact",
+        argNames: ["pubkey"],
+      );
+
+  Future<List<Contact>> getContacts({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_contacts(port_),
+      parseSuccessData: _wire2api_list_contact,
+      constMeta: kGetContactsConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetContactsConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_contacts",
+        argNames: [],
+      );
+
+  Future<Message> sendMessage(
+      {required String pubkey, required Message message, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(pubkey);
+    var arg1 = _platform.api2wire_box_autoadd_message(message);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_send_message(port_, arg0, arg1),
+      parseSuccessData: _wire2api_message,
+      constMeta: kSendMessageConstMeta,
+      argValues: [pubkey, message],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kSendMessageConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "send_message",
+        argNames: ["pubkey", "message"],
+      );
+
+  Future<List<Message>> getMessages({required String pubkey, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(pubkey);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_messages(port_, arg0),
+      parseSuccessData: _wire2api_list_message,
+      constMeta: kGetMessagesConstMeta,
+      argValues: [pubkey],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetMessagesConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_messages",
+        argNames: ["pubkey"],
+      );
+
   Future<String> getBalances({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_balances(port_),
@@ -412,6 +497,10 @@ class RustImpl implements Rust {
     return _wire2api_transaction(raw);
   }
 
+  int _wire2api_box_autoadd_u64(dynamic raw) {
+    return _wire2api_u64(raw);
+  }
+
   CashuTransaction _wire2api_cashu_transaction(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 6)
@@ -424,6 +513,22 @@ class RustImpl implements Rust {
       mint: _wire2api_String(arr[4]),
       token: _wire2api_String(arr[5]),
     );
+  }
+
+  Contact _wire2api_contact(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return Contact(
+      npub: _wire2api_String(arr[0]),
+      name: _wire2api_opt_String(arr[1]),
+      picture: _wire2api_opt_String(arr[2]),
+      lud16: _wire2api_opt_String(arr[3]),
+    );
+  }
+
+  Direction _wire2api_direction(dynamic raw) {
+    return Direction.values[raw as int];
   }
 
   int _wire2api_i32(dynamic raw) {
@@ -439,6 +544,18 @@ class RustImpl implements Rust {
       hash: _wire2api_String(arr[1]),
       memo: _wire2api_opt_String(arr[2]),
     );
+  }
+
+  InvoiceStatus _wire2api_invoice_status(dynamic raw) {
+    return InvoiceStatus.values[raw as int];
+  }
+
+  List<Contact> _wire2api_list_contact(dynamic raw) {
+    return (raw as List<dynamic>).map(_wire2api_contact).toList();
+  }
+
+  List<Message> _wire2api_list_message(dynamic raw) {
+    return (raw as List<dynamic>).map(_wire2api_message).toList();
   }
 
   List<Mint> _wire2api_list_mint(dynamic raw) {
@@ -464,6 +581,36 @@ class RustImpl implements Rust {
     );
   }
 
+  Message _wire2api_message(dynamic raw) {
+    switch (raw[0]) {
+      case 0:
+        return Message_Text(
+          direction: _wire2api_direction(raw[1]),
+          time: _wire2api_u64(raw[2]),
+          content: _wire2api_String(raw[3]),
+        );
+      case 1:
+        return Message_Invoice(
+          direction: _wire2api_direction(raw[1]),
+          time: _wire2api_u64(raw[2]),
+          bolt11: _wire2api_String(raw[3]),
+          amount: _wire2api_opt_box_autoadd_u64(raw[4]),
+          status: _wire2api_invoice_status(raw[5]),
+        );
+      case 2:
+        return Message_Token(
+          direction: _wire2api_direction(raw[1]),
+          time: _wire2api_u64(raw[2]),
+          token: _wire2api_String(raw[3]),
+          mint: _wire2api_String(raw[4]),
+          amount: _wire2api_opt_box_autoadd_u64(raw[5]),
+          status: _wire2api_token_status(raw[6]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
   Mint _wire2api_mint(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 3)
@@ -487,6 +634,10 @@ class RustImpl implements Rust {
     return raw == null ? null : _wire2api_box_autoadd_transaction(raw);
   }
 
+  int? _wire2api_opt_box_autoadd_u64(dynamic raw) {
+    return raw == null ? null : _wire2api_box_autoadd_u64(raw);
+  }
+
   TokenData _wire2api_token_data(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 4)
@@ -497,6 +648,10 @@ class RustImpl implements Rust {
       amount: _wire2api_u64(arr[2]),
       memo: _wire2api_opt_String(arr[3]),
     );
+  }
+
+  TokenStatus _wire2api_token_status(dynamic raw) {
+    return TokenStatus.values[raw as int];
   }
 
   Transaction _wire2api_transaction(dynamic raw) {
@@ -538,8 +693,23 @@ class RustImpl implements Rust {
 // Section: api2wire
 
 @protected
+int api2wire_direction(Direction raw) {
+  return api2wire_i32(raw.index);
+}
+
+@protected
 int api2wire_i32(int raw) {
   return raw;
+}
+
+@protected
+int api2wire_invoice_status(InvoiceStatus raw) {
+  return api2wire_i32(raw.index);
+}
+
+@protected
+int api2wire_token_status(TokenStatus raw) {
+  return api2wire_i32(raw.index);
 }
 
 @protected
@@ -590,6 +760,13 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
   }
 
   @protected
+  ffi.Pointer<wire_Message> api2wire_box_autoadd_message(Message raw) {
+    final ptr = inner.new_box_autoadd_message_0();
+    _api_fill_to_wire_message(raw, ptr.ref);
+    return ptr;
+  }
+
+  @protected
   ffi.Pointer<wire_Transaction> api2wire_box_autoadd_transaction(
       Transaction raw) {
     final ptr = inner.new_box_autoadd_transaction_0();
@@ -598,8 +775,18 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
   }
 
   @protected
+  ffi.Pointer<ffi.Uint64> api2wire_box_autoadd_u64(int raw) {
+    return inner.new_box_autoadd_u64_0(api2wire_u64(raw));
+  }
+
+  @protected
   ffi.Pointer<wire_uint_8_list> api2wire_opt_String(String? raw) {
     return raw == null ? ffi.nullptr : api2wire_String(raw);
+  }
+
+  @protected
+  ffi.Pointer<ffi.Uint64> api2wire_opt_box_autoadd_u64(int? raw) {
+    return raw == null ? ffi.nullptr : api2wire_box_autoadd_u64(raw);
   }
 
   @protected
@@ -627,6 +814,11 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
     _api_fill_to_wire_ln_transaction(apiObj, wireObj.ref);
   }
 
+  void _api_fill_to_wire_box_autoadd_message(
+      Message apiObj, ffi.Pointer<wire_Message> wireObj) {
+    _api_fill_to_wire_message(apiObj, wireObj.ref);
+  }
+
   void _api_fill_to_wire_box_autoadd_transaction(
       Transaction apiObj, ffi.Pointer<wire_Transaction> wireObj) {
     _api_fill_to_wire_transaction(apiObj, wireObj.ref);
@@ -651,6 +843,52 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
     wireObj.mint = api2wire_String(apiObj.mint);
     wireObj.bolt11 = api2wire_String(apiObj.bolt11);
     wireObj.hash = api2wire_String(apiObj.hash);
+  }
+
+  void _api_fill_to_wire_message(Message apiObj, wire_Message wireObj) {
+    if (apiObj is Message_Text) {
+      var pre_direction = api2wire_direction(apiObj.direction);
+      var pre_time = api2wire_u64(apiObj.time);
+      var pre_content = api2wire_String(apiObj.content);
+      wireObj.tag = 0;
+      wireObj.kind = inner.inflate_Message_Text();
+      wireObj.kind.ref.Text.ref.direction = pre_direction;
+      wireObj.kind.ref.Text.ref.time = pre_time;
+      wireObj.kind.ref.Text.ref.content = pre_content;
+      return;
+    }
+    if (apiObj is Message_Invoice) {
+      var pre_direction = api2wire_direction(apiObj.direction);
+      var pre_time = api2wire_u64(apiObj.time);
+      var pre_bolt11 = api2wire_String(apiObj.bolt11);
+      var pre_amount = api2wire_opt_box_autoadd_u64(apiObj.amount);
+      var pre_status = api2wire_invoice_status(apiObj.status);
+      wireObj.tag = 1;
+      wireObj.kind = inner.inflate_Message_Invoice();
+      wireObj.kind.ref.Invoice.ref.direction = pre_direction;
+      wireObj.kind.ref.Invoice.ref.time = pre_time;
+      wireObj.kind.ref.Invoice.ref.bolt11 = pre_bolt11;
+      wireObj.kind.ref.Invoice.ref.amount = pre_amount;
+      wireObj.kind.ref.Invoice.ref.status = pre_status;
+      return;
+    }
+    if (apiObj is Message_Token) {
+      var pre_direction = api2wire_direction(apiObj.direction);
+      var pre_time = api2wire_u64(apiObj.time);
+      var pre_token = api2wire_String(apiObj.token);
+      var pre_mint = api2wire_String(apiObj.mint);
+      var pre_amount = api2wire_opt_box_autoadd_u64(apiObj.amount);
+      var pre_status = api2wire_token_status(apiObj.status);
+      wireObj.tag = 2;
+      wireObj.kind = inner.inflate_Message_Token();
+      wireObj.kind.ref.Token.ref.direction = pre_direction;
+      wireObj.kind.ref.Token.ref.time = pre_time;
+      wireObj.kind.ref.Token.ref.token = pre_token;
+      wireObj.kind.ref.Token.ref.mint = pre_mint;
+      wireObj.kind.ref.Token.ref.amount = pre_amount;
+      wireObj.kind.ref.Token.ref.status = pre_status;
+      return;
+    }
   }
 
   void _api_fill_to_wire_transaction(
@@ -782,6 +1020,88 @@ class RustWire implements FlutterRustBridgeWireBase {
           ffi.Void Function(
               ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_init_db');
   late final _wire_init_db = _wire_init_dbPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_init_nostr(
+    int port_,
+  ) {
+    return _wire_init_nostr(
+      port_,
+    );
+  }
+
+  late final _wire_init_nostrPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_init_nostr');
+  late final _wire_init_nostr =
+      _wire_init_nostrPtr.asFunction<void Function(int)>();
+
+  void wire_add_contact(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> pubkey,
+  ) {
+    return _wire_add_contact(
+      port_,
+      pubkey,
+    );
+  }
+
+  late final _wire_add_contactPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_add_contact');
+  late final _wire_add_contact = _wire_add_contactPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_get_contacts(
+    int port_,
+  ) {
+    return _wire_get_contacts(
+      port_,
+    );
+  }
+
+  late final _wire_get_contactsPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_contacts');
+  late final _wire_get_contacts =
+      _wire_get_contactsPtr.asFunction<void Function(int)>();
+
+  void wire_send_message(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> pubkey,
+    ffi.Pointer<wire_Message> message,
+  ) {
+    return _wire_send_message(
+      port_,
+      pubkey,
+      message,
+    );
+  }
+
+  late final _wire_send_messagePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>,
+              ffi.Pointer<wire_Message>)>>('wire_send_message');
+  late final _wire_send_message = _wire_send_messagePtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_Message>)>();
+
+  void wire_get_messages(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> pubkey,
+  ) {
+    return _wire_get_messages(
+      port_,
+      pubkey,
+    );
+  }
+
+  late final _wire_get_messagesPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_get_messages');
+  late final _wire_get_messages = _wire_get_messagesPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_balances(
@@ -1148,6 +1468,16 @@ class RustWire implements FlutterRustBridgeWireBase {
       _new_box_autoadd_ln_transaction_0Ptr
           .asFunction<ffi.Pointer<wire_LNTransaction> Function()>();
 
+  ffi.Pointer<wire_Message> new_box_autoadd_message_0() {
+    return _new_box_autoadd_message_0();
+  }
+
+  late final _new_box_autoadd_message_0Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<wire_Message> Function()>>(
+          'new_box_autoadd_message_0');
+  late final _new_box_autoadd_message_0 = _new_box_autoadd_message_0Ptr
+      .asFunction<ffi.Pointer<wire_Message> Function()>();
+
   ffi.Pointer<wire_Transaction> new_box_autoadd_transaction_0() {
     return _new_box_autoadd_transaction_0();
   }
@@ -1157,6 +1487,20 @@ class RustWire implements FlutterRustBridgeWireBase {
           'new_box_autoadd_transaction_0');
   late final _new_box_autoadd_transaction_0 = _new_box_autoadd_transaction_0Ptr
       .asFunction<ffi.Pointer<wire_Transaction> Function()>();
+
+  ffi.Pointer<ffi.Uint64> new_box_autoadd_u64_0(
+    int value,
+  ) {
+    return _new_box_autoadd_u64_0(
+      value,
+    );
+  }
+
+  late final _new_box_autoadd_u64_0Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Uint64> Function(ffi.Uint64)>>(
+          'new_box_autoadd_u64_0');
+  late final _new_box_autoadd_u64_0 = _new_box_autoadd_u64_0Ptr
+      .asFunction<ffi.Pointer<ffi.Uint64> Function(int)>();
 
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,
@@ -1172,6 +1516,36 @@ class RustWire implements FlutterRustBridgeWireBase {
               ffi.Int32)>>('new_uint_8_list_0');
   late final _new_uint_8_list_0 = _new_uint_8_list_0Ptr
       .asFunction<ffi.Pointer<wire_uint_8_list> Function(int)>();
+
+  ffi.Pointer<MessageKind> inflate_Message_Text() {
+    return _inflate_Message_Text();
+  }
+
+  late final _inflate_Message_TextPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<MessageKind> Function()>>(
+          'inflate_Message_Text');
+  late final _inflate_Message_Text = _inflate_Message_TextPtr
+      .asFunction<ffi.Pointer<MessageKind> Function()>();
+
+  ffi.Pointer<MessageKind> inflate_Message_Invoice() {
+    return _inflate_Message_Invoice();
+  }
+
+  late final _inflate_Message_InvoicePtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<MessageKind> Function()>>(
+          'inflate_Message_Invoice');
+  late final _inflate_Message_Invoice = _inflate_Message_InvoicePtr
+      .asFunction<ffi.Pointer<MessageKind> Function()>();
+
+  ffi.Pointer<MessageKind> inflate_Message_Token() {
+    return _inflate_Message_Token();
+  }
+
+  late final _inflate_Message_TokenPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<MessageKind> Function()>>(
+          'inflate_Message_Token');
+  late final _inflate_Message_Token = _inflate_Message_TokenPtr
+      .asFunction<ffi.Pointer<MessageKind> Function()>();
 
   ffi.Pointer<TransactionKind> inflate_Transaction_CashuTransaction() {
     return _inflate_Transaction_CashuTransaction();
@@ -1217,6 +1591,63 @@ class wire_uint_8_list extends ffi.Struct {
 
   @ffi.Int32()
   external int len;
+}
+
+class wire_Message_Text extends ffi.Struct {
+  @ffi.Int32()
+  external int direction;
+
+  @ffi.Uint64()
+  external int time;
+
+  external ffi.Pointer<wire_uint_8_list> content;
+}
+
+class wire_Message_Invoice extends ffi.Struct {
+  @ffi.Int32()
+  external int direction;
+
+  @ffi.Uint64()
+  external int time;
+
+  external ffi.Pointer<wire_uint_8_list> bolt11;
+
+  external ffi.Pointer<ffi.Uint64> amount;
+
+  @ffi.Int32()
+  external int status;
+}
+
+class wire_Message_Token extends ffi.Struct {
+  @ffi.Int32()
+  external int direction;
+
+  @ffi.Uint64()
+  external int time;
+
+  external ffi.Pointer<wire_uint_8_list> token;
+
+  external ffi.Pointer<wire_uint_8_list> mint;
+
+  external ffi.Pointer<ffi.Uint64> amount;
+
+  @ffi.Int32()
+  external int status;
+}
+
+class MessageKind extends ffi.Union {
+  external ffi.Pointer<wire_Message_Text> Text;
+
+  external ffi.Pointer<wire_Message_Invoice> Invoice;
+
+  external ffi.Pointer<wire_Message_Token> Token;
+}
+
+class wire_Message extends ffi.Struct {
+  @ffi.Int32()
+  external int tag;
+
+  external ffi.Pointer<MessageKind> kind;
 }
 
 class wire_StringList extends ffi.Struct {

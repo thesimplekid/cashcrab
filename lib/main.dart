@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'color_schemes.g.dart';
 import 'screens/home.dart';
 import 'screens/settings.dart';
+import 'screens/contacts.dart';
 
 const base = "rust";
 final path = Platform.isWindows ? "$base.dll" : "lib$base.so";
@@ -60,10 +61,13 @@ class MyHomePageState extends State<MyHomePage> {
   Map<String, Transaction> pendingTransactions = {};
   Map<String, Transaction> transactions = {};
 
+  List<Contact> contacts = [];
+
   late List<Widget> _widgetOptions;
 
   late Home _homeTab;
   late Settings _settingsTab;
+  late Contacts _contactsTab;
 
   @override
   void initState() {
@@ -79,6 +83,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   Future<void> _initDB() async {
     await api.initDb(path: await _localPath);
+    await api.initNostr();
 
     _loadMints();
 
@@ -86,6 +91,10 @@ class MyHomePageState extends State<MyHomePage> {
     _loadTransactions();
 
     _getActiveMint();
+
+    _loadContacts();
+
+    // TODO: Fetech new messages
 
     // Set balances
     _getBalances();
@@ -101,6 +110,18 @@ class MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    _contactsTab = Contacts(
+      api: api,
+      mints: mints,
+      receiveToken: receiveToken,
+      sendToken: sendToken,
+      createInvoice: createInvoice,
+      payInvoice: payInvoice,
+      contacts: contacts,
+      addContact: addContact,
+      activeMint: activeMint?.url,
+    );
+
     _homeTab = Home(
       cashu: api,
       balance: balance,
@@ -128,7 +149,7 @@ class MyHomePageState extends State<MyHomePage> {
     );
 
     _widgetOptions = <Widget>[
-      // _lightningTab,
+      _contactsTab,
       _homeTab,
       _settingsTab,
     ];
@@ -141,6 +162,7 @@ class MyHomePageState extends State<MyHomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Messages'),
           BottomNavigationBarItem(
             icon: Icon(Icons.payments),
             label: 'Home',
@@ -165,6 +187,14 @@ class MyHomePageState extends State<MyHomePage> {
     });
 
     return lnt;
+  }
+
+  // TODO: This needs to add the transaction to transaction
+  // it also shouldnt need the amount as its in the invoice
+  Future<void> payInvoice(String bolt11, String mint, int amount) async {
+    await api.melt(invoice: bolt11, mint: mint, amount: amount);
+
+    setState(() {});
   }
 
   Future<void> _getBalances() async {
@@ -230,7 +260,10 @@ class MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void receiveToken() async {
+  void receiveToken(String? encodedToken) async {
+    if (encodedToken != null) {
+      await _decodeToken(encodedToken);
+    }
     if (tokenData?.encodedToken != null) {
       Transaction transaction =
           await api.receiveToken(encodedToken: tokenData!.encodedToken);
@@ -327,6 +360,23 @@ class MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  /// Load Contacts
+  Future<void> _loadContacts() async {
+    List<Contact> gotContacts = await api.getContacts();
+
+    setState(() {
+      contacts = gotContacts;
+    });
+  }
+
+  Future<void> addContact(String pubkey) async {
+    if (pubkey.length >= 63) {
+      await api.addContact(pubkey: pubkey);
+
+      await _loadContacts();
+    }
+  }
+
   /// Load mints from disk into rust
   Future<void> _loadMints() async {
     List<Mint> gotMints = await api.getMints();
@@ -340,7 +390,7 @@ class MyHomePageState extends State<MyHomePage> {
       mints = _mints;
     });
 
-    print("LoadedMint: " + mints.toString());
+    print("LoadedMint: $mints.toString()");
   }
 
   Future<void> removeMint(String mintUrl) async {

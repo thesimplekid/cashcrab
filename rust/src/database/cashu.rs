@@ -134,8 +134,6 @@ pub(crate) async fn get_all_mints() -> Result<Vec<Mint>, CashuError> {
         vec
     });
 
-    // return Err(CashuError(format!("Transactions: {:?}", transactions)));
-
     Ok(mints)
 }
 
