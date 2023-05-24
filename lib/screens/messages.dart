@@ -1,3 +1,6 @@
+import 'package:cashcrab/shared/widgets/invoice_message.dart';
+import 'package:cashcrab/shared/widgets/text_message.dart';
+import 'package:cashcrab/shared/widgets/token_message.dart';
 import 'package:flutter/material.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/bridge_definitions.dart';
@@ -115,159 +118,47 @@ class _MessagesState extends State<Messages> {
       body: Column(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: messages.length,
-                itemBuilder: (BuildContext context, int index) {
-                  Message message = messages[index];
-                  String content;
-                  Direction msgDirection;
-                  Widget messageRow = Container();
+            // constraints: const BoxConstraints.expand(),
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: messages.length,
+              itemBuilder: (BuildContext context, int index) {
+                Message message = messages[index];
+                Widget messageRow = Container();
 
-                  message.when(
-                    text: (dir, time, textContent) {
-                      msgDirection = dir;
-                      content = textContent;
-                      messageRow = Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (msgDirection == Direction.Received) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(content),
-                            ),
-                          ] else ...[
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.purple,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(content,
-                                  style: const TextStyle(color: Colors.white)),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                        ],
-                      );
-                    },
-                    invoice: (dir, time, bolt11, amount, status) {
-                      msgDirection = dir;
-                      content = bolt11;
-                      messageRow = Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (msgDirection == Direction.Received) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(content),
-                            ),
-                          ] else ...[
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.purple,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                children: [
-                                  Column(
-                                    children: [
-                                      const Text("Lightning Invoice"),
-                                      Text("Amount: ${amount ?? 0}"),
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          widget.payInvoice(bolt11,
-                                              widget.activeMint, amount);
-                                        },
-                                        // TODO: Check if paid
-                                        child: const Text('Pay Invoice'),
-                                      )
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                        ],
-                      );
-                    },
-                    token: (dir, time, token, mint, amount, status) {
-                      msgDirection = dir;
-                      content = token;
-                      // TODO: Decode token
-                      messageRow = Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (msgDirection == Direction.Received) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(content),
-                            ),
-                          ] else ...[
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.purple,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                children: [
-                                  Column(
-                                    children: [
-                                      const Text("Cashu Token"),
-                                      Text("Amount: ${amount ?? 0}"),
-                                      Text("Mint: $mint"),
-                                      // TODO: Check if spendable
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          widget.receiveToken(token);
-                                        },
-                                        child: const Text('Redeam'),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                        ],
-                      );
-                    },
-                  );
+                message.when(
+                  text: (dir, time, textContent) {
+                    messageRow = Text(
+                        textContent); // TextMessageWidget(time, textContent, dir);
+                  },
+                  invoice: (dir, time, bolt11, amount, status) {
+                    messageRow = InvoiceMessageWidget(
+                        dir,
+                        amount ?? 0,
+                        time,
+                        bolt11,
+                        status,
+                        widget.activeMint ?? "",
+                        widget.payInvoice);
+                  },
+                  token: (dir, time, token, mint, amount, status) {
+                    print("token widget");
+                    // TODO: Decode token
+                    messageRow = TokenMessageWidget(
+                        amount ?? 0, token, mint, widget.receiveToken, dir);
+                  },
+                );
 
-                  return GestureDetector(
-                    onTap: () {},
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      child: messageRow,
-                    ),
-                  );
-                },
-              ),
+                return GestureDetector(
+                  onTap: () {},
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: messageRow,
+                  ),
+                );
+              },
             ),
           ),
           Padding(

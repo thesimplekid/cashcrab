@@ -1,6 +1,9 @@
 use anyhow::{anyhow, Result};
 use bitcoin::secp256k1::XOnlyPublicKey;
-use nostr_sdk::prelude::{FromBech32, PREFIX_BECH32_PUBLIC_KEY};
+use nostr_sdk::{
+    prelude::{FromBech32, PREFIX_BECH32_PUBLIC_KEY},
+    Timestamp,
+};
 use redb::{ReadableMultimapTable, ReadableTable};
 use std::str::FromStr;
 
@@ -12,8 +15,7 @@ fn encode_pubkey(pubkey: &XOnlyPublicKey) -> String {
     hex::encode(ser)
 }
 
-// TODO: Call save the key
-pub(crate) async fn _save_key(key: &str) -> Result<()> {
+pub(crate) async fn save_key(key: &str) -> Result<()> {
     let db = DB.lock().await;
     let db = db
         .as_ref()
@@ -27,7 +29,6 @@ pub(crate) async fn _save_key(key: &str) -> Result<()> {
     }
     write_txn.commit()?;
 
-    //Err(CashuError(format!("added Proofs: {:?}", proofs)))
     Ok(())
 }
 
@@ -41,6 +42,40 @@ pub(crate) async fn get_key() -> Result<Option<String>> {
     let settings_table = read_txn.open_table(CONFIG)?;
 
     let key = settings_table.get("private_key")?;
+
+    match key {
+        Some(key) => Ok(Some(key.value().to_string())),
+        None => Ok(None),
+    }
+}
+
+pub(crate) async fn most_recent_event_time() -> Result<()> {
+    let db = DB.try_lock().unwrap();
+    let db = db
+        .as_ref()
+        .ok_or_else(|| anyhow!("DB not set".to_string()))?;
+
+    let write_txn = db.begin_write()?;
+    {
+        let mut settings_table = write_txn.open_table(CONFIG)?;
+
+        settings_table.insert("most_recent_event", Timestamp::now().to_string().as_str())?;
+    }
+    write_txn.commit()?;
+
+    Ok(())
+}
+
+pub(crate) async fn get_most_recent_event_time() -> Result<Option<String>> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| anyhow!("DB not set".to_string()))?;
+
+    let read_txn = db.begin_read()?;
+    let settings_table = read_txn.open_table(CONFIG)?;
+
+    let key = settings_table.get("most_recent_event")?;
 
     match key {
         Some(key) => Ok(Some(key.value().to_string())),

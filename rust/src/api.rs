@@ -110,13 +110,13 @@ pub fn init_db(path: String) -> Result<()> {
     result
 }
 
-pub fn init_nostr() -> Result<()> {
+pub fn init_nostr() -> Result<String> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
         let key = database::message::get_key().await?;
         // TODO: get relays
         init_client(key, vec!["wss://thesimplekid.space/".to_string()]).await?;
-        Ok(())
+        Ok("".to_string())
     });
 
     drop(rt);

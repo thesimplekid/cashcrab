@@ -42,10 +42,10 @@ class RustImpl implements Rust {
         argNames: ["path"],
       );
 
-  Future<void> initNostr({dynamic hint}) {
+  Future<String> initNostr({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_init_nostr(port_),
-      parseSuccessData: _wire2api_unit,
+      parseSuccessData: _wire2api_String,
       constMeta: kInitNostrConstMeta,
       argValues: [],
       hint: hint,

@@ -83,7 +83,9 @@ class MyHomePageState extends State<MyHomePage> {
 
   Future<void> _initDB() async {
     await api.initDb(path: await _localPath);
-    await api.initNostr();
+    String nostr = await api.initNostr();
+
+    print(nostr);
 
     _loadMints();
 
