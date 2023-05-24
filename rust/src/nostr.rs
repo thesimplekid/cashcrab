@@ -62,9 +62,16 @@ pub(crate) async fn init_client(private_key: Option<String>, relays: Vec<String>
     let mut s_client = SEND_CLIENT.lock().await;
     *s_client = Some(send_client);
 
-    //if let Err(err) = get_events_since_last(&keys.public_key()).await {
-    //  bail!(err);
-    //}
+    drop(s_client);
+    drop(g_client);
+
+    if let Err(err) = get_events_since_last(&keys.public_key()).await {
+        bail!(err);
+    }
+
+    if let Ok(contacts) = get_contacts(&keys.public_key()).await {
+        get_metadata(contacts).await?;
+    }
 
     if let Err(err) = handle_notifications().await {
         log::error!("Error in handle_notifications: {:?}", err);
