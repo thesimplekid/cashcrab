@@ -33,6 +33,8 @@ class Messages extends StatefulWidget {
 
 class _MessagesState extends State<Messages> {
   final TextEditingController _textEditingController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
   List<Message> messages = List.empty(growable: true);
   _MessagesState();
 
@@ -40,6 +42,9 @@ class _MessagesState extends State<Messages> {
   void initState() {
     super.initState();
     getMessages(widget.peerPubkey);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    });
   }
 
   @override
@@ -112,19 +117,38 @@ class _MessagesState extends State<Messages> {
     }
   }
 
+  // Scroll to bottom when new message is added
+  void _scrollToBottom() {
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+// Call _scrollToBottom() after adding new message
+  void _addMessage(Message message) {
+    setState(() {
+      messages.add(message);
+    });
+    _scrollToBottom();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
           Expanded(
-            // constraints: const BoxConstraints.expand(),
             child: ListView.builder(
+              controller: _scrollController,
+              reverse: true,
               shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               itemCount: messages.length,
               itemBuilder: (BuildContext context, int index) {
-                Message message = messages[index];
+                int reversedIndex = messages.length - 1 - index;
+                Message message = messages[reversedIndex];
                 Widget messageRow = Container();
 
                 message.when(
@@ -133,18 +157,23 @@ class _MessagesState extends State<Messages> {
                   },
                   invoice: (dir, time, bolt11, amount, status) {
                     messageRow = InvoiceMessageWidget(
-                        dir,
-                        amount ?? 0,
-                        time,
-                        bolt11,
-                        status,
-                        widget.activeMint ?? "",
-                        widget.payInvoice);
+                      dir,
+                      amount ?? 0,
+                      time,
+                      bolt11,
+                      status,
+                      widget.activeMint ?? "",
+                      widget.payInvoice,
+                    );
                   },
                   token: (dir, time, token, mint, amount, status) {
-                    // TODO: Decode token
                     messageRow = TokenMessageWidget(
-                        amount ?? 0, token, mint, widget.receiveToken, dir);
+                      amount ?? 0,
+                      token,
+                      mint,
+                      widget.receiveToken,
+                      dir,
+                    );
                   },
                 );
 
