@@ -23,38 +23,36 @@ class InvoiceMessageWidget extends StatelessWidget {
       bubbleColor = Colors.grey;
     }
 
-    return Scaffold(
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (direction == Direction.Sent) const Spacer(),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: bubbleColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Column(
-                  children: [
-                    const Text("Lightning Invoice"),
-                    Text("Amount: $amount"),
-                    // TODO: Check if paid
-                    ElevatedButton(
-                      onPressed: () async {
-                        payInvoice(bolt11, mint, amount);
-                      },
-                      // TODO: Check if paid
-                      child: const Text('Pay Invoice'),
-                    )
-                  ],
-                ),
-              ],
-            ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (direction == Direction.Sent) const Spacer(),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: bubbleColor,
+            borderRadius: BorderRadius.circular(10),
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              Column(
+                children: [
+                  const Text("Lightning Invoice"),
+                  Text("Amount: $amount"),
+                  // TODO: Check if paid
+                  ElevatedButton(
+                    onPressed: () async {
+                      payInvoice(bolt11, mint, amount);
+                    },
+                    // TODO: Check if paid
+                    child: const Text('Pay Invoice'),
+                  )
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
