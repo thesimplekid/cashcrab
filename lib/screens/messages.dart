@@ -8,6 +8,7 @@ import 'package:cashcrab/bridge_definitions.dart';
 class Messages extends StatefulWidget {
   final RustImpl api;
   final String peerPubkey;
+  final String? peerName;
   final String? activeMint;
   final Function receiveToken;
   final Function sendToken;
@@ -19,6 +20,7 @@ class Messages extends StatefulWidget {
     super.key,
     required this.activeMint,
     required this.peerPubkey,
+    required this.peerName,
     required this.mints,
     required this.receiveToken,
     required this.sendToken,
@@ -137,6 +139,9 @@ class _MessagesState extends State<Messages> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.peerName ?? truncateText(widget.peerPubkey)),
+      ),
       body: Column(
         children: [
           Expanded(

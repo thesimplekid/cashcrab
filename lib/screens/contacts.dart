@@ -83,6 +83,7 @@ class _ContactsState extends State<Contacts> {
                         receiveToken: widget.receiveToken,
                         payInvoice: widget.payInvoice,
                         peerPubkey: contact.npub,
+                        peerName: contact.name,
                         mints: widget.mints,
                       ),
                     ),
