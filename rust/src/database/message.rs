@@ -8,7 +8,7 @@ use redb::{ReadableMultimapTable, ReadableTable};
 use std::str::FromStr;
 
 use super::{CONFIG, CONTACTS, DB, MESSAGES};
-use crate::types::{Contact, Message};
+use crate::types::{self, Message};
 
 fn encode_pubkey(pubkey: &XOnlyPublicKey) -> String {
     let ser = pubkey.serialize();
@@ -83,7 +83,7 @@ pub(crate) async fn get_most_recent_event_time() -> Result<Option<String>> {
     }
 }
 
-pub(crate) async fn add_contact(pubkey: &str, contact: Contact) -> Result<()> {
+pub(crate) async fn add_contact(pubkey: &str, contact: types::Contact) -> Result<()> {
     let db = DB.lock().await;
     let db = db
         .as_ref()
@@ -105,7 +105,7 @@ pub(crate) async fn add_contact(pubkey: &str, contact: Contact) -> Result<()> {
     Ok(())
 }
 
-pub(crate) async fn get_contacts() -> Result<Vec<Contact>> {
+pub(crate) async fn get_contacts() -> Result<Vec<types::Contact>> {
     let db = DB.lock().await;
     let db = db
         .as_ref()
@@ -113,7 +113,7 @@ pub(crate) async fn get_contacts() -> Result<Vec<Contact>> {
     let read_txn = db.begin_read()?;
     let contacts_table = read_txn.open_table(CONTACTS)?;
 
-    let contacts: Vec<Contact> = contacts_table.iter()?.fold(Vec::new(), |mut vec, item| {
+    let contacts: Vec<types::Contact> = contacts_table.iter()?.fold(Vec::new(), |mut vec, item| {
         if let Ok((_key, value)) = item {
             if let Ok(contact) = serde_json::from_str(value.value()) {
                 vec.push(contact)

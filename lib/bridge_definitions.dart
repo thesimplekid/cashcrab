@@ -155,12 +155,14 @@ class CashuTransaction {
 }
 
 class Contact {
+  final String pubkey;
   final String npub;
   final String? name;
   final String? picture;
   final String? lud16;
 
   const Contact({
+    required this.pubkey,
     required this.npub,
     this.name,
     this.picture,

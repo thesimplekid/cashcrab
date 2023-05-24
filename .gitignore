@@ -43,6 +43,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+**/librust.so
+
 # Rust things ...
 **/target
 

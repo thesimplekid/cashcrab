@@ -484,6 +484,7 @@ impl support::IntoDartExceptPrimitive for CashuTransaction {}
 impl support::IntoDart for Contact {
     fn into_dart(self) -> support::DartAbi {
         vec![
+            self.pubkey.into_dart(),
             self.npub.into_dart(),
             self.name.into_dart(),
             self.picture.into_dart(),

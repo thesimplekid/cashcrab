@@ -9,7 +9,7 @@ use tokio::{sync::Mutex, task::JoinHandle};
 
 use crate::{
     database,
-    types::{Contact, Direction, InvoiceStatus, Message},
+    types::{self, Direction, InvoiceStatus, Message},
 };
 
 lazy_static! {
@@ -34,7 +34,7 @@ fn handle_keys(private_key: &Option<String>) -> Result<Keys> {
 }
 
 /// Init Nostr Client
-pub(crate) async fn init_client(private_key: Option<String>, relays: Vec<String>) -> Result<()> {
+pub(crate) async fn init_client(private_key: &Option<String>, relays: Vec<String>) -> Result<()> {
     let keys = handle_keys(&private_key)?;
 
     if private_key.is_none() {
@@ -139,7 +139,8 @@ async fn handle_metadata(event: Event) -> Result<()> {
     // TODO: Use `Metadat::from_str`
     // https://github.com/rust-nostr/nostr/issues/109
     if let Ok(info) = serde_json::from_str::<Value>(&event.clone().content) {
-        let contact = Contact {
+        let contact = types::Contact {
+            pubkey: event.pubkey.to_string(),
             npub: event
                 .clone()
                 .pubkey
@@ -298,6 +299,29 @@ pub(crate) async fn get_contacts(pubkey: &XOnlyPublicKey) -> Result<Vec<XOnlyPub
     }
 
     Ok(pubkeys)
+}
+
+pub(crate) async fn set_contact_list() -> Result<()> {
+    let mut client = SEND_CLIENT.lock().await;
+
+    if let Some(client) = client.as_mut() {
+        let contacts = database::message::get_contacts().await?;
+
+        let contacts: Vec<nostr_sdk::Contact> = contacts
+            .iter()
+            .map(|x| {
+                nostr_sdk::Contact::new::<String>(
+                    XOnlyPublicKey::from_str(&x.pubkey).unwrap(),
+                    None,
+                    None,
+                )
+            })
+            .collect();
+
+        client.set_contact_list(contacts).await?;
+    };
+
+    Ok(())
 }
 
 pub async fn send_message(receiver: XOnlyPublicKey, message: &Message) -> Result<()> {

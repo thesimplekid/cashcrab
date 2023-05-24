@@ -18,9 +18,7 @@ use tokio::sync::Mutex;
 use crate::{
     database,
     nostr::{self, init_client},
-    types::{
-        CashuTransaction, Contact, LNTransaction, Message, Mint, Transaction, TransactionStatus,
-    },
+    types::{self, CashuTransaction, LNTransaction, Message, Mint, Transaction, TransactionStatus},
 };
 
 impl From<CashuError> for Error {
@@ -115,7 +113,11 @@ pub fn init_nostr() -> Result<String> {
     let result = rt.block_on(async {
         let key = database::message::get_key().await?;
         // TODO: get relays
-        init_client(key, vec!["wss://thesimplekid.space/".to_string()]).await?;
+        init_client(&key, vec!["wss://thesimplekid.space/".to_string()]).await?;
+        if let Some(keys) = key {
+            // fetch_contacts(keys)?;
+        }
+
         Ok("".to_string())
     });
 
@@ -134,8 +136,12 @@ pub fn fetch_contacts(pubkey: String) -> Result<()> {
         let contacts = nostr::get_contacts(&x_pubkey).await?;
         nostr::get_metadata(contacts).await?;
 
+        // Publish contact list
+        nostr::set_contact_list().await?;
+
         Ok(())
     });
+    drop(rt);
 
     result
 }
@@ -155,7 +161,7 @@ pub fn add_contact(pubkey: String) -> Result<()> {
     result
 }
 
-pub fn get_contacts() -> Result<Vec<Contact>> {
+pub fn get_contacts() -> Result<Vec<types::Contact>> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
         let contacts = database::message::get_contacts().await?;
@@ -331,7 +337,6 @@ pub fn set_mints(mints: Vec<String>) -> Result<Vec<String>> {
     });
 
     drop(rt);
-
     result
 }
 

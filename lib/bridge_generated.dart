@@ -534,13 +534,14 @@ class RustImpl implements Rust {
 
   Contact _wire2api_contact(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return Contact(
-      npub: _wire2api_String(arr[0]),
-      name: _wire2api_opt_String(arr[1]),
-      picture: _wire2api_opt_String(arr[2]),
-      lud16: _wire2api_opt_String(arr[3]),
+      pubkey: _wire2api_String(arr[0]),
+      npub: _wire2api_String(arr[1]),
+      name: _wire2api_opt_String(arr[2]),
+      picture: _wire2api_opt_String(arr[3]),
+      lud16: _wire2api_opt_String(arr[4]),
     );
   }
 

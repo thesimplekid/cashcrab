@@ -201,6 +201,7 @@ impl Message {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Contact {
+    pub pubkey: String,
     pub npub: String,
     pub name: Option<String>,
     pub picture: Option<String>,
