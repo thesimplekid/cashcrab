@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/bridge_definitions.dart';
 
-// import 'package:cashcrab/bridge_definitions.freezed.dart';
-// Settings
 class Contacts extends StatefulWidget {
   final RustImpl api;
   final List<Contact> contacts;
@@ -89,16 +87,37 @@ class _ContactsState extends State<Contacts> {
                     ),
                   );
                 },
-                child: SizedBox(
-                  height: 50,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(contact.name ?? "null"),
-                      Text(truncateText(contact.npub)),
-                    ],
-                  ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                contact.name ?? "null",
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(truncateText(contact.npub)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(
+                      color: Colors.purple,
+                      height: 1,
+                    ),
+                  ],
                 ),
               );
             },

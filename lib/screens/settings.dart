@@ -7,6 +7,7 @@ class Settings extends StatefulWidget {
   final Function addMint;
   final Function removeMint;
   final Function setActiveMint;
+  final Function fetchContacts;
   final String? activeMint;
   final Map<String, int> mints;
 
@@ -16,6 +17,7 @@ class Settings extends StatefulWidget {
       required this.removeMint,
       required this.setActiveMint,
       required this.activeMint,
+      required this.fetchContacts,
       required this.mints});
 
   @override
@@ -23,10 +25,23 @@ class Settings extends StatefulWidget {
 }
 
 class _SettingsState extends State<Settings> {
+  final pubkeyController = TextEditingController();
+
   _SettingsState();
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    pubkeyController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchContacts() async {
+    String pubkey = pubkeyController.text;
+    await widget.fetchContacts(pubkey);
   }
 
   @override
@@ -83,6 +98,21 @@ class _SettingsState extends State<Settings> {
               },
             ),
           ),
+          TextField(
+            decoration: const InputDecoration(
+              labelText: 'Paste npub',
+            ),
+            controller: pubkeyController,
+          ),
+          TextButton(
+            onPressed: () async {
+              await _fetchContacts();
+            },
+            child: const Text("Fetch Contacts"),
+          ),
+          const SizedBox(
+            height: 100.0,
+          )
         ],
       ),
     );

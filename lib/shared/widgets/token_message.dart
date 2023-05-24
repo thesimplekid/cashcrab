@@ -43,7 +43,7 @@ class TokenMessageWidget extends StatelessWidget {
                     onPressed: () async {
                       receiveToken(token);
                     },
-                    child: const Text('Redeam'),
+                    child: const Text('Redeem'),
                   ),
                 ],
               ),

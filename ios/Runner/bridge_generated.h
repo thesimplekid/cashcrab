@@ -106,6 +106,8 @@ void wire_init_db(int64_t port_, struct wire_uint_8_list *path);
 
 void wire_init_nostr(int64_t port_);
 
+void wire_fetch_contacts(int64_t port_, struct wire_uint_8_list *pubkey);
+
 void wire_add_contact(int64_t port_, struct wire_uint_8_list *pubkey);
 
 void wire_get_contacts(int64_t port_);
@@ -190,6 +192,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;
     dummy_var ^= ((int64_t) (void*) wire_init_db);
     dummy_var ^= ((int64_t) (void*) wire_init_nostr);
+    dummy_var ^= ((int64_t) (void*) wire_fetch_contacts);
     dummy_var ^= ((int64_t) (void*) wire_add_contact);
     dummy_var ^= ((int64_t) (void*) wire_get_contacts);
     dummy_var ^= ((int64_t) (void*) wire_send_message);

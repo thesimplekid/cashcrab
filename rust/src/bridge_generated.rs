@@ -55,6 +55,19 @@ fn wire_init_nostr_impl(port_: MessagePort) {
         move || move |task_callback| init_nostr(),
     )
 }
+fn wire_fetch_contacts_impl(port_: MessagePort, pubkey: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "fetch_contacts",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_pubkey = pubkey.wire2api();
+            move |task_callback| fetch_contacts(api_pubkey)
+        },
+    )
+}
 fn wire_add_contact_impl(port_: MessagePort, pubkey: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {

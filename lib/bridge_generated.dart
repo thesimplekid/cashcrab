@@ -58,6 +58,23 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Future<void> fetchContacts({required String pubkey, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(pubkey);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_fetch_contacts(port_, arg0),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kFetchContactsConstMeta,
+      argValues: [pubkey],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kFetchContactsConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "fetch_contacts",
+        argNames: ["pubkey"],
+      );
+
   Future<void> addContact({required String pubkey, dynamic hint}) {
     var arg0 = _platform.api2wire_String(pubkey);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -1035,6 +1052,23 @@ class RustWire implements FlutterRustBridgeWireBase {
           'wire_init_nostr');
   late final _wire_init_nostr =
       _wire_init_nostrPtr.asFunction<void Function(int)>();
+
+  void wire_fetch_contacts(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> pubkey,
+  ) {
+    return _wire_fetch_contacts(
+      port_,
+      pubkey,
+    );
+  }
+
+  late final _wire_fetch_contactsPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_fetch_contacts');
+  late final _wire_fetch_contacts = _wire_fetch_contactsPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_add_contact(
     int port_,

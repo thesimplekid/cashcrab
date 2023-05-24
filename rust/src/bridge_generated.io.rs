@@ -12,6 +12,11 @@ pub extern "C" fn wire_init_nostr(port_: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_fetch_contacts(port_: i64, pubkey: *mut wire_uint_8_list) {
+    wire_fetch_contacts_impl(port_, pubkey)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_add_contact(port_: i64, pubkey: *mut wire_uint_8_list) {
     wire_add_contact_impl(port_, pubkey)
 }

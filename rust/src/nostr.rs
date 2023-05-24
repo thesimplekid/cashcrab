@@ -242,34 +242,55 @@ pub(crate) async fn get_events_since_last(pubkey: &XOnlyPublicKey) -> Result<()>
     Ok(())
 }
 
-pub(crate) async fn get_metadata(pubkey: &XOnlyPublicKey) -> Result<()> {
+/// Get metadata for pubkeys
+pub(crate) async fn get_metadata(pubkeys: Vec<XOnlyPublicKey>) -> Result<()> {
     let mut client = SEND_CLIENT.lock().await;
 
-    // bail!("X: {}", x_pubkey);
     if let Some(client) = client.as_mut() {
         client.connect().await;
-        let subscription = Filter::new()
-            .author(pubkey.to_string())
-            .kind(Kind::Metadata);
-        /*
-                bail!(
-                    "{:?}, Relays: {:?}",
-                    subscription.as_json(),
-                    client.relays().await
-                );
-        */
+        let pubkeys: Vec<String> = pubkeys.iter().map(|x| x.to_string()).collect();
+        let subscription = Filter::new().authors(pubkeys.clone()).kind(Kind::Metadata);
         let timeout = Duration::from_secs(30);
         let events = client
             .get_events_of(vec![subscription.clone()], Some(timeout))
             .await?;
 
-        if !events.is_empty() {
-            handle_metadata(events[0].clone()).await?;
+        for event in events {
+            handle_metadata(event).await?;
         }
-        // bail!("Filter: {:?}, Events: {:?}", subscription, events);
     }
 
     Ok(())
+}
+
+/// Get contacts for a given pubkey
+pub(crate) async fn get_contacts(pubkey: &XOnlyPublicKey) -> Result<Vec<XOnlyPublicKey>> {
+    let mut client = SEND_CLIENT.lock().await;
+
+    let mut pubkeys: Vec<XOnlyPublicKey> = Vec::new();
+    if let Some(client) = client.as_mut() {
+        client.connect().await;
+        let subscription = Filter::new()
+            .author(pubkey.to_string())
+            .kind(Kind::ContactList);
+
+        let timeout = Duration::from_secs(30);
+        let events = client
+            .get_events_of(vec![subscription.clone()], Some(timeout))
+            .await?;
+
+        for event in events.into_iter() {
+            for tag in event.tags.into_iter() {
+                match tag {
+                    Tag::PubKey(pk, _) => pubkeys.push(pk),
+                    Tag::ContactList { pk, .. } => pubkeys.push(pk),
+                    _ => (),
+                }
+            }
+        }
+    }
+
+    Ok(pubkeys)
 }
 
 pub async fn send_message(receiver: XOnlyPublicKey, message: &Message) -> Result<()> {

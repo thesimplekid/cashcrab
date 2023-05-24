@@ -20,6 +20,11 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kInitNostrConstMeta;
 
+  /// Fetech contacts from relay for a given pubkey
+  Future<void> fetchContacts({required String pubkey, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kFetchContactsConstMeta;
+
   Future<void> addContact({required String pubkey, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kAddContactConstMeta;

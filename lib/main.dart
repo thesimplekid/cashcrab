@@ -144,6 +144,7 @@ class MyHomePageState extends State<MyHomePage> {
 
     _settingsTab = Settings(
       mints: mints,
+      fetchContacts: fetechContacts,
       addMint: _addNewMint,
       removeMint: removeMint,
       activeMint: activeMint?.url,
@@ -189,6 +190,11 @@ class MyHomePageState extends State<MyHomePage> {
     });
 
     return lnt;
+  }
+
+  Future<void> fetechContacts(String pubkey) async {
+    await api.fetchContacts(pubkey: pubkey);
+    _loadContacts();
   }
 
   // TODO: This needs to add the transaction to transaction
