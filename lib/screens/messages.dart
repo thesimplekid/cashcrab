@@ -129,8 +129,7 @@ class _MessagesState extends State<Messages> {
 
                 message.when(
                   text: (dir, time, textContent) {
-                    messageRow = Text(
-                        textContent); // TextMessageWidget(time, textContent, dir);
+                    messageRow = TextMessageWidget(time, textContent, dir);
                   },
                   invoice: (dir, time, bolt11, amount, status) {
                     messageRow = InvoiceMessageWidget(
@@ -143,7 +142,6 @@ class _MessagesState extends State<Messages> {
                         widget.payInvoice);
                   },
                   token: (dir, time, token, mint, amount, status) {
-                    print("token widget");
                     // TODO: Decode token
                     messageRow = TokenMessageWidget(
                         amount ?? 0, token, mint, widget.receiveToken, dir);

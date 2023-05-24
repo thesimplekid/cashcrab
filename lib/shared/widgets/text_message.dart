@@ -16,41 +16,34 @@ class TextMessageWidget extends StatelessWidget {
     } else {
       bubbleColor = Colors.grey;
     }
-    return Flexible(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // if (direction == Direction.Sent) const Spacer(),
-          Container(
-            height: 100,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: bubbleColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                if (direction == Direction.Sent) const Spacer(),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: bubbleColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    content,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (direction == Direction.Sent) const Spacer(),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: bubbleColor,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          constraints: const BoxConstraints(maxWidth: 200), // Set maximum width
+          child: Row(
+            children: [
+              Flexible(
+                // Add Flexible widget to wrap text
+                child: Text(
+                  content,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
