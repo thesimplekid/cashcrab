@@ -1,5 +1,7 @@
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/main.dart';
+import 'package:cashcrab/screens/add_contact.dart';
+import 'package:cashcrab/screens/add_contacts.dart';
 import 'package:cashcrab/screens/nostr_settings.dart';
 import 'package:flutter/material.dart';
 
@@ -52,7 +54,6 @@ class _SettingsState extends State<Settings> {
 
   @override
   Widget build(BuildContext context) {
-    print(widget.mints);
     List<String> mints = widget.mints.keys.toList();
     mints
         .sort((a, b) => (widget.mints[b] ?? 0).compareTo(widget.mints[a] ?? 0));
@@ -117,7 +118,15 @@ class _SettingsState extends State<Settings> {
           ),
           TextButton(
             onPressed: () async {
-              await _fetchContacts();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddContacts(
+                    api: widget.api,
+                    userPubkey: pubkeyController.text,
+                  ),
+                ),
+              );
             },
             child: const Text("Fetch Contacts"),
           ),

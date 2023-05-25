@@ -1,11 +1,6 @@
-use std::str::FromStr;
-
 use anyhow::{anyhow, Result};
 use bitcoin::secp256k1::XOnlyPublicKey;
-use nostr_sdk::{
-    prelude::{FromBech32, PREFIX_BECH32_PUBLIC_KEY},
-    Timestamp,
-};
+use nostr_sdk::Timestamp;
 use redb::{ReadableMultimapTable, ReadableTable};
 
 use super::{CONFIG, CONTACTS, DB, MESSAGES};
@@ -46,22 +41,19 @@ pub(crate) async fn get_most_recent_event_time() -> Result<Option<String>> {
     }
 }
 
-pub(crate) async fn add_contact(pubkey: &str, contact: types::Contact) -> Result<()> {
+pub(crate) async fn add_contacts(contacts: Vec<types::Contact>) -> Result<()> {
     let db = DB.lock().await;
     let db = db
         .as_ref()
         .ok_or_else(|| anyhow!("DB not set".to_string()))?;
 
-    let x_pubkey = match pubkey.starts_with(PREFIX_BECH32_PUBLIC_KEY) {
-        true => XOnlyPublicKey::from_bech32(pubkey)?,
-        false => XOnlyPublicKey::from_str(pubkey)?,
-    };
-
     let write_txn = db.begin_write()?;
     {
         let mut contacts_table = write_txn.open_table(CONTACTS)?;
 
-        contacts_table.insert(x_pubkey.to_string().as_str(), contact.as_json().as_str())?;
+        for contact in contacts {
+            contacts_table.insert(contact.pubkey.as_str(), contact.as_json().as_str())?;
+        }
     }
     write_txn.commit()?;
 

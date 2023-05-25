@@ -108,11 +108,11 @@ class RustImpl implements Rust {
         argNames: ["relay"],
       );
 
-  Future<void> fetchContacts({required String pubkey, dynamic hint}) {
+  Future<List<Contact>> fetchContacts({required String pubkey, dynamic hint}) {
     var arg0 = _platform.api2wire_String(pubkey);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_fetch_contacts(port_, arg0),
-      parseSuccessData: _wire2api_unit,
+      parseSuccessData: _wire2api_list_contact,
       constMeta: kFetchContactsConstMeta,
       argValues: [pubkey],
       hint: hint,

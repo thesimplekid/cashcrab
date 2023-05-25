@@ -152,8 +152,8 @@ fn from_value(value: Option<&serde_json::Value>) -> Option<String> {
     value.and_then(|v| serde_json::to_string(v).ok().map(|s| s.replace('\"', "")))
 }
 
-/// Handle metadat event
-async fn handle_metadata(event: Event) -> Result<()> {
+/// Handle metadata event
+async fn handle_metadata(event: Event) -> Result<Option<types::Contact>> {
     // TODO: Use `Metadat::from_str`
     // https://github.com/rust-nostr/nostr/issues/109
     if let Ok(info) = serde_json::from_str::<Value>(&event.clone().content) {
@@ -169,13 +169,15 @@ async fn handle_metadata(event: Event) -> Result<()> {
             lud16: from_value(info.get("lud16")),
         };
 
-        if let Err(_err) =
-            database::message::add_contact(&event.pubkey.to_string(), contact.clone()).await
-        {
-            bail!("Could not add Contact");
-        }
+        /*
+                if let Err(_err) =
+                    database::message::add_contact(&event.pubkey.to_string(), contact.clone()).await
+                {
+                    bail!("Could not add Contact");
+                }
+        */
 
-        Ok(())
+        Ok(Some(contact))
     } else {
         bail!("Could not decode contact: {:?}", event);
     }
@@ -321,9 +323,10 @@ pub(crate) async fn get_events_since_last(pubkey: &XOnlyPublicKey) -> Result<()>
 }
 
 /// Get metadata for pubkeys
-pub(crate) async fn get_metadata(pubkeys: Vec<XOnlyPublicKey>) -> Result<()> {
+pub(crate) async fn get_metadata(pubkeys: Vec<XOnlyPublicKey>) -> Result<Vec<types::Contact>> {
     let mut client = SEND_CLIENT.lock().await;
 
+    let mut contacts = vec![];
     if let Some(client) = client.as_mut() {
         client.connect().await;
         let pubkeys: Vec<String> = pubkeys.iter().map(|x| x.to_string()).collect();
@@ -334,11 +337,13 @@ pub(crate) async fn get_metadata(pubkeys: Vec<XOnlyPublicKey>) -> Result<()> {
             .await?;
 
         for event in events {
-            handle_metadata(event).await?;
+            if let Some(contact) = handle_metadata(event).await? {
+                contacts.push(contact);
+            }
         }
     }
 
-    Ok(())
+    Ok(contacts)
 }
 
 pub(crate) async fn _refresh_contacts() -> Result<()> {

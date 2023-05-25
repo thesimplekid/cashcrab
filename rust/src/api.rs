@@ -146,8 +146,8 @@ pub fn remove_relay(relay: String) -> Result<()> {
     result
 }
 
-/// Fetech contacts from relay for a given pubkey
-pub fn fetch_contacts(pubkey: String) -> Result<()> {
+/// Fetch contacts from relay for a given pubkey
+pub fn fetch_contacts(pubkey: String) -> Result<Vec<types::Contact>> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
         let x_pubkey = match pubkey.starts_with(PREFIX_BECH32_PUBLIC_KEY) {
@@ -155,12 +155,12 @@ pub fn fetch_contacts(pubkey: String) -> Result<()> {
             false => XOnlyPublicKey::from_str(&pubkey)?,
         };
         let contacts = nostr::get_contacts(&x_pubkey).await?;
-        nostr::get_metadata(contacts).await?;
+        let contacts = nostr::get_metadata(contacts).await?;
 
         // Publish contact list
         nostr::set_contact_list().await?;
 
-        Ok(())
+        Ok(contacts)
     });
     drop(rt);
 
@@ -174,7 +174,8 @@ pub fn add_contact(pubkey: String) -> Result<()> {
             true => XOnlyPublicKey::from_bech32(&pubkey)?,
             false => XOnlyPublicKey::from_str(&pubkey)?,
         };
-        nostr::get_metadata(vec![x_pubkey]).await?;
+        let contacts = nostr::get_metadata(vec![x_pubkey]).await?;
+        database::message::add_contacts(contacts).await?;
         nostr::set_contact_list().await?;
         Ok(())
     });

@@ -1,19 +1,21 @@
+import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:flutter/material.dart';
 
 // Settings
-class NostrSettings extends StatefulWidget {
+class AddContacts extends StatefulWidget {
   final RustImpl api;
-  const NostrSettings({super.key, required this.api});
+  final String userPubkey;
+  const AddContacts({super.key, required this.api, required this.userPubkey});
 
   @override
-  State<NostrSettings> createState() => _NostrSettingsState();
+  State<AddContacts> createState() => _AddContactsState();
 }
 
-class _NostrSettingsState extends State<NostrSettings> {
-  List<String> relays = [];
+class _AddContactsState extends State<AddContacts> {
+  List<Contact> contacts = [];
 
-  _NostrSettingsState();
+  _AddContactsState();
 
   @override
   void initState() {
@@ -27,20 +29,15 @@ class _NostrSettingsState extends State<NostrSettings> {
   }
 
   Future<void> _loadRelays() async {
-    List<String> clientRelays = await widget.api.getRelays();
+    List<Contact> c = await widget.api.fetchContacts(pubkey: widget.userPubkey);
 
     setState(() {
-      relays = clientRelays;
+      contacts = c;
     });
   }
 
-  Future<void> _addRelay(String newRelay) async {
-    await widget.api.addRelay(relay: newRelay);
-    _loadRelays();
-  }
-
-  Future<void> _removeRelay(String relay) async {
-    await widget.api.removeRelay(relay: relay);
+  Future<void> _addContact(String pubkey) async {
+    await widget.api.addContact(pubkey: pubkey);
     _loadRelays();
   }
 
@@ -50,19 +47,13 @@ class _NostrSettingsState extends State<NostrSettings> {
       appBar: AppBar(title: const Text("Nostr Settings")),
       body: Column(
         children: [
-          SizedBox(
-            height: 100.0,
-            child: AddRelayForm(
-              addRelay: _addRelay,
-            ),
-          ),
           Flexible(
             child: ListView.builder(
-              itemCount: relays.length,
+              itemCount: contacts.length,
               itemBuilder: (BuildContext context, int index) {
                 return GestureDetector(
                   onTap: () {
-                    _removeRelay(relays[index]);
+                    _addContact(contacts[index].pubkey);
                   },
                   child: Container(
                     height: 45.0,
@@ -81,7 +72,7 @@ class _NostrSettingsState extends State<NostrSettings> {
                                         topLeft: Radius.circular(10.0),
                                         topRight: Radius.circular(10.0))),
                                 child: Text(
-                                  relays[index],
+                                  contacts[index].name ?? "",
                                   textAlign: TextAlign.left,
                                   style: const TextStyle(fontSize: 15.0),
                                   maxLines: 1,
@@ -89,13 +80,13 @@ class _NostrSettingsState extends State<NostrSettings> {
                               ),
                               GestureDetector(
                                 onTap: () {
-                                  _removeRelay(relays[index]);
+                                  _addContact(contacts[index].pubkey);
                                 },
                                 child: Container(
                                   margin: const EdgeInsets.all(0.0),
                                   child: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
+                                    Icons.add,
+                                    color: Colors.purple,
                                     size: 30.0,
                                   ),
                                 ),
@@ -121,69 +112,4 @@ class _NostrSettingsState extends State<NostrSettings> {
       ),
     );
   }
-}
-
-class AddRelayForm extends StatefulWidget {
-  final Function addRelay;
-  const AddRelayForm({super.key, required this.addRelay});
-
-  @override
-  State<AddRelayForm> createState() => _AddRelayFormState();
-}
-
-class _AddRelayFormState extends State<AddRelayForm> {
-  final addRelayController = TextEditingController();
-
-  _AddRelayFormState();
-
-  @override
-  void initState() {
-    super.initState();
-
-    addRelayController.addListener(() => {});
-  }
-
-  @override
-  void dispose() {
-    addRelayController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Stack(
-              children: [
-                TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Add new relay',
-                  ),
-                  controller: addRelayController,
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: ElevatedButton(
-                    style: ButtonStyle(
-                        foregroundColor:
-                            MaterialStateProperty.all<Color>(Colors.white),
-                        backgroundColor:
-                            MaterialStateProperty.all<Color>(Colors.purple)),
-                    onPressed: () {
-                      widget.addRelay(addRelayController.text);
-                    },
-                    child: const Icon(Icons.add),
-                  ), // Elevated Button
-                ), // Positioned
-              ],
-            ) // Stack
-          ],
-        ), // Column
-      ),
-    );
-  } // Widget Build
 }
