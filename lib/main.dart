@@ -119,6 +119,7 @@ class MyHomePageState extends State<MyHomePage> {
       payInvoice: payInvoice,
       contacts: contacts,
       addContact: addContact,
+      removeContact: removeContact,
       activeMint: activeMint?.url,
     );
 
@@ -379,6 +380,14 @@ class MyHomePageState extends State<MyHomePage> {
   Future<void> addContact(String pubkey) async {
     if (pubkey.length >= 63) {
       await api.addContact(pubkey: pubkey);
+
+      await _loadContacts();
+    }
+  }
+
+  Future<void> removeContact(String pubkey) async {
+    if (pubkey.length >= 63) {
+      await api.removeContact(pubkey: pubkey);
 
       await _loadContacts();
     }

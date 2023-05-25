@@ -41,6 +41,10 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kAddContactConstMeta;
 
+  Future<void> removeContact({required String pubkey, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kRemoveContactConstMeta;
+
   Future<List<Contact>> getContacts({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetContactsConstMeta;

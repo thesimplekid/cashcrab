@@ -8,6 +8,7 @@ class Contacts extends StatefulWidget {
   final RustImpl api;
   final List<Contact> contacts;
   final Function addContact;
+  final Function removeContact;
   final Function receiveToken;
   final Function sendToken;
   final Function createInvoice;
@@ -19,6 +20,7 @@ class Contacts extends StatefulWidget {
       {super.key,
       required this.activeMint,
       required this.mints,
+      required this.removeContact,
       required this.receiveToken,
       required this.sendToken,
       required this.createInvoice,
@@ -69,6 +71,33 @@ class _ContactsState extends State<Contacts> {
             itemBuilder: (BuildContext context, int index) {
               Contact contact = widget.contacts[index];
               return GestureDetector(
+                onLongPress: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text("Remove contact"),
+                        content: const Text(
+                            "Are you sure you want to delete this contact and messages?"),
+                        actions: [
+                          ElevatedButton(
+                            child: const Text("Cancel"),
+                            onPressed: () {
+                              Navigator.pop(context); // Close the dialog
+                            },
+                          ),
+                          ElevatedButton(
+                            child: const Text("Remove"),
+                            onPressed: () {
+                              widget.removeContact(contact.pubkey);
+                              Navigator.pop(context); // Close the dialog
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
                 onTap: () {
                   Navigator.push(
                     context,

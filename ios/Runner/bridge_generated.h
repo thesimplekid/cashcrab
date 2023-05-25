@@ -116,6 +116,8 @@ void wire_fetch_contacts(int64_t port_, struct wire_uint_8_list *pubkey);
 
 void wire_add_contact(int64_t port_, struct wire_uint_8_list *pubkey);
 
+void wire_remove_contact(int64_t port_, struct wire_uint_8_list *pubkey);
+
 void wire_get_contacts(int64_t port_);
 
 void wire_send_message(int64_t port_,
@@ -203,6 +205,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_remove_relay);
     dummy_var ^= ((int64_t) (void*) wire_fetch_contacts);
     dummy_var ^= ((int64_t) (void*) wire_add_contact);
+    dummy_var ^= ((int64_t) (void*) wire_remove_contact);
     dummy_var ^= ((int64_t) (void*) wire_get_contacts);
     dummy_var ^= ((int64_t) (void*) wire_send_message);
     dummy_var ^= ((int64_t) (void*) wire_get_messages);

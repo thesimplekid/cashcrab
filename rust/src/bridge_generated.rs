@@ -117,6 +117,19 @@ fn wire_add_contact_impl(port_: MessagePort, pubkey: impl Wire2Api<String> + Unw
         },
     )
 }
+fn wire_remove_contact_impl(port_: MessagePort, pubkey: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "remove_contact",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_pubkey = pubkey.wire2api();
+            move |task_callback| remove_contact(api_pubkey)
+        },
+    )
+}
 fn wire_get_contacts_impl(port_: MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {

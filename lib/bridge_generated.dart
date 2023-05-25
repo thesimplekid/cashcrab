@@ -142,6 +142,23 @@ class RustImpl implements Rust {
         argNames: ["pubkey"],
       );
 
+  Future<void> removeContact({required String pubkey, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(pubkey);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_remove_contact(port_, arg0),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kRemoveContactConstMeta,
+      argValues: [pubkey],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kRemoveContactConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "remove_contact",
+        argNames: ["pubkey"],
+      );
+
   Future<List<Contact>> getContacts({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_contacts(port_),
@@ -1184,6 +1201,23 @@ class RustWire implements FlutterRustBridgeWireBase {
           ffi.Void Function(
               ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_add_contact');
   late final _wire_add_contact = _wire_add_contactPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_remove_contact(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> pubkey,
+  ) {
+    return _wire_remove_contact(
+      port_,
+      pubkey,
+    );
+  }
+
+  late final _wire_remove_contactPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_remove_contact');
+  late final _wire_remove_contact = _wire_remove_contactPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_contacts(

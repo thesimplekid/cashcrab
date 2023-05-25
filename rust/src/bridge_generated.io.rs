@@ -37,6 +37,11 @@ pub extern "C" fn wire_add_contact(port_: i64, pubkey: *mut wire_uint_8_list) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_remove_contact(port_: i64, pubkey: *mut wire_uint_8_list) {
+    wire_remove_contact_impl(port_, pubkey)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_get_contacts(port_: i64) {
     wire_get_contacts_impl(port_)
 }

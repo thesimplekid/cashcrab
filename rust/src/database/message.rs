@@ -68,6 +68,27 @@ pub(crate) async fn add_contact(pubkey: &str, contact: types::Contact) -> Result
     Ok(())
 }
 
+/// Delete contact and messages from db
+pub(crate) async fn remove_contact(pubkey: &XOnlyPublicKey) -> Result<()> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| anyhow!("DB not set".to_string()))?;
+
+    let write_txn = db.begin_write()?;
+    {
+        let mut contacts_table = write_txn.open_table(CONTACTS)?;
+
+        contacts_table.remove(pubkey.to_string().as_str())?;
+        let mut messages_table = write_txn.open_multimap_table(MESSAGES)?;
+
+        messages_table.remove_all(pubkey.to_string().as_str())?;
+    }
+    write_txn.commit()?;
+
+    Ok(())
+}
+
 pub(crate) async fn get_contacts() -> Result<Vec<types::Contact>> {
     let db = DB.lock().await;
     let db = db

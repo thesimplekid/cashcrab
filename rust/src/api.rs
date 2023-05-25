@@ -183,11 +183,26 @@ pub fn add_contact(pubkey: String) -> Result<()> {
     result
 }
 
+pub fn remove_contact(pubkey: String) -> Result<()> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        let x_pubkey = match pubkey.starts_with(PREFIX_BECH32_PUBLIC_KEY) {
+            true => XOnlyPublicKey::from_bech32(&pubkey)?,
+            false => XOnlyPublicKey::from_str(&pubkey)?,
+        };
+        database::message::remove_contact(&x_pubkey).await?;
+        nostr::set_contact_list().await?;
+        Ok(())
+    });
+
+    drop(rt);
+    result
+}
+
 pub fn get_contacts() -> Result<Vec<types::Contact>> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
         let contacts = database::message::get_contacts().await?;
-        // TODO: get relays
         Ok(contacts)
     });
 
