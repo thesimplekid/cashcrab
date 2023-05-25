@@ -20,6 +20,18 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kInitNostrConstMeta;
 
+  Future<List<String>> getRelays({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetRelaysConstMeta;
+
+  Future<void> addRelay({required String relay, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kAddRelayConstMeta;
+
+  Future<void> removeRelay({required String relay, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kRemoveRelayConstMeta;
+
   /// Fetech contacts from relay for a given pubkey
   Future<void> fetchContacts({required String pubkey, dynamic hint});
 

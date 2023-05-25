@@ -141,6 +141,7 @@ class MyHomePageState extends State<MyHomePage> {
     );
 
     _settingsTab = Settings(
+      api: api,
       mints: mints,
       fetchContacts: fetechContacts,
       addMint: _addNewMint,

@@ -12,6 +12,21 @@ pub extern "C" fn wire_init_nostr(port_: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_get_relays(port_: i64) {
+    wire_get_relays_impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_add_relay(port_: i64, relay: *mut wire_uint_8_list) {
+    wire_add_relay_impl(port_, relay)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_remove_relay(port_: i64, relay: *mut wire_uint_8_list) {
+    wire_remove_relay_impl(port_, relay)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_fetch_contacts(port_: i64, pubkey: *mut wire_uint_8_list) {
     wire_fetch_contacts_impl(port_, pubkey)
 }

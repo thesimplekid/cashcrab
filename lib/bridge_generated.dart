@@ -58,6 +58,56 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Future<List<String>> getRelays({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_relays(port_),
+      parseSuccessData: _wire2api_StringList,
+      constMeta: kGetRelaysConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetRelaysConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_relays",
+        argNames: [],
+      );
+
+  Future<void> addRelay({required String relay, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(relay);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_add_relay(port_, arg0),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kAddRelayConstMeta,
+      argValues: [relay],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kAddRelayConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "add_relay",
+        argNames: ["relay"],
+      );
+
+  Future<void> removeRelay({required String relay, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(relay);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_remove_relay(port_, arg0),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kRemoveRelayConstMeta,
+      argValues: [relay],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kRemoveRelayConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "remove_relay",
+        argNames: ["relay"],
+      );
+
   Future<void> fetchContacts({required String pubkey, dynamic hint}) {
     var arg0 = _platform.api2wire_String(pubkey);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -1053,6 +1103,54 @@ class RustWire implements FlutterRustBridgeWireBase {
           'wire_init_nostr');
   late final _wire_init_nostr =
       _wire_init_nostrPtr.asFunction<void Function(int)>();
+
+  void wire_get_relays(
+    int port_,
+  ) {
+    return _wire_get_relays(
+      port_,
+    );
+  }
+
+  late final _wire_get_relaysPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_relays');
+  late final _wire_get_relays =
+      _wire_get_relaysPtr.asFunction<void Function(int)>();
+
+  void wire_add_relay(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> relay,
+  ) {
+    return _wire_add_relay(
+      port_,
+      relay,
+    );
+  }
+
+  late final _wire_add_relayPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_add_relay');
+  late final _wire_add_relay = _wire_add_relayPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_remove_relay(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> relay,
+  ) {
+    return _wire_remove_relay(
+      port_,
+      relay,
+    );
+  }
+
+  late final _wire_remove_relayPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_remove_relay');
+  late final _wire_remove_relay = _wire_remove_relayPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_fetch_contacts(
     int port_,

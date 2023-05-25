@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use anyhow::{anyhow, Result};
 use bitcoin::secp256k1::XOnlyPublicKey;
 use nostr_sdk::{
@@ -5,49 +7,10 @@ use nostr_sdk::{
     Timestamp,
 };
 use redb::{ReadableMultimapTable, ReadableTable};
-use std::str::FromStr;
 
 use super::{CONFIG, CONTACTS, DB, MESSAGES};
 use crate::types::{self, Message};
-
-fn encode_pubkey(pubkey: &XOnlyPublicKey) -> String {
-    let ser = pubkey.serialize();
-    hex::encode(ser)
-}
-
-pub(crate) async fn save_key(key: &str) -> Result<()> {
-    let db = DB.lock().await;
-    let db = db
-        .as_ref()
-        .ok_or_else(|| anyhow!("DB not set".to_string()))?;
-
-    let write_txn = db.begin_write()?;
-    {
-        let mut settings_table = write_txn.open_table(CONFIG)?;
-
-        settings_table.insert("private_key", key)?;
-    }
-    write_txn.commit()?;
-
-    Ok(())
-}
-
-pub(crate) async fn get_key() -> Result<Option<String>> {
-    let db = DB.lock().await;
-    let db = db
-        .as_ref()
-        .ok_or_else(|| anyhow!("DB not set".to_string()))?;
-
-    let read_txn = db.begin_read()?;
-    let settings_table = read_txn.open_table(CONFIG)?;
-
-    let key = settings_table.get("private_key")?;
-
-    match key {
-        Some(key) => Ok(Some(key.value().to_string())),
-        None => Ok(None),
-    }
-}
+use crate::utils;
 
 pub(crate) async fn most_recent_event_time() -> Result<()> {
     let db = DB.try_lock().unwrap();
@@ -136,7 +99,7 @@ pub(crate) async fn add_message(author: XOnlyPublicKey, message: &Message) -> Re
         let mut message_table = write_txn.open_multimap_table(MESSAGES)?;
 
         message_table.insert(
-            encode_pubkey(&author).as_str(),
+            utils::encode_pubkey(&author).as_str(),
             serde_json::to_string(&message)?.as_str(),
         )?;
     }
@@ -153,7 +116,7 @@ pub(crate) async fn get_messages(pubkey: &XOnlyPublicKey) -> Result<Vec<Message>
     let read_txn = db.begin_read()?;
     let table = read_txn.open_multimap_table(MESSAGES)?;
 
-    let messages = table.get(encode_pubkey(pubkey).as_str())?;
+    let messages = table.get(utils::encode_pubkey(pubkey).as_str())?;
 
     let mut messages: Vec<Message> = messages
         .into_iter()

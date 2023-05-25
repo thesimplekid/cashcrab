@@ -111,17 +111,38 @@ pub fn init_db(path: String) -> Result<()> {
 pub fn init_nostr() -> Result<String> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
-        let key = database::message::get_key().await?;
+        let key = database::nostr::get_key().await?;
         // TODO: get relays
-        init_client(&key, vec!["wss://thesimplekid.space/".to_string()]).await?;
-        if let Some(keys) = key {
-            // fetch_contacts(keys)?;
-        }
+        init_client(&key).await?;
 
         Ok("".to_string())
     });
 
     drop(rt);
+    result
+}
+
+pub fn get_relays() -> Result<Vec<String>> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async { nostr::get_relays().await });
+    drop(rt);
+
+    result
+}
+
+pub fn add_relay(relay: String) -> Result<()> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async { nostr::add_relay(relay).await });
+    drop(rt);
+
+    result
+}
+
+pub fn remove_relay(relay: String) -> Result<()> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async { nostr::remove_relay(relay).await });
+    drop(rt);
+
     result
 }
 
@@ -154,6 +175,7 @@ pub fn add_contact(pubkey: String) -> Result<()> {
             false => XOnlyPublicKey::from_str(&pubkey)?,
         };
         nostr::get_metadata(vec![x_pubkey]).await?;
+        nostr::set_contact_list().await?;
         Ok(())
     });
 
@@ -210,7 +232,6 @@ pub fn get_balances() -> Result<String> {
     let result = rt.block_on(async {
         let proofs = database::cashu::get_all_proofs().await?;
 
-        // bail!("{:?}", proofs);
         let balances = proofs
             .iter()
             .map(|(mint, proofs)| {
@@ -222,8 +243,6 @@ pub fn get_balances() -> Result<String> {
             .collect::<HashMap<_, _>>();
 
         Ok(serde_json::to_string(&balances)?)
-
-        // Ok(balances)
     });
 
     drop(rt);
@@ -372,7 +391,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
 
                 // REVIEW: This is a fairly naive check on if a token is spendable
                 // this works in the way `check_spendable` is called now but is not techically correct
-                // As a spendable proof can be from a completed tranasction
+                // As a spendable proof can be from a completed transaction
                 if check_spent.spendable.is_empty() {
                     let transaction = Transaction::CashuTransaction(CashuTransaction {
                         id: Some(transaction.id()),
@@ -416,7 +435,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
                     .await?;
                     // REVIEW: Change this trust falle to an enum.
                     // It is backwards because if a cashu token is NOT spendable then it is spend
-                    // But the opposite is true for LN if it is paid it is recived
+                    // But the opposite is true for LN if it is paid it is received
                     return Ok(false);
                 } else {
                     return Ok(true);

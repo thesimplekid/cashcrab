@@ -55,6 +55,42 @@ fn wire_init_nostr_impl(port_: MessagePort) {
         move || move |task_callback| init_nostr(),
     )
 }
+fn wire_get_relays_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_relays",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| get_relays(),
+    )
+}
+fn wire_add_relay_impl(port_: MessagePort, relay: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "add_relay",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_relay = relay.wire2api();
+            move |task_callback| add_relay(api_relay)
+        },
+    )
+}
+fn wire_remove_relay_impl(port_: MessagePort, relay: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "remove_relay",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_relay = relay.wire2api();
+            move |task_callback| remove_relay(api_relay)
+        },
+    )
+}
 fn wire_fetch_contacts_impl(port_: MessagePort, pubkey: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {

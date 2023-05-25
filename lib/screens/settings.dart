@@ -1,9 +1,13 @@
+import 'package:cashcrab/bridge_generated.dart';
+import 'package:cashcrab/main.dart';
+import 'package:cashcrab/screens/nostr_settings.dart';
 import 'package:flutter/material.dart';
 
 import '../shared/widgets/add_mint.dart';
 
 // Settings
 class Settings extends StatefulWidget {
+  final RustImpl api;
   final Function addMint;
   final Function removeMint;
   final Function setActiveMint;
@@ -13,6 +17,7 @@ class Settings extends StatefulWidget {
 
   const Settings(
       {super.key,
+      required this.api,
       required this.addMint,
       required this.removeMint,
       required this.setActiveMint,
@@ -26,6 +31,7 @@ class Settings extends StatefulWidget {
 
 class _SettingsState extends State<Settings> {
   final pubkeyController = TextEditingController();
+  final TextEditingController newRelayController = TextEditingController();
 
   _SettingsState();
   @override
@@ -98,6 +104,11 @@ class _SettingsState extends State<Settings> {
               },
             ),
           ),
+          const Divider(
+            color: Colors.purple,
+            height: 1,
+          ),
+          const Text("Follow contacts from pubkey"),
           TextField(
             decoration: const InputDecoration(
               labelText: 'Paste npub',
@@ -112,7 +123,30 @@ class _SettingsState extends State<Settings> {
           ),
           const SizedBox(
             height: 100.0,
-          )
+          ),
+          const Divider(
+            color: Colors.purple,
+            height: 1,
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.purple,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: TextButton(
+              onPressed: () async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => NostrSettings(
+                      api: widget.api,
+                    ),
+                  ),
+                );
+              },
+              child: const Text("Nostr Settings"),
+            ),
+          ),
         ],
       ),
     );

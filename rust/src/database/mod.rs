@@ -6,6 +6,7 @@ use tokio::sync::Mutex;
 
 pub(crate) mod cashu;
 pub(crate) mod message;
+pub(crate) mod nostr;
 pub(crate) mod transactions;
 
 const CONFIG: TableDefinition<&str, &str> = TableDefinition::new("config");

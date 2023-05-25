@@ -3,3 +3,4 @@ mod bridge_generated; /* AUTO INJECTED BY flutter_rust_bridge. This line may not
 mod database;
 mod nostr;
 mod types;
+mod utils;

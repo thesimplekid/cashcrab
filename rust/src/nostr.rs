@@ -1,10 +1,10 @@
 use std::time::Duration;
+use std::{str::FromStr, sync::Arc};
 
 use anyhow::{bail, Result};
 use cashu_crab::types::Token;
 use lazy_static::lazy_static;
 use nostr_sdk::prelude::*;
-use std::{str::FromStr, sync::Arc};
 use tokio::{sync::Mutex, task::JoinHandle};
 
 use crate::{
@@ -13,13 +13,14 @@ use crate::{
 };
 
 lazy_static! {
-    static ref CLIENT: Arc<Mutex<Option<Client>>> = Arc::new(Mutex::new(None));
+    static ref LISTEN_CLIENT: Arc<Mutex<Option<Client>>> = Arc::new(Mutex::new(None));
     static ref SEND_CLIENT: Arc<Mutex<Option<Client>>> = Arc::new(Mutex::new(None));
 }
 
 #[derive(Clone)]
 pub enum NostrMessage {}
 
+/// Convert string key to nostr keys
 fn handle_keys(private_key: &Option<String>) -> Result<Keys> {
     // Parse and validate private key
     let keys = match private_key {
@@ -34,13 +35,21 @@ fn handle_keys(private_key: &Option<String>) -> Result<Keys> {
 }
 
 /// Init Nostr Client
-pub(crate) async fn init_client(private_key: &Option<String>, relays: Vec<String>) -> Result<()> {
+pub(crate) async fn init_client(private_key: &Option<String>) -> Result<()> {
     let keys = handle_keys(&private_key)?;
 
     if private_key.is_none() {
         if let Ok(secret_key) = keys.secret_key() {
-            database::message::save_key(&secret_key.display_secret().to_string()).await?;
+            database::nostr::save_key(&secret_key.display_secret().to_string()).await?;
         }
+    }
+
+    let mut relays = database::nostr::get_relays().await?;
+
+    if relays.is_empty() {
+        // FIXME: Don't just default to this fine for dev
+        relays.push("wss://thesimplekid.space".to_string());
+        database::nostr::save_relays(&relays).await?;
     }
 
     let client = Client::new(&keys);
@@ -56,7 +65,7 @@ pub(crate) async fn init_client(private_key: &Option<String>, relays: Vec<String
         .since(Timestamp::now());
 
     client.subscribe(vec![subscription]).await;
-    let mut g_client = CLIENT.lock().await;
+    let mut g_client = LISTEN_CLIENT.lock().await;
     *g_client = Some(client);
 
     let mut s_client = SEND_CLIENT.lock().await;
@@ -77,9 +86,16 @@ pub(crate) async fn init_client(private_key: &Option<String>, relays: Vec<String
         log::error!("Error in handle_notifications: {:?}", err);
     }
 
+    // REVIEW: This breaks it, likely cant get a lock on something
+    // Not sure I want to refresh all the contacts on start up anyway
+    // if let Err(err) = refresh_contacts().await {
+    //     bail!(err);
+    // }
+
     Ok(())
 }
 
+/// Msats to sats
 fn invoice_amount(amount_msat: Option<u64>) -> Option<u64> {
     match amount_msat {
         Some(amount_msat) => Some(amount_msat / 1000),
@@ -87,6 +103,8 @@ fn invoice_amount(amount_msat: Option<u64>) -> Option<u64> {
     }
 }
 
+/// Handle Direct message
+/// Invoice, cahsu token, invoice
 async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp) -> Result<()> {
     if msg.to_lowercase().as_str().starts_with("lnbc") {
         // Invoice message
@@ -117,6 +135,7 @@ async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp
 
         database::message::add_message(author, &message).await?;
     } else {
+        // Text Message
         database::message::add_message(
             author,
             &Message::Text {
@@ -131,10 +150,12 @@ async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp
     Ok(())
 }
 
+/// Serde value to string without quotes
 fn from_value(value: Option<&serde_json::Value>) -> Option<String> {
     value.and_then(|v| serde_json::to_string(v).ok().map(|s| s.replace("\"", "")))
 }
 
+/// Handle metadat event
 async fn handle_metadata(event: Event) -> Result<()> {
     // TODO: Use `Metadat::from_str`
     // https://github.com/rust-nostr/nostr/issues/109
@@ -158,13 +179,12 @@ async fn handle_metadata(event: Event) -> Result<()> {
         }
 
         Ok(())
-
-        // bail!("{:?}", contact);
     } else {
         bail!("Could not decode contact: {:?}", event);
     }
 }
 
+/// Handle nostr event
 async fn handle_event(event: Event, keys: &Keys) -> Result<()> {
     database::message::most_recent_event_time().await?;
     match event.kind {
@@ -190,8 +210,77 @@ async fn handle_event(event: Event, keys: &Keys) -> Result<()> {
     Ok(())
 }
 
+pub(crate) async fn add_relay(relay: String) -> Result<()> {
+    let client = SEND_CLIENT.clone();
+
+    let _result: JoinHandle<Result<()>> = tokio::spawn(async move {
+        let mut client_guard = client.lock().await;
+        if let Some(client) = client_guard.as_mut() {
+            client.add_relay(relay, None).await?;
+
+            let relays: Vec<String> = client
+                .relays()
+                .await
+                .keys()
+                .into_iter()
+                .map(|u| u.to_string())
+                .collect();
+
+            database::nostr::save_relays(&relays).await?;
+        }
+
+        Ok(())
+    });
+
+    Ok(())
+}
+
+pub(crate) async fn remove_relay(relay: String) -> Result<()> {
+    let client = SEND_CLIENT.clone();
+
+    let _result: JoinHandle<Result<()>> = tokio::spawn(async move {
+        let mut client_guard = client.lock().await;
+        if let Some(client) = client_guard.as_mut() {
+            client.remove_relay(relay).await?;
+
+            let relays: Vec<String> = client
+                .relays()
+                .await
+                .keys()
+                .into_iter()
+                .map(|u| u.to_string())
+                .collect();
+
+            database::nostr::save_relays(&relays).await?;
+        }
+
+        Ok(())
+    });
+
+    Ok(())
+}
+
+pub(crate) async fn get_relays() -> Result<Vec<String>> {
+    let client = SEND_CLIENT.clone();
+
+    let mut client_guard = client.lock().await;
+
+    let mut relays = vec![];
+    if let Some(client) = client_guard.as_mut() {
+        let client_relays = client.relays().await;
+        let client_relays_string: Vec<String> = client_relays
+            .keys()
+            .into_iter()
+            .map(|k| k.to_string())
+            .collect();
+        relays = client_relays_string;
+    }
+
+    Ok(relays)
+}
+
 pub(crate) async fn handle_notifications() -> Result<()> {
-    let client = CLIENT.clone();
+    let client = LISTEN_CLIENT.clone();
 
     let _result: JoinHandle<Result<()>> = tokio::spawn(async move {
         let mut client_guard = client.lock().await;
@@ -212,17 +301,11 @@ pub(crate) async fn handle_notifications() -> Result<()> {
         Ok(())
     });
 
-    // if let Err(err) = result.await {
-    //    print!("{:?}", err);
-    // }
-
     Ok(())
 }
 
 pub(crate) async fn get_events_since_last(pubkey: &XOnlyPublicKey) -> Result<()> {
     let mut client = SEND_CLIENT.lock().await;
-
-    // bail!("X: {}", pubkey);
 
     if let Some(client) = client.as_mut() {
         let time = database::message::get_most_recent_event_time().await?;
@@ -268,6 +351,18 @@ pub(crate) async fn get_metadata(pubkeys: Vec<XOnlyPublicKey>) -> Result<()> {
         }
     }
 
+    Ok(())
+}
+
+pub(crate) async fn _refresh_contacts() -> Result<()> {
+    let mut client = SEND_CLIENT.try_lock()?;
+
+    if let Some(client) = client.as_mut() {
+        let x_pubkey = client.keys().public_key();
+        drop(client);
+        let contacts = get_contacts(&x_pubkey).await?;
+        get_metadata(contacts).await?;
+    }
     Ok(())
 }
 

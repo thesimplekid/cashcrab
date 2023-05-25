@@ -106,6 +106,12 @@ void wire_init_db(int64_t port_, struct wire_uint_8_list *path);
 
 void wire_init_nostr(int64_t port_);
 
+void wire_get_relays(int64_t port_);
+
+void wire_add_relay(int64_t port_, struct wire_uint_8_list *relay);
+
+void wire_remove_relay(int64_t port_, struct wire_uint_8_list *relay);
+
 void wire_fetch_contacts(int64_t port_, struct wire_uint_8_list *pubkey);
 
 void wire_add_contact(int64_t port_, struct wire_uint_8_list *pubkey);
@@ -192,6 +198,9 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;
     dummy_var ^= ((int64_t) (void*) wire_init_db);
     dummy_var ^= ((int64_t) (void*) wire_init_nostr);
+    dummy_var ^= ((int64_t) (void*) wire_get_relays);
+    dummy_var ^= ((int64_t) (void*) wire_add_relay);
+    dummy_var ^= ((int64_t) (void*) wire_remove_relay);
     dummy_var ^= ((int64_t) (void*) wire_fetch_contacts);
     dummy_var ^= ((int64_t) (void*) wire_add_contact);
     dummy_var ^= ((int64_t) (void*) wire_get_contacts);
