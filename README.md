@@ -10,7 +10,7 @@ A [Cashu](https://github.com/cashubtc/cashu) wallet with a flutter UI and with a
 
 ## Flutter Rust Bridge
 
-Genrate Dart from rust
+Generate Dart from rust
 ```sh
 flutter_rust_bridge_codegen --rust-input ./src/api.rs --dart-output ../lib/bridge_generated.dart --c-output ../ios/Runner/bridge_generated.h --dart-decl-output ../lib/bridge_definitions.dart
 

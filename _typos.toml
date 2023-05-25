@@ -1,0 +1,5 @@
+[files]
+extend-exclude = ["macos/Runner.xcodeproj/project.pbxproj", "Runner/Base.lproj/MainMenu.xib", "Runner.xcodeproj/project.pbxproj", "macos/Runner/Base.lproj/MainMenu.xib"]
+
+[default.extend-words]
+calle = "calle"
