@@ -405,9 +405,9 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
                     database::transactions::update_transaction_status(&transaction).await?;
 
                     // Update Status
-                    return Ok(false);
+                    Ok(false)
                 } else {
-                    return Ok(true);
+                    Ok(true)
                 }
             }
             Transaction::LNTransaction(ln_trans) => {
@@ -420,7 +420,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
                 database::cashu::add_proofs(&ln_trans.mint, proofs.clone()).await?;
 
                 // REVIEW:
-                if proofs.len() > 0 {
+                if !proofs.is_empty() {
                     let updated_transaction = LNTransaction::new(
                         Some(TransactionStatus::Received),
                         ln_trans.amount,
@@ -436,9 +436,9 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
                     // REVIEW: Change this trust falle to an enum.
                     // It is backwards because if a cashu token is NOT spendable then it is spend
                     // But the opposite is true for LN if it is paid it is received
-                    return Ok(false);
+                    Ok(false)
                 } else {
-                    return Ok(true);
+                    Ok(true)
                 }
             }
         }
@@ -523,7 +523,7 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
         let transaction = Transaction::CashuTransaction(transaction);
 
         database::transactions::add_transaction(&transaction).await?;
-        return Ok(transaction);
+        Ok(transaction)
     });
 
     drop(rt);

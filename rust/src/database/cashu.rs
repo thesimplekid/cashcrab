@@ -43,13 +43,11 @@ pub(crate) async fn get_proofs(mint: &str) -> Result<Proofs, CashuError> {
 
     let mut result: Proofs = vec![];
 
-    for p in proofs {
-        if let Ok(p) = p {
-            let p = p.value();
+    for p in proofs.flatten() {
+        let p = p.value();
 
-            if let Ok(p) = serde_json::from_str(p) {
-                result.push(p);
-            }
+        if let Ok(p) = serde_json::from_str(p) {
+            result.push(p);
         }
     }
 

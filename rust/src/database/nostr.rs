@@ -66,7 +66,7 @@ pub(crate) async fn get_relays() -> Result<Vec<String>> {
     let relays = settings_table.get("relays")?;
 
     match relays {
-        Some(relays) => Ok(serde_json::from_str(&relays.value().to_string())?),
+        Some(relays) => Ok(serde_json::from_str(relays.value())?),
         None => Ok(vec![]),
     }
 }

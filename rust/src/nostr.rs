@@ -36,7 +36,7 @@ fn handle_keys(private_key: &Option<String>) -> Result<Keys> {
 
 /// Init Nostr Client
 pub(crate) async fn init_client(private_key: &Option<String>) -> Result<()> {
-    let keys = handle_keys(&private_key)?;
+    let keys = handle_keys(private_key)?;
 
     if private_key.is_none() {
         if let Ok(secret_key) = keys.secret_key() {
@@ -97,10 +97,7 @@ pub(crate) async fn init_client(private_key: &Option<String>) -> Result<()> {
 
 /// Msats to sats
 fn invoice_amount(amount_msat: Option<u64>) -> Option<u64> {
-    match amount_msat {
-        Some(amount_msat) => Some(amount_msat / 1000),
-        None => None,
-    }
+    amount_msat.map(|amount_msat| amount_msat / 1000)
 }
 
 /// Handle Direct message
@@ -152,7 +149,7 @@ async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp
 
 /// Serde value to string without quotes
 fn from_value(value: Option<&serde_json::Value>) -> Option<String> {
-    value.and_then(|v| serde_json::to_string(v).ok().map(|s| s.replace("\"", "")))
+    value.and_then(|v| serde_json::to_string(v).ok().map(|s| s.replace('\"', "")))
 }
 
 /// Handle metadat event
@@ -200,11 +197,7 @@ async fn handle_event(event: Event, keys: &Keys) -> Result<()> {
                 }
             }
         }
-        Kind::Metadata => {
-            if let Err(_err) = handle_metadata(event).await {
-                ()
-            }
-        }
+        Kind::Metadata => if let Err(_err) = handle_metadata(event).await {},
         _ => (),
     }
     Ok(())
@@ -222,7 +215,6 @@ pub(crate) async fn add_relay(relay: String) -> Result<()> {
                 .relays()
                 .await
                 .keys()
-                .into_iter()
                 .map(|u| u.to_string())
                 .collect();
 
@@ -247,7 +239,6 @@ pub(crate) async fn remove_relay(relay: String) -> Result<()> {
                 .relays()
                 .await
                 .keys()
-                .into_iter()
                 .map(|u| u.to_string())
                 .collect();
 
@@ -268,11 +259,8 @@ pub(crate) async fn get_relays() -> Result<Vec<String>> {
     let mut relays = vec![];
     if let Some(client) = client_guard.as_mut() {
         let client_relays = client.relays().await;
-        let client_relays_string: Vec<String> = client_relays
-            .keys()
-            .into_iter()
-            .map(|k| k.to_string())
-            .collect();
+        let client_relays_string: Vec<String> =
+            client_relays.keys().map(|k| k.to_string()).collect();
         relays = client_relays_string;
     }
 
@@ -291,7 +279,6 @@ pub(crate) async fn handle_notifications() -> Result<()> {
                     if let RelayPoolNotification::Event(_url, event) = notification {
                         if let Err(_err) = handle_event(event, &client.keys()).await {
                             // bail!(err);
-                            ()
                         }
                     }
                     Ok(())
@@ -359,7 +346,6 @@ pub(crate) async fn _refresh_contacts() -> Result<()> {
 
     if let Some(client) = client.as_mut() {
         let x_pubkey = client.keys().public_key();
-        drop(client);
         let contacts = get_contacts(&x_pubkey).await?;
         get_metadata(contacts).await?;
     }

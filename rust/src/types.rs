@@ -187,7 +187,7 @@ pub enum Message {
 
 impl Message {
     /// Get contact as json string
-    pub fn as_json(&self) -> String {
+    pub fn _as_json(&self) -> String {
         serde_json::json!(self).to_string()
     }
     pub fn content(&self) -> String {
