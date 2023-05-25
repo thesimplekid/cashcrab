@@ -61,10 +61,10 @@ class _ContactsState extends State<Contacts> {
     return Scaffold(
       body: Column(
         children: [
-          SingleChildScrollView(
+          Expanded(
               child: ListView.builder(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(),
             itemCount: widget.contacts.length,
             itemBuilder: (BuildContext context, int index) {
               Contact contact = widget.contacts[index];
