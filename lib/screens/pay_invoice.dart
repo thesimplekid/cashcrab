@@ -71,7 +71,7 @@ class PayInvoiceState extends State<PayInvoice> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(children: const [Icon(Icons.bolt), Text('Pay Invoice')]),
+        title: const Row(children: [Icon(Icons.bolt), Text('Pay Invoice')]),
       ),
       body: Center(
         child: Column(

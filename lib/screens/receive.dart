@@ -108,9 +108,9 @@ class ReceiveTokenState extends State<ReceviceToken> {
                         );
                       }
                     },
-                    child: Row(
+                    child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.bolt),
                           Text(
                             'Receive via Lighting',

@@ -1,6 +1,5 @@
+import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/bridge_generated.dart';
-import 'package:cashcrab/main.dart';
-import 'package:cashcrab/screens/add_contact.dart';
 import 'package:cashcrab/screens/add_contacts.dart';
 import 'package:cashcrab/screens/nostr_settings.dart';
 import 'package:flutter/material.dart';
@@ -10,21 +9,25 @@ import '../shared/widgets/add_mint.dart';
 // Settings
 class Settings extends StatefulWidget {
   final RustImpl api;
+  final List<Contact> contacts;
   final Function addMint;
   final Function removeMint;
   final Function setActiveMint;
-  final Function fetchContacts;
+  final Function loadContacts;
+  final Function addContact;
   final String? activeMint;
   final Map<String, int> mints;
 
   const Settings(
       {super.key,
       required this.api,
+      required this.contacts,
       required this.addMint,
       required this.removeMint,
       required this.setActiveMint,
       required this.activeMint,
-      required this.fetchContacts,
+      required this.loadContacts,
+      required this.addContact,
       required this.mints});
 
   @override
@@ -47,116 +50,133 @@ class _SettingsState extends State<Settings> {
     super.dispose();
   }
 
-  Future<void> _fetchContacts() async {
-    String pubkey = pubkeyController.text;
-    await widget.fetchContacts(pubkey);
-  }
-
   @override
   Widget build(BuildContext context) {
     List<String> mints = widget.mints.keys.toList();
     mints
         .sort((a, b) => (widget.mints[b] ?? 0).compareTo(widget.mints[a] ?? 0));
+
     return Scaffold(
-      body: Column(
-        children: [
-          SizedBox(
-            height: 100.0,
-            child: AddMintForm(
-              addMint: widget.addMint,
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisSize:
+              MainAxisSize.min, // Set mainAxisSize to MainAxisSize.min
+          children: [
+            SizedBox(
+              height: 100.0,
+              child: AddMintForm(
+                addMint: widget.addMint,
+              ),
             ),
-          ),
-          Flexible(
-            child: ListView.builder(
-              itemCount: widget.mints.length,
-              itemBuilder: (BuildContext context, int index) {
-                int balance = widget.mints[mints[index]] ?? 0;
-                return CheckboxListTile(
-                  value: widget.activeMint == mints[index],
-                  onChanged: (bool? value) {
-                    if (value != null && value) {
-                      widget.setActiveMint(mints[index]);
-                    }
-                  },
-                  title: Text(
-                    mints[index],
-                    textAlign: TextAlign.left,
-                    style: const TextStyle(fontSize: 14.0),
-                    maxLines: 1,
-                  ),
-                  secondary: GestureDetector(
-                    onTap: () {
-                      if (balance == 0) {
-                        widget.removeMint(mints[index]);
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                itemCount: widget.mints.length,
+                itemBuilder: (BuildContext context, int index) {
+                  int balance = widget.mints[mints[index]] ?? 0;
+                  return CheckboxListTile(
+                    value: widget.activeMint == mints[index],
+                    onChanged: (bool? value) {
+                      if (value != null && value) {
+                        widget.setActiveMint(mints[index]);
                       }
                     },
-                    child: Container(
-                      margin: const EdgeInsets.all(0.0),
-                      child: balance == 0
-                          ? const Icon(
-                              Icons.delete,
-                              color: Colors.red,
-                              size: 30.0,
-                            )
-                          : Text("${balance.toString()} sats"),
+                    title: Text(
+                      mints[index],
+                      textAlign: TextAlign.left,
+                      style: const TextStyle(fontSize: 14.0),
+                      maxLines: 1,
                     ),
-                  ),
-                );
-              },
+                    secondary: GestureDetector(
+                      onTap: () {
+                        if (balance == 0) {
+                          widget.removeMint(mints[index]);
+                        }
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.all(0.0),
+                        child: balance == 0
+                            ? const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                                size: 30.0,
+                              )
+                            : Text("${balance.toString()} sats"),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          const Divider(
-            color: Colors.purple,
-            height: 1,
-          ),
-          const Text("Follow contacts from pubkey"),
-          TextField(
-            decoration: const InputDecoration(
-              labelText: 'Paste npub',
-            ),
-            controller: pubkeyController,
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AddContacts(
-                    api: widget.api,
-                    userPubkey: pubkeyController.text,
-                  ),
-                ),
-              );
-            },
-            child: const Text("Fetch Contacts"),
-          ),
-          const SizedBox(
-            height: 100.0,
-          ),
-          const Divider(
-            color: Colors.purple,
-            height: 1,
-          ),
-          Container(
-            decoration: BoxDecoration(
+            const Divider(
               color: Colors.purple,
-              borderRadius: BorderRadius.circular(10),
+              height: 1,
             ),
-            child: TextButton(
-              onPressed: () async {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => NostrSettings(
-                      api: widget.api,
-                    ),
+            const Text("Follow contacts from pubkey"),
+            Stack(
+              children: [
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Paste npub',
                   ),
-                );
-              },
-              child: const Text("Nostr Settings"),
+                  controller: pubkeyController,
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                        foregroundColor:
+                            MaterialStateProperty.all<Color>(Colors.white),
+                        backgroundColor:
+                            MaterialStateProperty.all<Color>(Colors.purple)),
+                    onPressed: () {
+                      // Check if its a valid url at least
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddContacts(
+                            api: widget.api,
+                            userPubkey: pubkeyController.text,
+                            loadContacts: widget.loadContacts,
+                            addContact: widget.addContact,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Icon(Icons.search),
+                  ), // Elevated Button
+                ), // Positioned
+              ],
+            ), // Stack
+            const SizedBox(
+              height: 100.0,
             ),
-          ),
-        ],
+            const Divider(
+              color: Colors.purple,
+              height: 1,
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.purple,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TextButton(
+                onPressed: () async {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NostrSettings(
+                        api: widget.api,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text("Nostr Settings"),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

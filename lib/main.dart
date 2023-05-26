@@ -122,7 +122,6 @@ class MyHomePageState extends State<MyHomePage> {
       removeContact: removeContact,
       activeMint: activeMint?.url,
     );
-
     _homeTab = Home(
       cashu: api,
       balance: balance,
@@ -144,7 +143,9 @@ class MyHomePageState extends State<MyHomePage> {
     _settingsTab = Settings(
       api: api,
       mints: mints,
-      fetchContacts: fetechContacts,
+      contacts: contacts,
+      loadContacts: _loadContacts,
+      addContact: addContact,
       addMint: _addNewMint,
       removeMint: removeMint,
       activeMint: activeMint?.url,
@@ -190,11 +191,6 @@ class MyHomePageState extends State<MyHomePage> {
     });
 
     return lnt;
-  }
-
-  Future<void> fetechContacts(String pubkey) async {
-    await api.fetchContacts(pubkey: pubkey);
-    _loadContacts();
   }
 
   // TODO: This needs to add the transaction to transaction
@@ -383,6 +379,11 @@ class MyHomePageState extends State<MyHomePage> {
 
       await _loadContacts();
     }
+  }
+
+  Future<void> fetchContacts(String pubkey) async {
+    await api.fetchContacts(pubkey: pubkey);
+    _loadContacts();
   }
 
   Future<void> removeContact(String pubkey) async {

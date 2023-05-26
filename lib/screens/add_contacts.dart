@@ -6,13 +6,23 @@ import 'package:flutter/material.dart';
 class AddContacts extends StatefulWidget {
   final RustImpl api;
   final String userPubkey;
-  const AddContacts({super.key, required this.api, required this.userPubkey});
+  final Function loadContacts;
+  final Function addContact;
+
+  const AddContacts({
+    super.key,
+    required this.api,
+    required this.userPubkey,
+    required this.loadContacts,
+    required this.addContact,
+  });
 
   @override
   State<AddContacts> createState() => _AddContactsState();
 }
 
 class _AddContactsState extends State<AddContacts> {
+  List<Contact> pubContacts = [];
   List<Contact> contacts = [];
 
   _AddContactsState();
@@ -20,7 +30,7 @@ class _AddContactsState extends State<AddContacts> {
   @override
   void initState() {
     super.initState();
-    _loadRelays();
+    _loadContacts();
   }
 
   @override
@@ -28,17 +38,24 @@ class _AddContactsState extends State<AddContacts> {
     super.dispose();
   }
 
-  Future<void> _loadRelays() async {
-    List<Contact> c = await widget.api.fetchContacts(pubkey: widget.userPubkey);
+  // Fetch contacts of entered pub key
+  Future<void> _loadAppContacts() async {
+    List<Contact> appContacts = await widget.api.getContacts();
 
     setState(() {
-      contacts = c;
+      contacts = appContacts;
     });
   }
 
-  Future<void> _addContact(String pubkey) async {
-    await widget.api.addContact(pubkey: pubkey);
-    _loadRelays();
+  // Fetch contacts of entered pub key
+  Future<void> _loadContacts() async {
+    List<Contact> c = await widget.api.fetchContacts(pubkey: widget.userPubkey);
+    List<Contact> apContacts = await widget.api.getContacts();
+
+    setState(() {
+      pubContacts = c;
+      contacts = apContacts;
+    });
   }
 
   @override
@@ -49,12 +66,13 @@ class _AddContactsState extends State<AddContacts> {
         children: [
           Flexible(
             child: ListView.builder(
-              itemCount: contacts.length,
+              itemCount: pubContacts.length,
               itemBuilder: (BuildContext context, int index) {
+                bool inContacts = contacts.any(
+                    (contact) => contact.pubkey == pubContacts[index].pubkey);
+
                 return GestureDetector(
-                  onTap: () {
-                    _addContact(contacts[index].pubkey);
-                  },
+                  onTap: () async {},
                   child: Container(
                     height: 45.0,
                     decoration: const BoxDecoration(),
@@ -72,20 +90,24 @@ class _AddContactsState extends State<AddContacts> {
                                         topLeft: Radius.circular(10.0),
                                         topRight: Radius.circular(10.0))),
                                 child: Text(
-                                  contacts[index].name ?? "",
+                                  pubContacts[index].name ?? "",
                                   textAlign: TextAlign.left,
                                   style: const TextStyle(fontSize: 15.0),
                                   maxLines: 1,
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  _addContact(contacts[index].pubkey);
+                                onTap: () async {
+                                  if (!inContacts) {
+                                    await widget
+                                        .addContact(pubContacts[index].pubkey);
+                                    _loadAppContacts();
+                                  }
                                 },
                                 child: Container(
                                   margin: const EdgeInsets.all(0.0),
-                                  child: const Icon(
-                                    Icons.add,
+                                  child: Icon(
+                                    inContacts ? Icons.check : Icons.add,
                                     color: Colors.purple,
                                     size: 30.0,
                                   ),

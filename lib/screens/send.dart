@@ -104,9 +104,9 @@ class SendState extends State<Send> {
                     ),
                   );
                 },
-                child: Row(
+                child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.bolt),
                       Text(
                         'Pay via Lightning',
