@@ -147,16 +147,9 @@ async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp
     Ok(())
 }
 
-/// Serde value to string without quotes
-fn from_value(value: Option<&serde_json::Value>) -> Option<String> {
-    value.and_then(|v| serde_json::to_string(v).ok().map(|s| s.replace('\"', "")))
-}
-
 /// Handle metadata event
 async fn handle_metadata(event: Event) -> Result<Option<types::Contact>> {
-    // TODO: Use `Metadat::from_str`
-    // https://github.com/rust-nostr/nostr/issues/109
-    if let Ok(info) = serde_json::from_str::<Value>(&event.clone().content) {
+    if let Ok(info) = Metadata::from_json(&event.clone().content) {
         let contact = types::Contact {
             pubkey: event.pubkey.to_string(),
             npub: event
@@ -164,18 +157,10 @@ async fn handle_metadata(event: Event) -> Result<Option<types::Contact>> {
                 .pubkey
                 .to_bech32()
                 .unwrap_or(event.pubkey.to_string()),
-            name: from_value(info.get("name")),
-            picture: from_value(info.get("picture")),
-            lud16: from_value(info.get("lud16")),
+            name: info.name,
+            picture: info.picture,
+            lud16: info.lud16,
         };
-
-        /*
-                if let Err(_err) =
-                    database::message::add_contact(&event.pubkey.to_string(), contact.clone()).await
-                {
-                    bail!("Could not add Contact");
-                }
-        */
 
         Ok(Some(contact))
     } else {
