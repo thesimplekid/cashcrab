@@ -91,7 +91,7 @@ pub struct LNTransaction {
     pub status: TransactionStatus,
     pub time: u64,
     pub amount: u64,
-    pub mint: String,
+    pub mint: Option<String>,
     pub bolt11: String,
     pub hash: String,
 }
@@ -100,7 +100,7 @@ impl LNTransaction {
     pub fn new(
         status: Option<TransactionStatus>,
         amount: u64,
-        mint: &str,
+        mint: Option<String>,
         bolt11: &str,
         hash: &str,
     ) -> Self {
@@ -114,7 +114,7 @@ impl LNTransaction {
             status,
             time: unix_time(),
             amount,
-            mint: mint.to_string(),
+            mint,
             bolt11: bolt11.to_string(),
             hash: hash.to_string(),
         }
@@ -170,18 +170,11 @@ pub enum Message {
     },
     Invoice {
         direction: Direction,
-        time: u64,
-        bolt11: String,
-        amount: Option<u64>,
-        status: InvoiceStatus,
+        transaction: LNTransaction,
     },
     Token {
         direction: Direction,
-        time: u64,
-        token: String,
-        mint: String,
-        amount: Option<u64>,
-        status: TokenStatus,
+        transaction: CashuTransaction,
     },
 }
 
@@ -190,11 +183,13 @@ impl Message {
     pub fn _as_json(&self) -> String {
         serde_json::json!(self).to_string()
     }
+
+    /// Content of message
     pub fn content(&self) -> String {
         match self {
             Self::Text { content, .. } => content.to_owned(),
-            Self::Invoice { bolt11, .. } => bolt11.to_owned(),
-            Self::Token { token, .. } => token.to_owned(),
+            Self::Invoice { transaction, .. } => transaction.bolt11.to_owned(),
+            Self::Token { transaction, .. } => transaction.token.to_owned(),
         }
     }
 }

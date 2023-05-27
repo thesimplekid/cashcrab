@@ -20,21 +20,33 @@ typedef struct wire_Message_Text {
   struct wire_uint_8_list *content;
 } wire_Message_Text;
 
+typedef struct wire_LNTransaction {
+  struct wire_uint_8_list *id;
+  int32_t status;
+  uint64_t time;
+  uint64_t amount;
+  struct wire_uint_8_list *mint;
+  struct wire_uint_8_list *bolt11;
+  struct wire_uint_8_list *hash;
+} wire_LNTransaction;
+
 typedef struct wire_Message_Invoice {
   int32_t direction;
-  uint64_t time;
-  struct wire_uint_8_list *bolt11;
-  uint64_t *amount;
-  int32_t status;
+  struct wire_LNTransaction *transaction;
 } wire_Message_Invoice;
+
+typedef struct wire_CashuTransaction {
+  struct wire_uint_8_list *id;
+  int32_t status;
+  uint64_t time;
+  uint64_t amount;
+  struct wire_uint_8_list *mint;
+  struct wire_uint_8_list *token;
+} wire_CashuTransaction;
 
 typedef struct wire_Message_Token {
   int32_t direction;
-  uint64_t time;
-  struct wire_uint_8_list *token;
-  struct wire_uint_8_list *mint;
-  uint64_t *amount;
-  int32_t status;
+  struct wire_CashuTransaction *transaction;
 } wire_Message_Token;
 
 typedef union MessageKind {
@@ -53,28 +65,9 @@ typedef struct wire_StringList {
   int32_t len;
 } wire_StringList;
 
-typedef struct wire_CashuTransaction {
-  struct wire_uint_8_list *id;
-  int32_t status;
-  uint64_t time;
-  uint64_t amount;
-  struct wire_uint_8_list *mint;
-  struct wire_uint_8_list *token;
-} wire_CashuTransaction;
-
 typedef struct wire_Transaction_CashuTransaction {
   struct wire_CashuTransaction *field0;
 } wire_Transaction_CashuTransaction;
-
-typedef struct wire_LNTransaction {
-  struct wire_uint_8_list *id;
-  int32_t status;
-  uint64_t time;
-  uint64_t amount;
-  struct wire_uint_8_list *mint;
-  struct wire_uint_8_list *bolt11;
-  struct wire_uint_8_list *hash;
-} wire_LNTransaction;
 
 typedef struct wire_Transaction_LNTransaction {
   struct wire_LNTransaction *field0;
@@ -180,8 +173,6 @@ struct wire_Message *new_box_autoadd_message_0(void);
 
 struct wire_Transaction *new_box_autoadd_transaction_0(void);
 
-uint64_t *new_box_autoadd_u64_0(uint64_t value);
-
 struct wire_uint_8_list *new_uint_8_list_0(int32_t len);
 
 union MessageKind *inflate_Message_Text(void);
@@ -233,7 +224,6 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_ln_transaction_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_message_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_transaction_0);
-    dummy_var ^= ((int64_t) (void*) new_box_autoadd_u64_0);
     dummy_var ^= ((int64_t) (void*) new_uint_8_list_0);
     dummy_var ^= ((int64_t) (void*) inflate_Message_Text);
     dummy_var ^= ((int64_t) (void*) inflate_Message_Invoice);

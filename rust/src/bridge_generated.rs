@@ -22,11 +22,9 @@ use std::sync::Arc;
 use crate::types::CashuTransaction;
 use crate::types::Contact;
 use crate::types::Direction;
-use crate::types::InvoiceStatus;
 use crate::types::LNTransaction;
 use crate::types::Message;
 use crate::types::Mint;
-use crate::types::TokenStatus;
 use crate::types::Transaction;
 use crate::types::TransactionStatus;
 
@@ -470,26 +468,6 @@ impl Wire2Api<i32> for i32 {
         self
     }
 }
-impl Wire2Api<InvoiceStatus> for i32 {
-    fn wire2api(self) -> InvoiceStatus {
-        match self {
-            0 => InvoiceStatus::Paid,
-            1 => InvoiceStatus::Unpaid,
-            2 => InvoiceStatus::Expired,
-            _ => unreachable!("Invalid variant for InvoiceStatus: {}", self),
-        }
-    }
-}
-
-impl Wire2Api<TokenStatus> for i32 {
-    fn wire2api(self) -> TokenStatus {
-        match self {
-            0 => TokenStatus::Spendable,
-            1 => TokenStatus::Claimed,
-            _ => unreachable!("Invalid variant for TokenStatus: {}", self),
-        }
-    }
-}
 
 impl Wire2Api<TransactionStatus> for i32 {
     fn wire2api(self) -> TransactionStatus {
@@ -567,18 +545,6 @@ impl support::IntoDart for InvoiceInfo {
 }
 impl support::IntoDartExceptPrimitive for InvoiceInfo {}
 
-impl support::IntoDart for InvoiceStatus {
-    fn into_dart(self) -> support::DartAbi {
-        match self {
-            Self::Paid => 0,
-            Self::Unpaid => 1,
-            Self::Expired => 2,
-        }
-        .into_dart()
-    }
-}
-impl support::IntoDartExceptPrimitive for InvoiceStatus {}
-
 impl support::IntoDart for LNTransaction {
     fn into_dart(self) -> support::DartAbi {
         vec![
@@ -610,33 +576,19 @@ impl support::IntoDart for Message {
             ],
             Self::Invoice {
                 direction,
-                time,
-                bolt11,
-                amount,
-                status,
+                transaction,
             } => vec![
                 1.into_dart(),
                 direction.into_dart(),
-                time.into_dart(),
-                bolt11.into_dart(),
-                amount.into_dart(),
-                status.into_dart(),
+                transaction.into_dart(),
             ],
             Self::Token {
                 direction,
-                time,
-                token,
-                mint,
-                amount,
-                status,
+                transaction,
             } => vec![
                 2.into_dart(),
                 direction.into_dart(),
-                time.into_dart(),
-                token.into_dart(),
-                mint.into_dart(),
-                amount.into_dart(),
-                status.into_dart(),
+                transaction.into_dart(),
             ],
         }
         .into_dart()
@@ -668,16 +620,6 @@ impl support::IntoDart for TokenData {
 }
 impl support::IntoDartExceptPrimitive for TokenData {}
 
-impl support::IntoDart for TokenStatus {
-    fn into_dart(self) -> support::DartAbi {
-        match self {
-            Self::Spendable => 0,
-            Self::Claimed => 1,
-        }
-        .into_dart()
-    }
-}
-impl support::IntoDartExceptPrimitive for TokenStatus {}
 impl support::IntoDart for Transaction {
     fn into_dart(self) -> support::DartAbi {
         match self {

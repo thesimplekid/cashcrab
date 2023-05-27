@@ -7,7 +7,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 class InvoiceInfoScreen extends StatefulWidget {
   final int amount;
-  final String mintUrl;
+  final String? mintUrl;
   final LNTransaction? invoice;
   final Function? createInvoice;
 

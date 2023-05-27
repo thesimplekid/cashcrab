@@ -145,8 +145,8 @@ pub(crate) async fn get_messages(pubkey: &XOnlyPublicKey) -> Result<Vec<Message>
     // Sort in ascending order
     messages.sort_by_key(|message| match message {
         Message::Text { time, .. } => *time,
-        Message::Invoice { time, .. } => *time,
-        Message::Token { time, .. } => *time,
+        Message::Invoice { transaction, .. } => transaction.time,
+        Message::Token { transaction, .. } => transaction.time,
     });
 
     Ok(messages)

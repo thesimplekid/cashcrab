@@ -403,6 +403,8 @@ async fn wallet_for_url(mint_url: &str) -> Result<CashuWallet> {
     Ok(cashu_wallet)
 }
 
+// Check spendable for messages
+
 pub fn check_spendable(transaction: Transaction) -> Result<bool> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
@@ -437,32 +439,37 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
                 }
             }
             Transaction::LNTransaction(ln_trans) => {
-                let wallet = wallet_for_url(&ln_trans.mint).await?;
+                if let Some(mint) = &ln_trans.mint {
+                    let wallet = wallet_for_url(&mint).await?;
 
-                let proofs = wallet
-                    .mint_token(Amount::from_sat(ln_trans.amount), &ln_trans.hash)
-                    .await?;
+                    let proofs = wallet
+                        .mint_token(Amount::from_sat(ln_trans.amount), &ln_trans.hash)
+                        .await?;
 
-                database::cashu::add_proofs(&ln_trans.mint, proofs.clone()).await?;
+                    database::cashu::add_proofs(&mint, proofs.clone()).await?;
 
-                // REVIEW:
-                if !proofs.is_empty() {
-                    let updated_transaction = LNTransaction::new(
-                        Some(TransactionStatus::Received),
-                        ln_trans.amount,
-                        &ln_trans.mint,
-                        &ln_trans.bolt11,
-                        &ln_trans.hash,
-                    );
+                    // REVIEW:
+                    if !proofs.is_empty() {
+                        let updated_transaction = LNTransaction::new(
+                            Some(TransactionStatus::Received),
+                            ln_trans.amount,
+                            ln_trans.mint.clone(),
+                            &ln_trans.bolt11,
+                            &ln_trans.hash,
+                        );
 
-                    database::transactions::update_transaction_status(&Transaction::LNTransaction(
-                        updated_transaction,
-                    ))
-                    .await?;
-                    // REVIEW: Change this trust falle to an enum.
-                    // It is backwards because if a cashu token is NOT spendable then it is spend
-                    // But the opposite is true for LN if it is paid it is received
-                    Ok(false)
+                        database::transactions::update_transaction_status(
+                            &Transaction::LNTransaction(updated_transaction),
+                        )
+                        .await?;
+                        // REVIEW: Change this to an enum.
+                        // It is backwards because if a cashu token is NOT spendable then it is spend
+                        // But the opposite is true for LN if it is paid it is received
+                        Ok(false)
+                    } else {
+                        // TODO: Return could not check error
+                        Ok(true)
+                    }
                 } else {
                     Ok(true)
                 }
@@ -581,7 +588,7 @@ pub fn request_mint(amount: u64, mint_url: String) -> Result<Transaction> {
         let transaction = LNTransaction::new(
             None,
             amount,
-            &mint_url,
+            Some(mint_url),
             &invoice.pr.to_string(),
             &invoice.hash,
         );

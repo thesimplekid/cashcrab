@@ -7,6 +7,7 @@ use lazy_static::lazy_static;
 use nostr_sdk::prelude::*;
 use tokio::{sync::Mutex, task::JoinHandle};
 
+use crate::types::CashuTransaction;
 use crate::{
     database,
     types::{self, Direction, InvoiceStatus, Message},
@@ -108,11 +109,15 @@ async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp
         let invoice = lightning_invoice::Invoice::from_str(msg)?;
         let message = Message::Invoice {
             direction: Direction::Received,
-            time: created_at.as_u64(),
-            bolt11: msg.to_string(),
-            amount: invoice_amount(invoice.amount_milli_satoshis()),
-            // Check if its paid
-            status: InvoiceStatus::Unpaid,
+            transaction: types::LNTransaction {
+                id: None,
+                status: types::TransactionStatus::Pending,
+                time: created_at.as_u64(),
+                amount: invoice_amount(invoice.amount_milli_satoshis()).unwrap_or(0),
+                mint: None,
+                bolt11: msg.to_string(),
+                hash: "".to_string(),
+            },
         };
 
         database::message::add_message(author, &message).await?;
@@ -123,11 +128,14 @@ async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp
         let token_info = token.token_info();
         let message = Message::Token {
             direction: Direction::Received,
-            time: created_at.as_u64(),
-            token: msg.to_string(),
-            amount: Some(token_info.0),
-            mint: token_info.1,
-            status: crate::types::TokenStatus::Spendable,
+            transaction: CashuTransaction {
+                id: None,
+                status: types::TransactionStatus::Pending,
+                time: created_at.as_u64(),
+                amount: token_info.0,
+                mint: token_info.1,
+                token: msg.to_string(),
+            },
         };
 
         database::message::add_message(author, &message).await?;

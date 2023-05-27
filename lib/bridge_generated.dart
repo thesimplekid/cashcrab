@@ -581,10 +581,6 @@ class RustImpl implements Rust {
     return _wire2api_transaction(raw);
   }
 
-  int _wire2api_box_autoadd_u64(dynamic raw) {
-    return _wire2api_u64(raw);
-  }
-
   CashuTransaction _wire2api_cashu_transaction(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 6)
@@ -631,10 +627,6 @@ class RustImpl implements Rust {
     );
   }
 
-  InvoiceStatus _wire2api_invoice_status(dynamic raw) {
-    return InvoiceStatus.values[raw as int];
-  }
-
   List<Contact> _wire2api_list_contact(dynamic raw) {
     return (raw as List<dynamic>).map(_wire2api_contact).toList();
   }
@@ -660,7 +652,7 @@ class RustImpl implements Rust {
       status: _wire2api_transaction_status(arr[1]),
       time: _wire2api_u64(arr[2]),
       amount: _wire2api_u64(arr[3]),
-      mint: _wire2api_String(arr[4]),
+      mint: _wire2api_opt_String(arr[4]),
       bolt11: _wire2api_String(arr[5]),
       hash: _wire2api_String(arr[6]),
     );
@@ -677,19 +669,12 @@ class RustImpl implements Rust {
       case 1:
         return Message_Invoice(
           direction: _wire2api_direction(raw[1]),
-          time: _wire2api_u64(raw[2]),
-          bolt11: _wire2api_String(raw[3]),
-          amount: _wire2api_opt_box_autoadd_u64(raw[4]),
-          status: _wire2api_invoice_status(raw[5]),
+          transaction: _wire2api_box_autoadd_ln_transaction(raw[2]),
         );
       case 2:
         return Message_Token(
           direction: _wire2api_direction(raw[1]),
-          time: _wire2api_u64(raw[2]),
-          token: _wire2api_String(raw[3]),
-          mint: _wire2api_String(raw[4]),
-          amount: _wire2api_opt_box_autoadd_u64(raw[5]),
-          status: _wire2api_token_status(raw[6]),
+          transaction: _wire2api_box_autoadd_cashu_transaction(raw[2]),
         );
       default:
         throw Exception("unreachable");
@@ -719,10 +704,6 @@ class RustImpl implements Rust {
     return raw == null ? null : _wire2api_box_autoadd_transaction(raw);
   }
 
-  int? _wire2api_opt_box_autoadd_u64(dynamic raw) {
-    return raw == null ? null : _wire2api_box_autoadd_u64(raw);
-  }
-
   TokenData _wire2api_token_data(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 4)
@@ -733,10 +714,6 @@ class RustImpl implements Rust {
       amount: _wire2api_u64(arr[2]),
       memo: _wire2api_opt_String(arr[3]),
     );
-  }
-
-  TokenStatus _wire2api_token_status(dynamic raw) {
-    return TokenStatus.values[raw as int];
   }
 
   Transaction _wire2api_transaction(dynamic raw) {
@@ -785,16 +762,6 @@ int api2wire_direction(Direction raw) {
 @protected
 int api2wire_i32(int raw) {
   return raw;
-}
-
-@protected
-int api2wire_invoice_status(InvoiceStatus raw) {
-  return api2wire_i32(raw.index);
-}
-
-@protected
-int api2wire_token_status(TokenStatus raw) {
-  return api2wire_i32(raw.index);
 }
 
 @protected
@@ -860,18 +827,8 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
   }
 
   @protected
-  ffi.Pointer<ffi.Uint64> api2wire_box_autoadd_u64(int raw) {
-    return inner.new_box_autoadd_u64_0(api2wire_u64(raw));
-  }
-
-  @protected
   ffi.Pointer<wire_uint_8_list> api2wire_opt_String(String? raw) {
     return raw == null ? ffi.nullptr : api2wire_String(raw);
-  }
-
-  @protected
-  ffi.Pointer<ffi.Uint64> api2wire_opt_box_autoadd_u64(int? raw) {
-    return raw == null ? ffi.nullptr : api2wire_box_autoadd_u64(raw);
   }
 
   @protected
@@ -925,7 +882,7 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
     wireObj.status = api2wire_transaction_status(apiObj.status);
     wireObj.time = api2wire_u64(apiObj.time);
     wireObj.amount = api2wire_u64(apiObj.amount);
-    wireObj.mint = api2wire_String(apiObj.mint);
+    wireObj.mint = api2wire_opt_String(apiObj.mint);
     wireObj.bolt11 = api2wire_String(apiObj.bolt11);
     wireObj.hash = api2wire_String(apiObj.hash);
   }
@@ -944,34 +901,22 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
     }
     if (apiObj is Message_Invoice) {
       var pre_direction = api2wire_direction(apiObj.direction);
-      var pre_time = api2wire_u64(apiObj.time);
-      var pre_bolt11 = api2wire_String(apiObj.bolt11);
-      var pre_amount = api2wire_opt_box_autoadd_u64(apiObj.amount);
-      var pre_status = api2wire_invoice_status(apiObj.status);
+      var pre_transaction =
+          api2wire_box_autoadd_ln_transaction(apiObj.transaction);
       wireObj.tag = 1;
       wireObj.kind = inner.inflate_Message_Invoice();
       wireObj.kind.ref.Invoice.ref.direction = pre_direction;
-      wireObj.kind.ref.Invoice.ref.time = pre_time;
-      wireObj.kind.ref.Invoice.ref.bolt11 = pre_bolt11;
-      wireObj.kind.ref.Invoice.ref.amount = pre_amount;
-      wireObj.kind.ref.Invoice.ref.status = pre_status;
+      wireObj.kind.ref.Invoice.ref.transaction = pre_transaction;
       return;
     }
     if (apiObj is Message_Token) {
       var pre_direction = api2wire_direction(apiObj.direction);
-      var pre_time = api2wire_u64(apiObj.time);
-      var pre_token = api2wire_String(apiObj.token);
-      var pre_mint = api2wire_String(apiObj.mint);
-      var pre_amount = api2wire_opt_box_autoadd_u64(apiObj.amount);
-      var pre_status = api2wire_token_status(apiObj.status);
+      var pre_transaction =
+          api2wire_box_autoadd_cashu_transaction(apiObj.transaction);
       wireObj.tag = 2;
       wireObj.kind = inner.inflate_Message_Token();
       wireObj.kind.ref.Token.ref.direction = pre_direction;
-      wireObj.kind.ref.Token.ref.time = pre_time;
-      wireObj.kind.ref.Token.ref.token = pre_token;
-      wireObj.kind.ref.Token.ref.mint = pre_mint;
-      wireObj.kind.ref.Token.ref.amount = pre_amount;
-      wireObj.kind.ref.Token.ref.status = pre_status;
+      wireObj.kind.ref.Token.ref.transaction = pre_transaction;
       return;
     }
   }
@@ -1655,20 +1600,6 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _new_box_autoadd_transaction_0 = _new_box_autoadd_transaction_0Ptr
       .asFunction<ffi.Pointer<wire_Transaction> Function()>();
 
-  ffi.Pointer<ffi.Uint64> new_box_autoadd_u64_0(
-    int value,
-  ) {
-    return _new_box_autoadd_u64_0(
-      value,
-    );
-  }
-
-  late final _new_box_autoadd_u64_0Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Uint64> Function(ffi.Uint64)>>(
-          'new_box_autoadd_u64_0');
-  late final _new_box_autoadd_u64_0 = _new_box_autoadd_u64_0Ptr
-      .asFunction<ffi.Pointer<ffi.Uint64> Function(int)>();
-
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,
   ) {
@@ -1770,36 +1701,54 @@ final class wire_Message_Text extends ffi.Struct {
   external ffi.Pointer<wire_uint_8_list> content;
 }
 
-final class wire_Message_Invoice extends ffi.Struct {
+final class wire_LNTransaction extends ffi.Struct {
+  external ffi.Pointer<wire_uint_8_list> id;
+
   @ffi.Int32()
-  external int direction;
+  external int status;
 
   @ffi.Uint64()
   external int time;
 
+  @ffi.Uint64()
+  external int amount;
+
+  external ffi.Pointer<wire_uint_8_list> mint;
+
   external ffi.Pointer<wire_uint_8_list> bolt11;
 
-  external ffi.Pointer<ffi.Uint64> amount;
+  external ffi.Pointer<wire_uint_8_list> hash;
+}
+
+final class wire_Message_Invoice extends ffi.Struct {
+  @ffi.Int32()
+  external int direction;
+
+  external ffi.Pointer<wire_LNTransaction> transaction;
+}
+
+final class wire_CashuTransaction extends ffi.Struct {
+  external ffi.Pointer<wire_uint_8_list> id;
 
   @ffi.Int32()
   external int status;
+
+  @ffi.Uint64()
+  external int time;
+
+  @ffi.Uint64()
+  external int amount;
+
+  external ffi.Pointer<wire_uint_8_list> mint;
+
+  external ffi.Pointer<wire_uint_8_list> token;
 }
 
 final class wire_Message_Token extends ffi.Struct {
   @ffi.Int32()
   external int direction;
 
-  @ffi.Uint64()
-  external int time;
-
-  external ffi.Pointer<wire_uint_8_list> token;
-
-  external ffi.Pointer<wire_uint_8_list> mint;
-
-  external ffi.Pointer<ffi.Uint64> amount;
-
-  @ffi.Int32()
-  external int status;
+  external ffi.Pointer<wire_CashuTransaction> transaction;
 }
 
 final class MessageKind extends ffi.Union {
@@ -1824,44 +1773,8 @@ final class wire_StringList extends ffi.Struct {
   external int len;
 }
 
-final class wire_CashuTransaction extends ffi.Struct {
-  external ffi.Pointer<wire_uint_8_list> id;
-
-  @ffi.Int32()
-  external int status;
-
-  @ffi.Uint64()
-  external int time;
-
-  @ffi.Uint64()
-  external int amount;
-
-  external ffi.Pointer<wire_uint_8_list> mint;
-
-  external ffi.Pointer<wire_uint_8_list> token;
-}
-
 final class wire_Transaction_CashuTransaction extends ffi.Struct {
   external ffi.Pointer<wire_CashuTransaction> field0;
-}
-
-final class wire_LNTransaction extends ffi.Struct {
-  external ffi.Pointer<wire_uint_8_list> id;
-
-  @ffi.Int32()
-  external int status;
-
-  @ffi.Uint64()
-  external int time;
-
-  @ffi.Uint64()
-  external int amount;
-
-  external ffi.Pointer<wire_uint_8_list> mint;
-
-  external ffi.Pointer<wire_uint_8_list> bolt11;
-
-  external ffi.Pointer<wire_uint_8_list> hash;
 }
 
 final class wire_Transaction_LNTransaction extends ffi.Struct {

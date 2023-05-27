@@ -83,24 +83,15 @@ class _MessagesState extends State<Messages> {
 
       CashuTransaction cTransaction = transaction.field0 as CashuTransaction;
 
-      message = Message.token(
-          direction: Direction.Sent,
-          time: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-          token: cTransaction.token,
-          mint: widget.activeMint!,
-          amount: int.parse(splits[1]),
-          status: TokenStatus.Spendable);
+      message =
+          Message.token(direction: Direction.Sent, transaction: cTransaction);
     } else if (msg.startsWith("/request")) {
       List<String> splits = msg.split(' ');
       LNTransaction transaction =
           await widget.createInvoice(int.parse(splits[1]), widget.activeMint);
 
-      message = Message.invoice(
-          direction: Direction.Sent,
-          time: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-          bolt11: transaction.bolt11,
-          amount: int.parse(splits[1]),
-          status: InvoiceStatus.Unpaid);
+      message =
+          Message.invoice(direction: Direction.Sent, transaction: transaction);
     } else {
       message = Message.text(
           content: msg,
@@ -160,25 +151,16 @@ class _MessagesState extends State<Messages> {
                   text: (dir, time, textContent) {
                     messageRow = TextMessageWidget(time, textContent, dir);
                   },
-                  invoice: (dir, time, bolt11, amount, status) {
+                  invoice: (dir, transaction) {
                     messageRow = InvoiceMessageWidget(
                       dir,
-                      amount ?? 0,
-                      time,
-                      bolt11,
-                      status,
-                      widget.activeMint ?? "",
+                      transaction,
                       widget.payInvoice,
                     );
                   },
-                  token: (dir, time, token, mint, amount, status) {
+                  token: (dir, transaction) {
                     messageRow = TokenMessageWidget(
-                      amount ?? 0,
-                      token,
-                      mint,
-                      widget.receiveToken,
-                      dir,
-                    );
+                        widget.receiveToken, dir, transaction);
                   },
                 );
 

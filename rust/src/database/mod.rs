@@ -31,7 +31,7 @@ const KEYSETS: TableDefinition<&str, &str> = TableDefinition::new("keysets");
 // Key: Transaction Id
 // Value: Serialized transaction info
 const PENDING_TRANSACTIONS: TableDefinition<&str, &str> =
-    TableDefinition::new("pendingtransactions");
+    TableDefinition::new("pending_transactions");
 
 // Transactions
 // Key: Transaction Id

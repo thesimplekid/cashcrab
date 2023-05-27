@@ -197,11 +197,6 @@ pub extern "C" fn new_box_autoadd_transaction_0() -> *mut wire_Transaction {
 }
 
 #[no_mangle]
-pub extern "C" fn new_box_autoadd_u64_0(value: u64) -> *mut u64 {
-    support::new_leak_box_ptr(value)
-}
-
-#[no_mangle]
 pub extern "C" fn new_uint_8_list_0(len: i32) -> *mut wire_uint_8_list {
     let ans = wire_uint_8_list {
         ptr: support::new_leak_vec_ptr(Default::default(), len),
@@ -253,11 +248,6 @@ impl Wire2Api<Transaction> for *mut wire_Transaction {
         Wire2Api::<Transaction>::wire2api(*wrap).into()
     }
 }
-impl Wire2Api<u64> for *mut u64 {
-    fn wire2api(self) -> u64 {
-        unsafe { *support::box_from_leak_ptr(self) }
-    }
-}
 impl Wire2Api<CashuTransaction> for wire_CashuTransaction {
     fn wire2api(self) -> CashuTransaction {
         CashuTransaction {
@@ -301,10 +291,7 @@ impl Wire2Api<Message> for wire_Message {
                 let ans = support::box_from_leak_ptr(ans.Invoice);
                 Message::Invoice {
                     direction: ans.direction.wire2api(),
-                    time: ans.time.wire2api(),
-                    bolt11: ans.bolt11.wire2api(),
-                    amount: ans.amount.wire2api(),
-                    status: ans.status.wire2api(),
+                    transaction: ans.transaction.wire2api(),
                 }
             },
             2 => unsafe {
@@ -312,11 +299,7 @@ impl Wire2Api<Message> for wire_Message {
                 let ans = support::box_from_leak_ptr(ans.Token);
                 Message::Token {
                     direction: ans.direction.wire2api(),
-                    time: ans.time.wire2api(),
-                    token: ans.token.wire2api(),
-                    mint: ans.mint.wire2api(),
-                    amount: ans.amount.wire2api(),
-                    status: ans.status.wire2api(),
+                    transaction: ans.transaction.wire2api(),
                 }
             },
             _ => unreachable!(),
@@ -415,21 +398,14 @@ pub struct wire_Message_Text {
 #[derive(Clone)]
 pub struct wire_Message_Invoice {
     direction: i32,
-    time: u64,
-    bolt11: *mut wire_uint_8_list,
-    amount: *mut u64,
-    status: i32,
+    transaction: *mut wire_LNTransaction,
 }
 
 #[repr(C)]
 #[derive(Clone)]
 pub struct wire_Message_Token {
     direction: i32,
-    time: u64,
-    token: *mut wire_uint_8_list,
-    mint: *mut wire_uint_8_list,
-    amount: *mut u64,
-    status: i32,
+    transaction: *mut wire_CashuTransaction,
 }
 
 #[repr(C)]
@@ -539,10 +515,7 @@ pub extern "C" fn inflate_Message_Invoice() -> *mut MessageKind {
     support::new_leak_box_ptr(MessageKind {
         Invoice: support::new_leak_box_ptr(wire_Message_Invoice {
             direction: Default::default(),
-            time: Default::default(),
-            bolt11: core::ptr::null_mut(),
-            amount: core::ptr::null_mut(),
-            status: Default::default(),
+            transaction: core::ptr::null_mut(),
         }),
     })
 }
@@ -552,11 +525,7 @@ pub extern "C" fn inflate_Message_Token() -> *mut MessageKind {
     support::new_leak_box_ptr(MessageKind {
         Token: support::new_leak_box_ptr(wire_Message_Token {
             direction: Default::default(),
-            time: Default::default(),
-            token: core::ptr::null_mut(),
-            mint: core::ptr::null_mut(),
-            amount: core::ptr::null_mut(),
-            status: Default::default(),
+            transaction: core::ptr::null_mut(),
         }),
     })
 }

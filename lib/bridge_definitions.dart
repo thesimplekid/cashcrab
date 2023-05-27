@@ -203,18 +203,12 @@ class InvoiceInfo {
   });
 }
 
-enum InvoiceStatus {
-  Paid,
-  Unpaid,
-  Expired,
-}
-
 class LNTransaction {
   final String? id;
   final TransactionStatus status;
   final int time;
   final int amount;
-  final String mint;
+  final String? mint;
   final String bolt11;
   final String hash;
 
@@ -223,7 +217,7 @@ class LNTransaction {
     required this.status,
     required this.time,
     required this.amount,
-    required this.mint,
+    this.mint,
     required this.bolt11,
     required this.hash,
   });
@@ -238,18 +232,11 @@ class Message with _$Message {
   }) = Message_Text;
   const factory Message.invoice({
     required Direction direction,
-    required int time,
-    required String bolt11,
-    int? amount,
-    required InvoiceStatus status,
+    required LNTransaction transaction,
   }) = Message_Invoice;
   const factory Message.token({
     required Direction direction,
-    required int time,
-    required String token,
-    required String mint,
-    int? amount,
-    required TokenStatus status,
+    required CashuTransaction transaction,
   }) = Message_Token;
 }
 
@@ -277,11 +264,6 @@ class TokenData {
     required this.amount,
     this.memo,
   });
-}
-
-enum TokenStatus {
-  Spendable,
-  Claimed,
 }
 
 @freezed
