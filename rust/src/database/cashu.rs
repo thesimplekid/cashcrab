@@ -1,12 +1,12 @@
 use anyhow::Result;
-use cashu_crab::types::Proofs;
+use cashu_crab::{keyset::Keys, types::Proofs};
 use redb::{ReadableMultimapTable, ReadableTable};
 use std::collections::HashMap;
 
-use super::{CONFIG, DB, MINT_INFO, PROOFS};
+use super::{CONFIG, DB, KEYSETS, MINT_INFO, MINT_KEYSETS, PROOFS};
 use crate::{
     api::CashuError,
-    types::{Mint, MintInfo},
+    types::{unix_time, Mint, MintInfo},
 };
 
 /// Add proofs
@@ -112,6 +112,54 @@ pub(crate) async fn add_mint(mint: Mint) -> Result<()> {
     write_txn.commit()?;
 
     Ok(())
+}
+
+/// Add Keyset
+pub(crate) async fn add_keyset(mint: &str, keys: &Keys) -> Result<()> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+
+    let write_txn = db.begin_write()?;
+    {
+        let keyset_id = keys.id();
+
+        let time = unix_time();
+
+        let mut mint_keysets_table = write_txn.open_multimap_table(MINT_KEYSETS)?;
+        mint_keysets_table.insert(mint, (keyset_id.as_str(), time))?;
+
+        let mut keysets_table = write_txn.open_table(KEYSETS)?;
+
+        keysets_table.insert(keyset_id.as_str(), serde_json::to_string(&keys)?.as_str())?;
+    }
+    write_txn.commit()?;
+
+    Ok(())
+}
+
+/// Get keysets
+pub(crate) async fn get_keyset(mint: &str) -> Result<HashMap<String, u64>> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+
+    let read_txn = db.begin_read()?;
+    let mint_keysets_table = read_txn.open_multimap_table(MINT_KEYSETS)?;
+    let keysets = mint_keysets_table.get(mint)?;
+
+    let mut keyset_map = HashMap::new();
+
+    for k in keysets {
+        if let Ok(k) = k {
+            let (key, value) = k.value();
+            keyset_map.insert(key.to_string(), value);
+        }
+    }
+
+    Ok(keyset_map)
 }
 
 /// Get all mints

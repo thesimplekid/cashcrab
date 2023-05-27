@@ -62,10 +62,10 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kGetBalancesConstMeta;
 
-  /// Create Wallet
-  Future<void> createWallet({required String url, dynamic hint});
+  /// Add Mint
+  Future<void> addMint({required String url, dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kCreateWalletConstMeta;
+  FlutterRustBridgeTaskConstMeta get kAddMintConstMeta;
 
   Future<List<String>> getWallets({dynamic hint});
 

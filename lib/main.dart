@@ -435,7 +435,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   Future<void> _addNewMint(String mintUrl) async {
     // TODO: Should handle error connecting to mint
-    await api.createWallet(url: mintUrl);
+    await api.addMint(url: mintUrl);
     mints[mintUrl] = 0;
   }
 }

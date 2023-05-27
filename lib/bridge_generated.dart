@@ -227,20 +227,20 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
-  Future<void> createWallet({required String url, dynamic hint}) {
+  Future<void> addMint({required String url, dynamic hint}) {
     var arg0 = _platform.api2wire_String(url);
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_create_wallet(port_, arg0),
+      callFfi: (port_) => _platform.inner.wire_add_mint(port_, arg0),
       parseSuccessData: _wire2api_unit,
-      constMeta: kCreateWalletConstMeta,
+      constMeta: kAddMintConstMeta,
       argValues: [url],
       hint: hint,
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kCreateWalletConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kAddMintConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "create_wallet",
+        debugName: "add_mint",
         argNames: ["url"],
       );
 
@@ -1285,21 +1285,21 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _wire_get_balances =
       _wire_get_balancesPtr.asFunction<void Function(int)>();
 
-  void wire_create_wallet(
+  void wire_add_mint(
     int port_,
     ffi.Pointer<wire_uint_8_list> url,
   ) {
-    return _wire_create_wallet(
+    return _wire_add_mint(
       port_,
       url,
     );
   }
 
-  late final _wire_create_walletPtr = _lookup<
+  late final _wire_add_mintPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_create_wallet');
-  late final _wire_create_wallet = _wire_create_walletPtr
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_add_mint');
+  late final _wire_add_mint = _wire_add_mintPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_wallets(

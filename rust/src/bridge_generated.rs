@@ -181,16 +181,16 @@ fn wire_get_balances_impl(port_: MessagePort) {
         move || move |task_callback| get_balances(),
     )
 }
-fn wire_create_wallet_impl(port_: MessagePort, url: impl Wire2Api<String> + UnwindSafe) {
+fn wire_add_mint_impl(port_: MessagePort, url: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "create_wallet",
+            debug_name: "add_mint",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
             let api_url = url.wire2api();
-            move |task_callback| create_wallet(api_url)
+            move |task_callback| add_mint(api_url)
         },
     )
 }

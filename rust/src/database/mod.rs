@@ -18,12 +18,13 @@ const MINT_INFO: TableDefinition<&str, &str> = TableDefinition::new("mint_info")
 
 // Mint Keysets
 // Key: Mint url
-// Value: keyset id
-const MINT_KEYSETS: TableDefinition<&str, &str> = TableDefinition::new("mint_keysets");
+// Value: (keyset id, unix_time)
+const MINT_KEYSETS: MultimapTableDefinition<&str, (&str, u64)> =
+    MultimapTableDefinition::new("mint_keysets");
 
 // Keysets
 // Key: Keyset ID
-/// Value: Serialized hashmap of mint public keys
+// Value: Serialized hashmap of mint public keys
 const KEYSETS: TableDefinition<&str, &str> = TableDefinition::new("keysets");
 
 // Transactions
@@ -70,13 +71,13 @@ pub(crate) async fn init_db(path: &str) -> Result<()> {
         {
             let _ = write_txn.open_table(CONFIG)?;
             let _ = write_txn.open_table(MINT_INFO)?;
-            let _ = write_txn.open_table(MINT_KEYSETS)?;
             let _ = write_txn.open_table(KEYSETS)?;
             let _ = write_txn.open_table(TRANSACTIONS)?;
             let _ = write_txn.open_table(PENDING_TRANSACTIONS)?;
             let _ = write_txn.open_table(CONTACTS)?;
             let _ = write_txn.open_multimap_table(PROOFS)?;
             let _ = write_txn.open_multimap_table(MESSAGES)?;
+            let _ = write_txn.open_multimap_table(MINT_KEYSETS)?;
         }
         write_txn.commit()?;
     }

@@ -66,8 +66,8 @@ pub extern "C" fn wire_get_balances(port_: i64) {
 }
 
 #[no_mangle]
-pub extern "C" fn wire_create_wallet(port_: i64, url: *mut wire_uint_8_list) {
-    wire_create_wallet_impl(port_, url)
+pub extern "C" fn wire_add_mint(port_: i64, url: *mut wire_uint_8_list) {
+    wire_add_mint_impl(port_, url)
 }
 
 #[no_mangle]

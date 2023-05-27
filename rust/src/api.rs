@@ -265,14 +265,26 @@ pub fn get_balances() -> Result<String> {
     result
 }
 
-/// Create Wallet
-pub fn create_wallet(url: String) -> Result<()> {
+/// Add Mint
+pub fn add_mint(url: String) -> Result<()> {
     let rt = lock_runtime!();
 
     let result = rt.block_on(async {
+        let mut active_keyset = None;
+        let mut keysets = vec![];
+
         let client = Client::new(&url)?;
         let wallet = match client.get_keys().await {
-            Ok(keys) => Some(CashuWallet::new(client.clone(), keys)),
+            Ok(keys) => {
+                let keyset_id = keys.id();
+
+                active_keyset = Some(keyset_id.clone());
+                keysets.push(keyset_id.clone());
+
+                database::cashu::add_keyset(&url, &keys).await?;
+
+                Some(CashuWallet::new(client.clone(), keys))
+            }
             Err(_err) => None,
         };
 
@@ -280,10 +292,8 @@ pub fn create_wallet(url: String) -> Result<()> {
 
         let mint = Mint {
             url,
-            // TODO:
-            active_keyset: None,
-            // TODO:
-            keysets: vec![],
+            active_keyset,
+            keysets,
         };
 
         database::cashu::add_mint(mint).await?;
@@ -492,11 +502,24 @@ pub fn receive_token(encoded_token: String) -> Result<Transaction> {
 }
 
 // REVIEW: Naive coin selection
-fn select_send_proofs(amount: u64, proofs: &Proofs) -> (Proofs, Proofs) {
+async fn select_send_proofs(mint: &str, amount: u64, proofs: &Proofs) -> Result<(Proofs, Proofs)> {
     let mut send_proofs = vec![];
     let mut keep_proofs = vec![];
 
     let mut a = 0;
+
+    let keysets = database::cashu::get_keyset(mint).await?;
+
+    let mut sorted_vec_of_proofs = proofs.clone();
+
+    // Sort proofs so oldest ming keyset is first
+    sorted_vec_of_proofs.sort_by_key(|s| {
+        keysets
+            .iter()
+            .find(|(field, _)| field == &&s.id.clone().unwrap_or_default())
+            .map(|(_, key)| *key)
+            .unwrap_or(u64::MAX)
+    });
 
     for proof in proofs {
         if a < amount {
@@ -507,7 +530,7 @@ fn select_send_proofs(amount: u64, proofs: &Proofs) -> (Proofs, Proofs) {
         a += proof.amount.to_sat();
     }
 
-    (send_proofs, keep_proofs)
+    Ok((send_proofs, keep_proofs))
 }
 
 pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
@@ -517,7 +540,8 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
 
         let proofs = database::cashu::get_proofs(&active_mint).await?;
 
-        let (send_proofs, mut keep_proofs) = select_send_proofs(amount, &proofs);
+        let (send_proofs, mut keep_proofs) =
+            select_send_proofs(&active_mint, amount, &proofs).await?;
         let r = wallet
             .send(Amount::from_sat(amount), send_proofs.clone())
             .await?;
@@ -600,7 +624,7 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<()> {
         let invoice = str::parse::<Invoice>(&invoice)?;
         let proofs = database::cashu::get_proofs(&mint).await?;
 
-        let (send_proofs, mut keep_proofs) = select_send_proofs(amount, &proofs);
+        let (send_proofs, mut keep_proofs) = select_send_proofs(&mint, amount, &proofs).await?;
         let change = wallet.melt(invoice, send_proofs.clone()).await?;
         if let Some(change) = change.change {
             keep_proofs.extend(change);

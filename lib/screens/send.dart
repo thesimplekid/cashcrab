@@ -105,14 +105,15 @@ class SendState extends State<Send> {
                   );
                 },
                 child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.bolt),
-                      Text(
-                        'Pay via Lightning',
-                        style: TextStyle(fontSize: 20),
-                      )
-                    ]),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.bolt),
+                    Text(
+                      'Pay via Lightning',
+                      style: TextStyle(fontSize: 20),
+                    )
+                  ],
+                ),
               ),
             ),
           ],
