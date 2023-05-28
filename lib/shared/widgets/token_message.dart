@@ -35,11 +35,17 @@ class TokenMessageWidget extends StatelessWidget {
                   const Text("Cashu Token"),
                   Text("Amount: ${transaction?.amount}"),
                   Text("Mint: ${transaction?.mint}"),
-                  // TODO: Check if spendable
                   ElevatedButton(
                     onPressed: () async {
                       receiveToken(transaction?.token);
                     },
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all<Color>(
+                          transaction?.status != TransactionStatus.Pending
+                              ? Colors.green
+                              : Colors
+                                  .purple), // Set the desired background color
+                    ),
                     child: Text(transaction?.status == TransactionStatus.Pending
                         ? 'Redeem'
                         : 'Claimed'),

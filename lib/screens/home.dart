@@ -298,6 +298,17 @@ class TransactionList extends StatelessWidget {
                 ),
               );
               break;
+            case TransactionStatus.Pending:
+              statusIcon = Icons.call_received;
+              amountText = Text(
+                "${transaction.amount} sats",
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w100,
+                  color: Colors.green,
+                ),
+              );
+              break;
             default:
               amountText = Text(
                 "${transaction.amount} sats",

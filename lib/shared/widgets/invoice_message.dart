@@ -39,7 +39,13 @@ class InvoiceMessageWidget extends StatelessWidget {
                       payInvoice(transaction?.bolt11, transaction?.mint,
                           transaction?.amount);
                     },
-                    // TODO: Check if paid
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all<Color>(
+                          transaction?.status != TransactionStatus.Pending
+                              ? Colors.green
+                              : Colors
+                                  .purple), // Set the desired background color
+                    ),
                     child: Text(transaction?.status == TransactionStatus.Pending
                         ? 'Pay Invoice'
                         : 'Paid'),
