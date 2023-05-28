@@ -34,14 +34,15 @@ class InvoiceMessageWidget extends StatelessWidget {
                 children: [
                   const Text("Lightning Invoice"),
                   Text("Amount: ${transaction?.amount}"),
-                  // TODO: Check if paid
                   ElevatedButton(
                     onPressed: () async {
                       payInvoice(transaction?.bolt11, transaction?.mint,
                           transaction?.amount);
                     },
                     // TODO: Check if paid
-                    child: const Text('Pay Invoice'),
+                    child: Text(transaction?.status == TransactionStatus.Pending
+                        ? 'Pay Invoice'
+                        : 'Paid'),
                   )
                 ],
               ),

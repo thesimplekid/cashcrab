@@ -248,7 +248,6 @@ pub fn get_messages(pubkey: String) -> Result<Conversation> {
             .map(|x| x.id())
             .flatten()
             .collect();
-        // bail!("{:?}", transaction_messages);
 
         let transactions = database::transactions::get_transactions(transaction_messages).await?;
         Ok(Conversation {
