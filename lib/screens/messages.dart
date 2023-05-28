@@ -37,7 +37,9 @@ class _MessagesState extends State<Messages> {
   final TextEditingController _textEditingController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  List<Message> messages = List.empty(growable: true);
+  List<Message> messages = [];
+  Map<String, Transaction> transactions = {};
+
   _MessagesState();
 
   @override
@@ -56,20 +58,35 @@ class _MessagesState extends State<Messages> {
   }
 
   Future<void> getMessages(String pubkey) async {
-    List<Message> gotMessages = await widget.api.getMessages(pubkey: pubkey);
+    Conversation c = await widget.api.getMessages(pubkey: pubkey);
+
+    Map<String, Transaction> t = {};
+
+    for (var transaction in c.transactions) {
+      transaction.when(cashuTransaction: (cashu) {
+        if (cashu.id != null) {
+          t[cashu.id!] = transaction;
+        }
+      }, lnTransaction: (ln) {
+        if (ln.id != null) {
+          t[ln.id!] = transaction;
+        }
+      });
+    }
 
     setState(() {
-      messages = gotMessages;
+      messages = c.messages;
+      transactions = t;
     });
   }
 
   Future<void> sendMessage(Message msg) async {
-    Message message =
+    Conversation c =
         await widget.api.sendMessage(pubkey: widget.peerPubkey, message: msg);
     _textEditingController.clear();
 
     setState(() {
-      messages.add(message);
+      _addMessage(c);
     });
   }
 
@@ -83,15 +100,19 @@ class _MessagesState extends State<Messages> {
 
       CashuTransaction cTransaction = transaction.field0 as CashuTransaction;
 
-      message =
-          Message.token(direction: Direction.Sent, transaction: cTransaction);
+      message = Message.token(
+          direction: Direction.Sent,
+          time: cTransaction.time,
+          transactionId: cTransaction.id!);
     } else if (msg.startsWith("/request")) {
       List<String> splits = msg.split(' ');
       LNTransaction transaction =
           await widget.createInvoice(int.parse(splits[1]), widget.activeMint);
 
-      message =
-          Message.invoice(direction: Direction.Sent, transaction: transaction);
+      message = Message.invoice(
+          direction: Direction.Sent,
+          time: transaction.time,
+          transactionId: transaction.id!);
     } else {
       message = Message.text(
           content: msg,
@@ -120,9 +141,21 @@ class _MessagesState extends State<Messages> {
   }
 
 // Call _scrollToBottom() after adding new message
-  void _addMessage(Message message) {
+  void _addMessage(Conversation addedConversation) {
     setState(() {
-      messages.add(message);
+      messages = messages + addedConversation.messages;
+
+      for (var transaction in addedConversation.transactions) {
+        transaction.when(cashuTransaction: (cashu) {
+          if (cashu.id != null) {
+            transactions[cashu.id!] = transaction;
+          }
+        }, lnTransaction: (ln) {
+          if (ln.id != null) {
+            transactions[ln.id!] = transaction;
+          }
+        });
+      }
     });
     _scrollToBottom();
   }
@@ -151,14 +184,27 @@ class _MessagesState extends State<Messages> {
                   text: (dir, time, textContent) {
                     messageRow = TextMessageWidget(time, textContent, dir);
                   },
-                  invoice: (dir, transaction) {
+                  invoice: (dir, time, transactionId) {
+                    LNTransaction? transaction;
+
+                    if (transactions[transactionId] != null) {
+                      transaction =
+                          transactions[transactionId]!.field0 as LNTransaction;
+                    }
                     messageRow = InvoiceMessageWidget(
                       dir,
                       transaction,
                       widget.payInvoice,
                     );
                   },
-                  token: (dir, transaction) {
+                  token: (dir, time, transactionId) {
+                    CashuTransaction? transaction;
+
+                    if (transactions[transactionId] != null) {
+                      transaction = transactions[transactionId]!.field0
+                          as CashuTransaction;
+                    }
+
                     messageRow = TokenMessageWidget(
                         widget.receiveToken, dir, transaction);
                   },

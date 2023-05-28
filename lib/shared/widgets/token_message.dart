@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class TokenMessageWidget extends StatelessWidget {
   final Direction direction;
-  final CashuTransaction transaction;
+  final CashuTransaction? transaction;
   final Function receiveToken;
 
   const TokenMessageWidget(this.receiveToken, this.direction, this.transaction,
@@ -33,14 +33,14 @@ class TokenMessageWidget extends StatelessWidget {
               Column(
                 children: [
                   const Text("Cashu Token"),
-                  Text("Amount: ${transaction.amount}"),
-                  Text("Mint: ${transaction.mint}"),
+                  Text("Amount: ${transaction?.amount}"),
+                  Text("Mint: ${transaction?.mint}"),
                   // TODO: Check if spendable
                   ElevatedButton(
                     onPressed: () async {
-                      receiveToken(transaction.token);
+                      receiveToken(transaction?.token);
                     },
-                    child: Text(transaction.status == TransactionStatus.Pending
+                    child: Text(transaction?.status == TransactionStatus.Pending
                         ? 'Redeem'
                         : 'Claimed'),
                   ),

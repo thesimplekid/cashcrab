@@ -7,10 +7,10 @@ use lazy_static::lazy_static;
 use nostr_sdk::prelude::*;
 use tokio::{sync::Mutex, task::JoinHandle};
 
-use crate::types::CashuTransaction;
+use crate::types::{unix_time, CashuTransaction, Conversation, Transaction};
 use crate::{
     database,
-    types::{self, Direction, InvoiceStatus, Message},
+    types::{self, Direction, Message},
 };
 
 lazy_static! {
@@ -107,35 +107,42 @@ async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp
     if msg.to_lowercase().as_str().starts_with("lnbc") {
         // Invoice message
         let invoice = lightning_invoice::Invoice::from_str(msg)?;
-        let message = Message::Invoice {
-            direction: Direction::Received,
-            transaction: types::LNTransaction {
-                id: None,
-                status: types::TransactionStatus::Pending,
-                time: created_at.as_u64(),
-                amount: invoice_amount(invoice.amount_milli_satoshis()).unwrap_or(0),
-                mint: None,
-                bolt11: msg.to_string(),
-                hash: "".to_string(),
-            },
-        };
 
+        let transaction = Transaction::LNTransaction(types::LNTransaction::new(
+            None,
+            invoice_amount(invoice.amount_milli_satoshis()).unwrap_or(0),
+            None,
+            msg,
+            "",
+        ));
+
+        database::transactions::add_transaction(&transaction).await?;
+
+        let message = Message::Token {
+            direction: Direction::Received,
+            time: unix_time(),
+            transaction_id: transaction.id(),
+        };
         database::message::add_message(author, &message).await?;
     }
     // cashu token
     else if msg.to_lowercase().as_str().starts_with("cashu") {
         let token = Token::from_str(msg)?;
         let token_info = token.token_info();
+
+        let transaction = Transaction::CashuTransaction(CashuTransaction::new(
+            None,
+            token_info.0,
+            &token_info.1,
+            msg,
+        ));
+
+        database::transactions::add_transaction(&transaction).await?;
+
         let message = Message::Token {
             direction: Direction::Received,
-            transaction: CashuTransaction {
-                id: None,
-                status: types::TransactionStatus::Pending,
-                time: created_at.as_u64(),
-                amount: token_info.0,
-                mint: token_info.1,
-                token: msg.to_string(),
-            },
+            time: unix_time(),
+            transaction_id: transaction.id(),
         };
 
         database::message::add_message(author, &message).await?;
@@ -403,12 +410,21 @@ pub(crate) async fn set_contact_list() -> Result<()> {
     Ok(())
 }
 
-pub async fn send_message(receiver: XOnlyPublicKey, message: &Message) -> Result<()> {
+pub async fn send_message(receiver: XOnlyPublicKey, message: &Message) -> Result<Conversation> {
     let mut client = SEND_CLIENT.lock().await;
 
     if let Some(client) = client.as_mut() {
-        client.send_direct_msg(receiver, message.content()).await?;
+        if let Ok(Some(msg)) = message.content().await {
+            client.send_direct_msg(receiver, msg).await?;
+            if let Some(transaction_id) = message.id() {
+                if let Ok(Some(transaction)) =
+                    database::transactions::get_transaction(&transaction_id).await
+                {
+                    return Ok(Conversation::new(vec![message.clone()], vec![transaction]));
+                }
+            }
+        }
     }
 
-    Ok(())
+    Ok(Conversation::new(vec![message.clone()], vec![]))
 }

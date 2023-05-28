@@ -291,7 +291,8 @@ impl Wire2Api<Message> for wire_Message {
                 let ans = support::box_from_leak_ptr(ans.Invoice);
                 Message::Invoice {
                     direction: ans.direction.wire2api(),
-                    transaction: ans.transaction.wire2api(),
+                    time: ans.time.wire2api(),
+                    transaction_id: ans.transaction_id.wire2api(),
                 }
             },
             2 => unsafe {
@@ -299,7 +300,8 @@ impl Wire2Api<Message> for wire_Message {
                 let ans = support::box_from_leak_ptr(ans.Token);
                 Message::Token {
                     direction: ans.direction.wire2api(),
-                    transaction: ans.transaction.wire2api(),
+                    time: ans.time.wire2api(),
+                    transaction_id: ans.transaction_id.wire2api(),
                 }
             },
             _ => unreachable!(),
@@ -398,14 +400,16 @@ pub struct wire_Message_Text {
 #[derive(Clone)]
 pub struct wire_Message_Invoice {
     direction: i32,
-    transaction: *mut wire_LNTransaction,
+    time: u64,
+    transaction_id: *mut wire_uint_8_list,
 }
 
 #[repr(C)]
 #[derive(Clone)]
 pub struct wire_Message_Token {
     direction: i32,
-    transaction: *mut wire_CashuTransaction,
+    time: u64,
+    transaction_id: *mut wire_uint_8_list,
 }
 
 #[repr(C)]
@@ -515,7 +519,8 @@ pub extern "C" fn inflate_Message_Invoice() -> *mut MessageKind {
     support::new_leak_box_ptr(MessageKind {
         Invoice: support::new_leak_box_ptr(wire_Message_Invoice {
             direction: Default::default(),
-            transaction: core::ptr::null_mut(),
+            time: Default::default(),
+            transaction_id: core::ptr::null_mut(),
         }),
     })
 }
@@ -525,7 +530,8 @@ pub extern "C" fn inflate_Message_Token() -> *mut MessageKind {
     support::new_leak_box_ptr(MessageKind {
         Token: support::new_leak_box_ptr(wire_Message_Token {
             direction: Default::default(),
-            transaction: core::ptr::null_mut(),
+            time: Default::default(),
+            transaction_id: core::ptr::null_mut(),
         }),
     })
 }

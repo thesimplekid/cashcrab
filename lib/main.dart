@@ -193,8 +193,6 @@ class MyHomePageState extends State<MyHomePage> {
     return lnt;
   }
 
-  // TODO: This needs to add the transaction to transaction
-  // it also shouldnt need the amount as its in the invoice
   Future<void> payInvoice(String bolt11, String mint, int amount) async {
     await api.melt(invoice: bolt11, mint: mint, amount: amount);
 

@@ -70,21 +70,48 @@ pub(crate) async fn get_all_transactions() -> Result<Vec<Transaction>, CashuErro
     Ok(transactions)
 }
 
-/// Get all transactions
-pub(crate) async fn get_transactions(id: &str) -> Result<Option<Transaction>, CashuError> {
+/// Get transaction
+pub(crate) async fn get_transaction(id: &str) -> Result<Option<Transaction>, CashuError> {
     let db = DB.lock().await;
     let db = db
         .as_ref()
         .ok_or_else(|| CashuError("DB not set".to_string()))?;
     let read_txn = db.begin_read()?;
     let table = read_txn.open_table(TRANSACTIONS)?;
+    let pending_table = read_txn.open_table(PENDING_TRANSACTIONS)?;
 
     let transaction = match table.get(id)? {
         Some(t) => Some(serde_json::from_str(t.value())?),
-        None => None,
+        None => match pending_table.get(id)? {
+            Some(t) => Some(serde_json::from_str(t.value())?),
+            None => None,
+        },
     };
 
     Ok(transaction)
+}
+
+/// Get transactions
+pub(crate) async fn get_transactions(ids: &Vec<String>) -> Result<Vec<Transaction>, CashuError> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+    let read_txn = db.begin_read()?;
+    let table = read_txn.open_table(TRANSACTIONS)?;
+    let pending_table = read_txn.open_table(PENDING_TRANSACTIONS)?;
+
+    let mut transactions = vec![];
+
+    for id in ids {
+        if let Ok(Some(t)) = table.get(id.as_str()) {
+            transactions.push(serde_json::from_str(t.value())?);
+        } else if let Ok(Some(t)) = pending_table.get(id.as_str()) {
+            transactions.push(serde_json::from_str(t.value())?);
+        }
+    }
+
+    Ok(transactions)
 }
 
 pub(crate) async fn update_transaction_status(transaction: &Transaction) -> Result<(), CashuError> {

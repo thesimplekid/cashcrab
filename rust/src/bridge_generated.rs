@@ -21,6 +21,7 @@ use std::sync::Arc;
 
 use crate::types::CashuTransaction;
 use crate::types::Contact;
+use crate::types::Conversation;
 use crate::types::Direction;
 use crate::types::LNTransaction;
 use crate::types::Message;
@@ -522,6 +523,13 @@ impl support::IntoDart for Contact {
 }
 impl support::IntoDartExceptPrimitive for Contact {}
 
+impl support::IntoDart for Conversation {
+    fn into_dart(self) -> support::DartAbi {
+        vec![self.messages.into_dart(), self.transactions.into_dart()].into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for Conversation {}
+
 impl support::IntoDart for Direction {
     fn into_dart(self) -> support::DartAbi {
         match self {
@@ -576,19 +584,23 @@ impl support::IntoDart for Message {
             ],
             Self::Invoice {
                 direction,
-                transaction,
+                time,
+                transaction_id,
             } => vec![
                 1.into_dart(),
                 direction.into_dart(),
-                transaction.into_dart(),
+                time.into_dart(),
+                transaction_id.into_dart(),
             ],
             Self::Token {
                 direction,
-                transaction,
+                time,
+                transaction_id,
             } => vec![
                 2.into_dart(),
                 direction.into_dart(),
-                transaction.into_dart(),
+                time.into_dart(),
+                transaction_id.into_dart(),
             ],
         }
         .into_dart()

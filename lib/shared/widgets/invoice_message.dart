@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class InvoiceMessageWidget extends StatelessWidget {
   final Direction direction;
-  final LNTransaction transaction;
+  final LNTransaction? transaction;
   final Function payInvoice;
 
   const InvoiceMessageWidget(this.direction, this.transaction, this.payInvoice,
@@ -33,12 +33,12 @@ class InvoiceMessageWidget extends StatelessWidget {
               Column(
                 children: [
                   const Text("Lightning Invoice"),
-                  Text("Amount: ${transaction.amount}"),
+                  Text("Amount: ${transaction?.amount}"),
                   // TODO: Check if paid
                   ElevatedButton(
                     onPressed: () async {
-                      payInvoice(transaction.bolt11, transaction.mint,
-                          transaction.amount);
+                      payInvoice(transaction?.bolt11, transaction?.mint,
+                          transaction?.amount);
                     },
                     // TODO: Check if paid
                     child: const Text('Pay Invoice'),

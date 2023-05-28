@@ -1,8 +1,11 @@
+use anyhow::Result;
 use bitcoin_hashes::sha256;
 use bitcoin_hashes::Hash;
 pub use cashu_crab::types::MintInfo;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
+
+use crate::database;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TransactionStatus {
@@ -40,6 +43,13 @@ impl Transaction {
         match self {
             Transaction::CashuTransaction(transaction) => transaction.status,
             Transaction::LNTransaction(transaction) => transaction.status,
+        }
+    }
+
+    pub fn content(&self) -> String {
+        match self {
+            Transaction::CashuTransaction(transaction) => transaction.token.clone(),
+            Transaction::LNTransaction(transaction) => transaction.bolt11.clone(),
         }
     }
 
@@ -170,11 +180,13 @@ pub enum Message {
     },
     Invoice {
         direction: Direction,
-        transaction: LNTransaction,
+        time: u64,
+        transaction_id: String,
     },
     Token {
         direction: Direction,
-        transaction: CashuTransaction,
+        time: u64,
+        transaction_id: String,
     },
 }
 
@@ -184,12 +196,45 @@ impl Message {
         serde_json::json!(self).to_string()
     }
 
-    /// Content of message
-    pub fn content(&self) -> String {
+    pub fn id(&self) -> Option<String> {
         match self {
-            Self::Text { content, .. } => content.to_owned(),
-            Self::Invoice { transaction, .. } => transaction.bolt11.to_owned(),
-            Self::Token { transaction, .. } => transaction.token.to_owned(),
+            Message::Invoice { transaction_id, .. } => Some(transaction_id.to_string()),
+            Message::Token { transaction_id, .. } => Some(transaction_id.to_string()),
+            Message::Text { .. } => None,
+        }
+    }
+
+    /// Content of message
+    pub async fn content(&self) -> Result<Option<String>> {
+        match self {
+            Self::Text { content, .. } => Ok(Some(content.to_owned())),
+            Self::Invoice { transaction_id, .. } => {
+                match database::transactions::get_transaction(&transaction_id).await? {
+                    Some(transaction) => Ok(Some(transaction.content())),
+                    None => Ok(None),
+                }
+            }
+            Self::Token { transaction_id, .. } => {
+                match database::transactions::get_transaction(&transaction_id).await? {
+                    Some(transaction) => Ok(Some(transaction.content())),
+                    None => Ok(None),
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Conversation {
+    pub messages: Vec<Message>,
+    pub transactions: Vec<Transaction>,
+}
+
+impl Conversation {
+    pub fn new(messages: Vec<Message>, transactions: Vec<Transaction>) -> Self {
+        Self {
+            messages,
+            transactions,
         }
     }
 }

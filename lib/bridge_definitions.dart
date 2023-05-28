@@ -49,12 +49,12 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kGetContactsConstMeta;
 
-  Future<Message> sendMessage(
+  Future<Conversation> sendMessage(
       {required String pubkey, required Message message, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kSendMessageConstMeta;
 
-  Future<List<Message>> getMessages({required String pubkey, dynamic hint});
+  Future<Conversation> getMessages({required String pubkey, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetMessagesConstMeta;
 
@@ -186,6 +186,16 @@ class Contact {
   });
 }
 
+class Conversation {
+  final List<Message> messages;
+  final List<Transaction> transactions;
+
+  const Conversation({
+    required this.messages,
+    required this.transactions,
+  });
+}
+
 enum Direction {
   Sent,
   Received,
@@ -232,11 +242,13 @@ class Message with _$Message {
   }) = Message_Text;
   const factory Message.invoice({
     required Direction direction,
-    required LNTransaction transaction,
+    required int time,
+    required String transactionId,
   }) = Message_Invoice;
   const factory Message.token({
     required Direction direction,
-    required CashuTransaction transaction,
+    required int time,
+    required String transactionId,
   }) = Message_Token;
 }
 

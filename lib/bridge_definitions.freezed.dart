@@ -17,28 +17,35 @@ final _privateConstructorUsedError = UnsupportedError(
 /// @nodoc
 mixin _$Message {
   Direction get direction => throw _privateConstructorUsedError;
+  int get time => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Direction direction, int time, String content)
         text,
-    required TResult Function(Direction direction, LNTransaction transaction)
+    required TResult Function(
+            Direction direction, int time, String transactionId)
         invoice,
-    required TResult Function(Direction direction, CashuTransaction transaction)
+    required TResult Function(
+            Direction direction, int time, String transactionId)
         token,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Direction direction, int time, String content)? text,
-    TResult? Function(Direction direction, LNTransaction transaction)? invoice,
-    TResult? Function(Direction direction, CashuTransaction transaction)? token,
+    TResult? Function(Direction direction, int time, String transactionId)?
+        invoice,
+    TResult? Function(Direction direction, int time, String transactionId)?
+        token,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Direction direction, int time, String content)? text,
-    TResult Function(Direction direction, LNTransaction transaction)? invoice,
-    TResult Function(Direction direction, CashuTransaction transaction)? token,
+    TResult Function(Direction direction, int time, String transactionId)?
+        invoice,
+    TResult Function(Direction direction, int time, String transactionId)?
+        token,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -74,7 +81,7 @@ abstract class $MessageCopyWith<$Res> {
   factory $MessageCopyWith(Message value, $Res Function(Message) then) =
       _$MessageCopyWithImpl<$Res, Message>;
   @useResult
-  $Res call({Direction direction});
+  $Res call({Direction direction, int time});
 }
 
 /// @nodoc
@@ -91,12 +98,17 @@ class _$MessageCopyWithImpl<$Res, $Val extends Message>
   @override
   $Res call({
     Object? direction = null,
+    Object? time = null,
   }) {
     return _then(_value.copyWith(
       direction: null == direction
           ? _value.direction
           : direction // ignore: cast_nullable_to_non_nullable
               as Direction,
+      time: null == time
+          ? _value.time
+          : time // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -186,9 +198,11 @@ class _$Message_Text implements Message_Text {
   TResult when<TResult extends Object?>({
     required TResult Function(Direction direction, int time, String content)
         text,
-    required TResult Function(Direction direction, LNTransaction transaction)
+    required TResult Function(
+            Direction direction, int time, String transactionId)
         invoice,
-    required TResult Function(Direction direction, CashuTransaction transaction)
+    required TResult Function(
+            Direction direction, int time, String transactionId)
         token,
   }) {
     return text(direction, time, content);
@@ -198,8 +212,10 @@ class _$Message_Text implements Message_Text {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Direction direction, int time, String content)? text,
-    TResult? Function(Direction direction, LNTransaction transaction)? invoice,
-    TResult? Function(Direction direction, CashuTransaction transaction)? token,
+    TResult? Function(Direction direction, int time, String transactionId)?
+        invoice,
+    TResult? Function(Direction direction, int time, String transactionId)?
+        token,
   }) {
     return text?.call(direction, time, content);
   }
@@ -208,8 +224,10 @@ class _$Message_Text implements Message_Text {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Direction direction, int time, String content)? text,
-    TResult Function(Direction direction, LNTransaction transaction)? invoice,
-    TResult Function(Direction direction, CashuTransaction transaction)? token,
+    TResult Function(Direction direction, int time, String transactionId)?
+        invoice,
+    TResult Function(Direction direction, int time, String transactionId)?
+        token,
     required TResult orElse(),
   }) {
     if (text != null) {
@@ -261,6 +279,7 @@ abstract class Message_Text implements Message {
 
   @override
   Direction get direction;
+  @override
   int get time;
   String get content;
   @override
@@ -277,7 +296,7 @@ abstract class _$$Message_InvoiceCopyWith<$Res>
       __$$Message_InvoiceCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({Direction direction, LNTransaction transaction});
+  $Res call({Direction direction, int time, String transactionId});
 }
 
 /// @nodoc
@@ -292,17 +311,22 @@ class __$$Message_InvoiceCopyWithImpl<$Res>
   @override
   $Res call({
     Object? direction = null,
-    Object? transaction = null,
+    Object? time = null,
+    Object? transactionId = null,
   }) {
     return _then(_$Message_Invoice(
       direction: null == direction
           ? _value.direction
           : direction // ignore: cast_nullable_to_non_nullable
               as Direction,
-      transaction: null == transaction
-          ? _value.transaction
-          : transaction // ignore: cast_nullable_to_non_nullable
-              as LNTransaction,
+      time: null == time
+          ? _value.time
+          : time // ignore: cast_nullable_to_non_nullable
+              as int,
+      transactionId: null == transactionId
+          ? _value.transactionId
+          : transactionId // ignore: cast_nullable_to_non_nullable
+              as String,
     ));
   }
 }
@@ -310,16 +334,21 @@ class __$$Message_InvoiceCopyWithImpl<$Res>
 /// @nodoc
 
 class _$Message_Invoice implements Message_Invoice {
-  const _$Message_Invoice({required this.direction, required this.transaction});
+  const _$Message_Invoice(
+      {required this.direction,
+      required this.time,
+      required this.transactionId});
 
   @override
   final Direction direction;
   @override
-  final LNTransaction transaction;
+  final int time;
+  @override
+  final String transactionId;
 
   @override
   String toString() {
-    return 'Message.invoice(direction: $direction, transaction: $transaction)';
+    return 'Message.invoice(direction: $direction, time: $time, transactionId: $transactionId)';
   }
 
   @override
@@ -329,12 +358,13 @@ class _$Message_Invoice implements Message_Invoice {
             other is _$Message_Invoice &&
             (identical(other.direction, direction) ||
                 other.direction == direction) &&
-            (identical(other.transaction, transaction) ||
-                other.transaction == transaction));
+            (identical(other.time, time) || other.time == time) &&
+            (identical(other.transactionId, transactionId) ||
+                other.transactionId == transactionId));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, direction, transaction);
+  int get hashCode => Object.hash(runtimeType, direction, time, transactionId);
 
   @JsonKey(ignore: true)
   @override
@@ -347,34 +377,40 @@ class _$Message_Invoice implements Message_Invoice {
   TResult when<TResult extends Object?>({
     required TResult Function(Direction direction, int time, String content)
         text,
-    required TResult Function(Direction direction, LNTransaction transaction)
+    required TResult Function(
+            Direction direction, int time, String transactionId)
         invoice,
-    required TResult Function(Direction direction, CashuTransaction transaction)
+    required TResult Function(
+            Direction direction, int time, String transactionId)
         token,
   }) {
-    return invoice(direction, transaction);
+    return invoice(direction, time, transactionId);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Direction direction, int time, String content)? text,
-    TResult? Function(Direction direction, LNTransaction transaction)? invoice,
-    TResult? Function(Direction direction, CashuTransaction transaction)? token,
+    TResult? Function(Direction direction, int time, String transactionId)?
+        invoice,
+    TResult? Function(Direction direction, int time, String transactionId)?
+        token,
   }) {
-    return invoice?.call(direction, transaction);
+    return invoice?.call(direction, time, transactionId);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Direction direction, int time, String content)? text,
-    TResult Function(Direction direction, LNTransaction transaction)? invoice,
-    TResult Function(Direction direction, CashuTransaction transaction)? token,
+    TResult Function(Direction direction, int time, String transactionId)?
+        invoice,
+    TResult Function(Direction direction, int time, String transactionId)?
+        token,
     required TResult orElse(),
   }) {
     if (invoice != null) {
-      return invoice(direction, transaction);
+      return invoice(direction, time, transactionId);
     }
     return orElse();
   }
@@ -417,11 +453,14 @@ class _$Message_Invoice implements Message_Invoice {
 abstract class Message_Invoice implements Message {
   const factory Message_Invoice(
       {required final Direction direction,
-      required final LNTransaction transaction}) = _$Message_Invoice;
+      required final int time,
+      required final String transactionId}) = _$Message_Invoice;
 
   @override
   Direction get direction;
-  LNTransaction get transaction;
+  @override
+  int get time;
+  String get transactionId;
   @override
   @JsonKey(ignore: true)
   _$$Message_InvoiceCopyWith<_$Message_Invoice> get copyWith =>
@@ -436,7 +475,7 @@ abstract class _$$Message_TokenCopyWith<$Res>
       __$$Message_TokenCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({Direction direction, CashuTransaction transaction});
+  $Res call({Direction direction, int time, String transactionId});
 }
 
 /// @nodoc
@@ -451,17 +490,22 @@ class __$$Message_TokenCopyWithImpl<$Res>
   @override
   $Res call({
     Object? direction = null,
-    Object? transaction = null,
+    Object? time = null,
+    Object? transactionId = null,
   }) {
     return _then(_$Message_Token(
       direction: null == direction
           ? _value.direction
           : direction // ignore: cast_nullable_to_non_nullable
               as Direction,
-      transaction: null == transaction
-          ? _value.transaction
-          : transaction // ignore: cast_nullable_to_non_nullable
-              as CashuTransaction,
+      time: null == time
+          ? _value.time
+          : time // ignore: cast_nullable_to_non_nullable
+              as int,
+      transactionId: null == transactionId
+          ? _value.transactionId
+          : transactionId // ignore: cast_nullable_to_non_nullable
+              as String,
     ));
   }
 }
@@ -469,16 +513,21 @@ class __$$Message_TokenCopyWithImpl<$Res>
 /// @nodoc
 
 class _$Message_Token implements Message_Token {
-  const _$Message_Token({required this.direction, required this.transaction});
+  const _$Message_Token(
+      {required this.direction,
+      required this.time,
+      required this.transactionId});
 
   @override
   final Direction direction;
   @override
-  final CashuTransaction transaction;
+  final int time;
+  @override
+  final String transactionId;
 
   @override
   String toString() {
-    return 'Message.token(direction: $direction, transaction: $transaction)';
+    return 'Message.token(direction: $direction, time: $time, transactionId: $transactionId)';
   }
 
   @override
@@ -488,12 +537,13 @@ class _$Message_Token implements Message_Token {
             other is _$Message_Token &&
             (identical(other.direction, direction) ||
                 other.direction == direction) &&
-            (identical(other.transaction, transaction) ||
-                other.transaction == transaction));
+            (identical(other.time, time) || other.time == time) &&
+            (identical(other.transactionId, transactionId) ||
+                other.transactionId == transactionId));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, direction, transaction);
+  int get hashCode => Object.hash(runtimeType, direction, time, transactionId);
 
   @JsonKey(ignore: true)
   @override
@@ -506,34 +556,40 @@ class _$Message_Token implements Message_Token {
   TResult when<TResult extends Object?>({
     required TResult Function(Direction direction, int time, String content)
         text,
-    required TResult Function(Direction direction, LNTransaction transaction)
+    required TResult Function(
+            Direction direction, int time, String transactionId)
         invoice,
-    required TResult Function(Direction direction, CashuTransaction transaction)
+    required TResult Function(
+            Direction direction, int time, String transactionId)
         token,
   }) {
-    return token(direction, transaction);
+    return token(direction, time, transactionId);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Direction direction, int time, String content)? text,
-    TResult? Function(Direction direction, LNTransaction transaction)? invoice,
-    TResult? Function(Direction direction, CashuTransaction transaction)? token,
+    TResult? Function(Direction direction, int time, String transactionId)?
+        invoice,
+    TResult? Function(Direction direction, int time, String transactionId)?
+        token,
   }) {
-    return token?.call(direction, transaction);
+    return token?.call(direction, time, transactionId);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Direction direction, int time, String content)? text,
-    TResult Function(Direction direction, LNTransaction transaction)? invoice,
-    TResult Function(Direction direction, CashuTransaction transaction)? token,
+    TResult Function(Direction direction, int time, String transactionId)?
+        invoice,
+    TResult Function(Direction direction, int time, String transactionId)?
+        token,
     required TResult orElse(),
   }) {
     if (token != null) {
-      return token(direction, transaction);
+      return token(direction, time, transactionId);
     }
     return orElse();
   }
@@ -576,11 +632,14 @@ class _$Message_Token implements Message_Token {
 abstract class Message_Token implements Message {
   const factory Message_Token(
       {required final Direction direction,
-      required final CashuTransaction transaction}) = _$Message_Token;
+      required final int time,
+      required final String transactionId}) = _$Message_Token;
 
   @override
   Direction get direction;
-  CashuTransaction get transaction;
+  @override
+  int get time;
+  String get transactionId;
   @override
   @JsonKey(ignore: true)
   _$$Message_TokenCopyWith<_$Message_Token> get copyWith =>

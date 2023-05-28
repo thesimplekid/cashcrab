@@ -20,33 +20,16 @@ typedef struct wire_Message_Text {
   struct wire_uint_8_list *content;
 } wire_Message_Text;
 
-typedef struct wire_LNTransaction {
-  struct wire_uint_8_list *id;
-  int32_t status;
-  uint64_t time;
-  uint64_t amount;
-  struct wire_uint_8_list *mint;
-  struct wire_uint_8_list *bolt11;
-  struct wire_uint_8_list *hash;
-} wire_LNTransaction;
-
 typedef struct wire_Message_Invoice {
   int32_t direction;
-  struct wire_LNTransaction *transaction;
-} wire_Message_Invoice;
-
-typedef struct wire_CashuTransaction {
-  struct wire_uint_8_list *id;
-  int32_t status;
   uint64_t time;
-  uint64_t amount;
-  struct wire_uint_8_list *mint;
-  struct wire_uint_8_list *token;
-} wire_CashuTransaction;
+  struct wire_uint_8_list *transaction_id;
+} wire_Message_Invoice;
 
 typedef struct wire_Message_Token {
   int32_t direction;
-  struct wire_CashuTransaction *transaction;
+  uint64_t time;
+  struct wire_uint_8_list *transaction_id;
 } wire_Message_Token;
 
 typedef union MessageKind {
@@ -65,9 +48,28 @@ typedef struct wire_StringList {
   int32_t len;
 } wire_StringList;
 
+typedef struct wire_CashuTransaction {
+  struct wire_uint_8_list *id;
+  int32_t status;
+  uint64_t time;
+  uint64_t amount;
+  struct wire_uint_8_list *mint;
+  struct wire_uint_8_list *token;
+} wire_CashuTransaction;
+
 typedef struct wire_Transaction_CashuTransaction {
   struct wire_CashuTransaction *field0;
 } wire_Transaction_CashuTransaction;
+
+typedef struct wire_LNTransaction {
+  struct wire_uint_8_list *id;
+  int32_t status;
+  uint64_t time;
+  uint64_t amount;
+  struct wire_uint_8_list *mint;
+  struct wire_uint_8_list *bolt11;
+  struct wire_uint_8_list *hash;
+} wire_LNTransaction;
 
 typedef struct wire_Transaction_LNTransaction {
   struct wire_LNTransaction *field0;

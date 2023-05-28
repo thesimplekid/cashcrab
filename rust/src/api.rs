@@ -18,7 +18,10 @@ use tokio::sync::Mutex;
 use crate::{
     database,
     nostr::{self, init_client},
-    types::{self, CashuTransaction, LNTransaction, Message, Mint, Transaction, TransactionStatus},
+    types::{
+        self, CashuTransaction, Conversation, LNTransaction, Message, Mint, Transaction,
+        TransactionStatus,
+    },
 };
 
 impl From<CashuError> for Error {
@@ -211,7 +214,7 @@ pub fn get_contacts() -> Result<Vec<types::Contact>> {
     result
 }
 
-pub fn send_message(pubkey: String, message: Message) -> Result<Message> {
+pub fn send_message(pubkey: String, message: Message) -> Result<Conversation> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
         let x_pubkey = match pubkey.starts_with(PREFIX_BECH32_PUBLIC_KEY) {
@@ -219,24 +222,39 @@ pub fn send_message(pubkey: String, message: Message) -> Result<Message> {
             false => XOnlyPublicKey::from_str(&pubkey)?,
         };
 
-        nostr::send_message(x_pubkey, &message).await?;
         database::message::add_message(x_pubkey, &message).await?;
-        Ok(message)
+        let conversation = nostr::send_message(x_pubkey, &message).await?;
+        Ok(conversation)
     });
 
     drop(rt);
     result
 }
 
-pub fn get_messages(pubkey: String) -> Result<Vec<Message>> {
+pub fn get_messages(pubkey: String) -> Result<Conversation> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async {
+    let result: Result<Conversation> = rt.block_on(async {
         let x_pubkey = match pubkey.starts_with(PREFIX_BECH32_PUBLIC_KEY) {
             true => XOnlyPublicKey::from_bech32(&pubkey)?,
             false => XOnlyPublicKey::from_str(&pubkey)?,
         };
         let messages = database::message::get_messages(&x_pubkey).await?;
-        Ok(messages)
+
+        let transaction_messages: &Vec<String> = &messages
+            .iter()
+            .filter(|enum_value| {
+                matches!(enum_value, Message::Invoice { .. } | Message::Token { .. })
+            })
+            .map(|x| x.id())
+            .flatten()
+            .collect();
+        // bail!("{:?}", transaction_messages);
+
+        let transactions = database::transactions::get_transactions(transaction_messages).await?;
+        Ok(Conversation {
+            messages,
+            transactions,
+        })
     });
 
     drop(rt);
@@ -675,7 +693,7 @@ pub fn get_transactions() -> Result<Vec<Transaction>> {
 
 pub fn get_transaction(tid: String) -> Result<Option<Transaction>> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async { Ok(database::transactions::get_transactions(&tid).await?) });
+    let result = rt.block_on(async { Ok(database::transactions::get_transaction(&tid).await?) });
 
     drop(rt);
 

@@ -175,13 +175,13 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
-  Future<Message> sendMessage(
+  Future<Conversation> sendMessage(
       {required String pubkey, required Message message, dynamic hint}) {
     var arg0 = _platform.api2wire_String(pubkey);
     var arg1 = _platform.api2wire_box_autoadd_message(message);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_send_message(port_, arg0, arg1),
-      parseSuccessData: _wire2api_message,
+      parseSuccessData: _wire2api_conversation,
       constMeta: kSendMessageConstMeta,
       argValues: [pubkey, message],
       hint: hint,
@@ -194,11 +194,11 @@ class RustImpl implements Rust {
         argNames: ["pubkey", "message"],
       );
 
-  Future<List<Message>> getMessages({required String pubkey, dynamic hint}) {
+  Future<Conversation> getMessages({required String pubkey, dynamic hint}) {
     var arg0 = _platform.api2wire_String(pubkey);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_messages(port_, arg0),
-      parseSuccessData: _wire2api_list_message,
+      parseSuccessData: _wire2api_conversation,
       constMeta: kGetMessagesConstMeta,
       argValues: [pubkey],
       hint: hint,
@@ -608,6 +608,16 @@ class RustImpl implements Rust {
     );
   }
 
+  Conversation _wire2api_conversation(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return Conversation(
+      messages: _wire2api_list_message(arr[0]),
+      transactions: _wire2api_list_transaction(arr[1]),
+    );
+  }
+
   Direction _wire2api_direction(dynamic raw) {
     return Direction.values[raw as int];
   }
@@ -669,12 +679,14 @@ class RustImpl implements Rust {
       case 1:
         return Message_Invoice(
           direction: _wire2api_direction(raw[1]),
-          transaction: _wire2api_box_autoadd_ln_transaction(raw[2]),
+          time: _wire2api_u64(raw[2]),
+          transactionId: _wire2api_String(raw[3]),
         );
       case 2:
         return Message_Token(
           direction: _wire2api_direction(raw[1]),
-          transaction: _wire2api_box_autoadd_cashu_transaction(raw[2]),
+          time: _wire2api_u64(raw[2]),
+          transactionId: _wire2api_String(raw[3]),
         );
       default:
         throw Exception("unreachable");
@@ -901,22 +913,24 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
     }
     if (apiObj is Message_Invoice) {
       var pre_direction = api2wire_direction(apiObj.direction);
-      var pre_transaction =
-          api2wire_box_autoadd_ln_transaction(apiObj.transaction);
+      var pre_time = api2wire_u64(apiObj.time);
+      var pre_transaction_id = api2wire_String(apiObj.transactionId);
       wireObj.tag = 1;
       wireObj.kind = inner.inflate_Message_Invoice();
       wireObj.kind.ref.Invoice.ref.direction = pre_direction;
-      wireObj.kind.ref.Invoice.ref.transaction = pre_transaction;
+      wireObj.kind.ref.Invoice.ref.time = pre_time;
+      wireObj.kind.ref.Invoice.ref.transaction_id = pre_transaction_id;
       return;
     }
     if (apiObj is Message_Token) {
       var pre_direction = api2wire_direction(apiObj.direction);
-      var pre_transaction =
-          api2wire_box_autoadd_cashu_transaction(apiObj.transaction);
+      var pre_time = api2wire_u64(apiObj.time);
+      var pre_transaction_id = api2wire_String(apiObj.transactionId);
       wireObj.tag = 2;
       wireObj.kind = inner.inflate_Message_Token();
       wireObj.kind.ref.Token.ref.direction = pre_direction;
-      wireObj.kind.ref.Token.ref.transaction = pre_transaction;
+      wireObj.kind.ref.Token.ref.time = pre_time;
+      wireObj.kind.ref.Token.ref.transaction_id = pre_transaction_id;
       return;
     }
   }
@@ -1701,54 +1715,24 @@ final class wire_Message_Text extends ffi.Struct {
   external ffi.Pointer<wire_uint_8_list> content;
 }
 
-final class wire_LNTransaction extends ffi.Struct {
-  external ffi.Pointer<wire_uint_8_list> id;
-
-  @ffi.Int32()
-  external int status;
-
-  @ffi.Uint64()
-  external int time;
-
-  @ffi.Uint64()
-  external int amount;
-
-  external ffi.Pointer<wire_uint_8_list> mint;
-
-  external ffi.Pointer<wire_uint_8_list> bolt11;
-
-  external ffi.Pointer<wire_uint_8_list> hash;
-}
-
 final class wire_Message_Invoice extends ffi.Struct {
   @ffi.Int32()
   external int direction;
 
-  external ffi.Pointer<wire_LNTransaction> transaction;
-}
-
-final class wire_CashuTransaction extends ffi.Struct {
-  external ffi.Pointer<wire_uint_8_list> id;
-
-  @ffi.Int32()
-  external int status;
-
   @ffi.Uint64()
   external int time;
 
-  @ffi.Uint64()
-  external int amount;
-
-  external ffi.Pointer<wire_uint_8_list> mint;
-
-  external ffi.Pointer<wire_uint_8_list> token;
+  external ffi.Pointer<wire_uint_8_list> transaction_id;
 }
 
 final class wire_Message_Token extends ffi.Struct {
   @ffi.Int32()
   external int direction;
 
-  external ffi.Pointer<wire_CashuTransaction> transaction;
+  @ffi.Uint64()
+  external int time;
+
+  external ffi.Pointer<wire_uint_8_list> transaction_id;
 }
 
 final class MessageKind extends ffi.Union {
@@ -1773,8 +1757,44 @@ final class wire_StringList extends ffi.Struct {
   external int len;
 }
 
+final class wire_CashuTransaction extends ffi.Struct {
+  external ffi.Pointer<wire_uint_8_list> id;
+
+  @ffi.Int32()
+  external int status;
+
+  @ffi.Uint64()
+  external int time;
+
+  @ffi.Uint64()
+  external int amount;
+
+  external ffi.Pointer<wire_uint_8_list> mint;
+
+  external ffi.Pointer<wire_uint_8_list> token;
+}
+
 final class wire_Transaction_CashuTransaction extends ffi.Struct {
   external ffi.Pointer<wire_CashuTransaction> field0;
+}
+
+final class wire_LNTransaction extends ffi.Struct {
+  external ffi.Pointer<wire_uint_8_list> id;
+
+  @ffi.Int32()
+  external int status;
+
+  @ffi.Uint64()
+  external int time;
+
+  @ffi.Uint64()
+  external int amount;
+
+  external ffi.Pointer<wire_uint_8_list> mint;
+
+  external ffi.Pointer<wire_uint_8_list> bolt11;
+
+  external ffi.Pointer<wire_uint_8_list> hash;
 }
 
 final class wire_Transaction_LNTransaction extends ffi.Struct {

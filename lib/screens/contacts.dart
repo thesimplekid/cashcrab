@@ -34,7 +34,7 @@ class Contacts extends StatefulWidget {
 }
 
 class _ContactsState extends State<Contacts> {
-  List<Message> messages = List.empty(growable: true);
+  Conversation? conversation;
   _ContactsState();
 
   @override
@@ -43,10 +43,10 @@ class _ContactsState extends State<Contacts> {
   }
 
   Future<void> getMessages(String pubkey) async {
-    List<Message> gotMessages = await widget.api.getMessages(pubkey: pubkey);
+    Conversation conversation = await widget.api.getMessages(pubkey: pubkey);
 
     setState(() {
-      messages = gotMessages;
+      conversation = conversation;
     });
   }
 
