@@ -1,5 +1,6 @@
 import 'package:cashcrab/screens/add_contact.dart';
 import 'package:cashcrab/screens/messages.dart';
+import 'package:cashcrab/shared/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/bridge_definitions.dart';
@@ -42,7 +43,7 @@ class _ContactsState extends State<Contacts> {
     super.initState();
   }
 
-  Future<void> getConversation(String pubkey) async {
+  Future<void> getMessages(String pubkey) async {
     Conversation conversation =
         await widget.api.getConversation(pubkey: pubkey);
 
@@ -143,8 +144,8 @@ class _ContactsState extends State<Contacts> {
                         ),
                       ],
                     ),
-                    const Divider(
-                      color: Colors.purple,
+                    Divider(
+                      color: purpleColor,
                       height: 1,
                     ),
                   ],
@@ -166,7 +167,7 @@ class _ContactsState extends State<Contacts> {
             ),
           );
         },
-        backgroundColor: Colors.purple,
+        backgroundColor: purpleColor,
         child: const Icon(Icons.add),
       ),
     );

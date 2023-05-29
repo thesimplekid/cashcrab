@@ -1,5 +1,6 @@
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/bridge_generated.dart';
+import 'package:cashcrab/shared/colors.dart';
 import 'package:flutter/material.dart';
 
 // Settings
@@ -108,7 +109,7 @@ class _AddContactsState extends State<AddContacts> {
                                   margin: const EdgeInsets.all(0.0),
                                   child: Icon(
                                     inContacts ? Icons.check : Icons.add,
-                                    color: Colors.purple,
+                                    color: purpleColor,
                                     size: 30.0,
                                   ),
                                 ),
@@ -116,8 +117,8 @@ class _AddContactsState extends State<AddContacts> {
                             ],
                           ),
                         ),
-                        const Divider(
-                          color: Colors.purple,
+                        Divider(
+                          color: purpleColor,
                           height: 1,
                         ),
                       ],

@@ -1,4 +1,5 @@
 import 'package:cashcrab/bridge_definitions.dart';
+import 'package:cashcrab/shared/colors.dart';
 import 'package:flutter/material.dart';
 
 class InvoiceMessageWidget extends StatelessWidget {
@@ -13,7 +14,7 @@ class InvoiceMessageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bubbleColor;
     if (direction == Direction.Sent) {
-      bubbleColor = Colors.purple;
+      bubbleColor = purpleColor;
     } else {
       bubbleColor = Colors.grey;
     }
@@ -42,9 +43,8 @@ class InvoiceMessageWidget extends StatelessWidget {
                     style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.all<Color>(
                           transaction?.status != TransactionStatus.Pending
-                              ? Colors.green
-                              : Colors
-                                  .purple), // Set the desired background color
+                              ? paidColor
+                              : messageAction),
                     ),
                     child: Text(transaction?.status == TransactionStatus.Pending
                         ? 'Pay Invoice'

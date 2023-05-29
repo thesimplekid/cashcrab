@@ -2,6 +2,7 @@ import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/screens/add_contacts.dart';
 import 'package:cashcrab/screens/nostr_settings.dart';
+import 'package:cashcrab/shared/colors.dart';
 import 'package:flutter/material.dart';
 
 import '../shared/widgets/add_mint.dart';
@@ -108,8 +109,8 @@ class _SettingsState extends State<Settings> {
                 },
               ),
             ),
-            const Divider(
-              color: Colors.purple,
+            Divider(
+              color: purpleColor,
               height: 1,
             ),
             const Text("Follow contacts from pubkey"),
@@ -129,7 +130,7 @@ class _SettingsState extends State<Settings> {
                         foregroundColor:
                             MaterialStateProperty.all<Color>(Colors.white),
                         backgroundColor:
-                            MaterialStateProperty.all<Color>(Colors.purple)),
+                            MaterialStateProperty.all<Color>(purpleColor)),
                     onPressed: () {
                       // Check if its a valid url at least
                       Navigator.push(
@@ -152,13 +153,13 @@ class _SettingsState extends State<Settings> {
             const SizedBox(
               height: 100.0,
             ),
-            const Divider(
-              color: Colors.purple,
+            Divider(
+              color: purpleColor,
               height: 1,
             ),
             Container(
               decoration: BoxDecoration(
-                color: Colors.purple,
+                color: purpleColor,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: TextButton(
@@ -230,7 +231,7 @@ class _AddMintFormState extends State<AddMintForm> {
                       foregroundColor:
                           MaterialStateProperty.all<Color>(Colors.white),
                       backgroundColor:
-                          MaterialStateProperty.all<Color>(Colors.purple)),
+                          MaterialStateProperty.all<Color>(purpleColor)),
                   onPressed: () {
                     // Check if its a valid url at least
                     showDialog(

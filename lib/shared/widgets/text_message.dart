@@ -1,4 +1,5 @@
 import 'package:cashcrab/bridge_definitions.dart';
+import 'package:cashcrab/shared/colors.dart';
 import 'package:flutter/material.dart';
 
 class TextMessageWidget extends StatelessWidget {
@@ -12,7 +13,7 @@ class TextMessageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bubbleColor;
     if (direction == Direction.Sent) {
-      bubbleColor = Colors.purple;
+      bubbleColor = purpleColor;
     } else {
       bubbleColor = Colors.grey;
     }

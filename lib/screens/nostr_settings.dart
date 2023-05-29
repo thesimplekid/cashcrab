@@ -1,4 +1,5 @@
 import 'package:cashcrab/bridge_generated.dart';
+import 'package:cashcrab/shared/colors.dart';
 import 'package:flutter/material.dart';
 
 // Settings
@@ -103,8 +104,8 @@ class _NostrSettingsState extends State<NostrSettings> {
                             ],
                           ),
                         ),
-                        const Divider(
-                          color: Colors.purple,
+                        Divider(
+                          color: purpleColor,
                           height: 1,
                         ),
                       ],
@@ -172,7 +173,7 @@ class _AddRelayFormState extends State<AddRelayForm> {
                         foregroundColor:
                             MaterialStateProperty.all<Color>(Colors.white),
                         backgroundColor:
-                            MaterialStateProperty.all<Color>(Colors.purple)),
+                            MaterialStateProperty.all<Color>(purpleColor)),
                     onPressed: () {
                       widget.addRelay(addRelayController.text);
                     },
