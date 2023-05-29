@@ -3,9 +3,9 @@ use bitcoin_hashes::sha256;
 use bitcoin_hashes::Hash;
 pub use cashu_crab::types::MintInfo;
 use serde::{Deserialize, Serialize};
-use std::time::SystemTime;
 
 use crate::database;
+use crate::utils::unix_time;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TransactionStatus {
@@ -131,13 +131,6 @@ impl LNTransaction {
     }
 }
 
-pub fn unix_time() -> u64 {
-    SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map(|x| x.as_secs())
-        .unwrap_or(0)
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Mint {
     pub url: String,
@@ -253,4 +246,17 @@ impl Contact {
     pub fn as_json(&self) -> String {
         serde_json::json!(self).to_string()
     }
+}
+
+pub struct InvoiceInfo {
+    pub amount: u64,
+    pub hash: String,
+    pub memo: Option<String>,
+}
+
+pub struct TokenData {
+    pub encoded_token: String,
+    pub mint: String,
+    pub amount: u64,
+    pub memo: Option<String>, // spendable: Option<bool>,
 }

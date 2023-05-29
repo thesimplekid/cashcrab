@@ -23,9 +23,11 @@ use crate::types::CashuTransaction;
 use crate::types::Contact;
 use crate::types::Conversation;
 use crate::types::Direction;
+use crate::types::InvoiceInfo;
 use crate::types::LNTransaction;
 use crate::types::Message;
 use crate::types::Mint;
+use crate::types::TokenData;
 use crate::types::Transaction;
 use crate::types::TransactionStatus;
 

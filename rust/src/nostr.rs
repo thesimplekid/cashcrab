@@ -7,10 +7,10 @@ use lazy_static::lazy_static;
 use nostr_sdk::prelude::*;
 use tokio::{sync::Mutex, task::JoinHandle};
 
-use crate::types::{unix_time, CashuTransaction, Conversation, Transaction};
 use crate::{
     database,
-    types::{self, Direction, Message},
+    types::{self, CashuTransaction, Conversation, Direction, Message, Transaction},
+    utils::unix_time,
 };
 
 lazy_static! {

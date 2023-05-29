@@ -6,7 +6,8 @@ use std::collections::HashMap;
 use super::{CONFIG, DB, KEYSETS, MINT_INFO, MINT_KEYSETS, PROOFS};
 use crate::{
     api::CashuError,
-    types::{unix_time, Mint, MintInfo},
+    types::{Mint, MintInfo},
+    utils::unix_time,
 };
 
 /// Add proofs

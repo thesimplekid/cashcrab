@@ -15,6 +15,8 @@ use std::{collections::HashMap, fmt, io, str::FromStr, sync::Arc};
 use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
+use super::types::{InvoiceInfo, TokenData};
+
 use crate::{
     database,
     nostr::{self, init_client},
@@ -728,19 +730,6 @@ pub fn set_active_mint(mint_url: Option<String>) -> Result<()> {
     result?;
 
     Ok(())
-}
-
-pub struct InvoiceInfo {
-    pub amount: u64,
-    pub hash: String,
-    pub memo: Option<String>,
-}
-
-pub struct TokenData {
-    pub encoded_token: String,
-    pub mint: String,
-    pub amount: u64,
-    pub memo: Option<String>, // spendable: Option<bool>,
 }
 
 pub fn decode_token(encoded_token: String) -> Result<TokenData> {
