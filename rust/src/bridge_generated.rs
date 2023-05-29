@@ -159,16 +159,16 @@ fn wire_send_message_impl(
         },
     )
 }
-fn wire_get_messages_impl(port_: MessagePort, pubkey: impl Wire2Api<String> + UnwindSafe) {
+fn wire_get_conversation_impl(port_: MessagePort, pubkey: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "get_messages",
+            debug_name: "get_conversation",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
             let api_pubkey = pubkey.wire2api();
-            move |task_callback| get_messages(api_pubkey)
+            move |task_callback| get_conversation(api_pubkey)
         },
     )
 }

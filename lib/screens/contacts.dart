@@ -42,8 +42,9 @@ class _ContactsState extends State<Contacts> {
     super.initState();
   }
 
-  Future<void> getMessages(String pubkey) async {
-    Conversation conversation = await widget.api.getMessages(pubkey: pubkey);
+  Future<void> getConversation(String pubkey) async {
+    Conversation conversation =
+        await widget.api.getConversation(pubkey: pubkey);
 
     setState(() {
       conversation = conversation;

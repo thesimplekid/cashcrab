@@ -194,20 +194,20 @@ class RustImpl implements Rust {
         argNames: ["pubkey", "message"],
       );
 
-  Future<Conversation> getMessages({required String pubkey, dynamic hint}) {
+  Future<Conversation> getConversation({required String pubkey, dynamic hint}) {
     var arg0 = _platform.api2wire_String(pubkey);
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_get_messages(port_, arg0),
+      callFfi: (port_) => _platform.inner.wire_get_conversation(port_, arg0),
       parseSuccessData: _wire2api_conversation,
-      constMeta: kGetMessagesConstMeta,
+      constMeta: kGetConversationConstMeta,
       argValues: [pubkey],
       hint: hint,
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kGetMessagesConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kGetConversationConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "get_messages",
+        debugName: "get_conversation",
         argNames: ["pubkey"],
       );
 
@@ -1213,21 +1213,21 @@ class RustWire implements FlutterRustBridgeWireBase {
       void Function(
           int, ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_Message>)>();
 
-  void wire_get_messages(
+  void wire_get_conversation(
     int port_,
     ffi.Pointer<wire_uint_8_list> pubkey,
   ) {
-    return _wire_get_messages(
+    return _wire_get_conversation(
       port_,
       pubkey,
     );
   }
 
-  late final _wire_get_messagesPtr = _lookup<
+  late final _wire_get_conversationPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_get_messages');
-  late final _wire_get_messages = _wire_get_messagesPtr
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_get_conversation');
+  late final _wire_get_conversation = _wire_get_conversationPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_balances(

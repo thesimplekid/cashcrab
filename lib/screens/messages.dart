@@ -58,7 +58,7 @@ class _MessagesState extends State<Messages> {
   }
 
   Future<void> getMessages(String pubkey) async {
-    Conversation c = await widget.api.getMessages(pubkey: pubkey);
+    Conversation c = await widget.api.getConversation(pubkey: pubkey);
 
     Map<String, Transaction> t = {};
 
@@ -241,9 +241,11 @@ class _MessagesState extends State<Messages> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    // Handle send button action
-                    Message msg = await createMessage();
-                    await sendMessage(msg);
+                    if (_textEditingController.text.isNotEmpty) {
+                      // Handle send button action
+                      Message msg = await createMessage();
+                      await sendMessage(msg);
+                    }
                   },
                   child: const Icon(Icons.send),
                 ),

@@ -54,9 +54,9 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kSendMessageConstMeta;
 
-  Future<Conversation> getMessages({required String pubkey, dynamic hint});
+  Future<Conversation> getConversation({required String pubkey, dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kGetMessagesConstMeta;
+  FlutterRustBridgeTaskConstMeta get kGetConversationConstMeta;
 
   Future<String> getBalances({dynamic hint});
 

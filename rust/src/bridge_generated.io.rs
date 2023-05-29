@@ -56,8 +56,8 @@ pub extern "C" fn wire_send_message(
 }
 
 #[no_mangle]
-pub extern "C" fn wire_get_messages(port_: i64, pubkey: *mut wire_uint_8_list) {
-    wire_get_messages_impl(port_, pubkey)
+pub extern "C" fn wire_get_conversation(port_: i64, pubkey: *mut wire_uint_8_list) {
+    wire_get_conversation_impl(port_, pubkey)
 }
 
 #[no_mangle]

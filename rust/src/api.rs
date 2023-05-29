@@ -233,7 +233,7 @@ pub fn send_message(pubkey: String, message: Message) -> Result<Conversation> {
     result
 }
 
-pub fn get_messages(pubkey: String) -> Result<Conversation> {
+pub fn get_conversation(pubkey: String) -> Result<Conversation> {
     let rt = lock_runtime!();
     let result: Result<Conversation> = rt.block_on(async {
         let x_pubkey = match pubkey.starts_with(PREFIX_BECH32_PUBLIC_KEY) {
