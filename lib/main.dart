@@ -121,6 +121,7 @@ class MyHomePageState extends State<MyHomePage> {
       addContact: addContact,
       removeContact: removeContact,
       activeMint: activeMint?.url,
+      activeMintBalance: activeBalance,
     );
     _homeTab = Home(
       cashu: api,

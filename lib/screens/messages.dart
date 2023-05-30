@@ -1,3 +1,4 @@
+import 'package:cashcrab/screens/contact_payment.dart';
 import 'package:cashcrab/shared/widgets/invoice_message.dart';
 import 'package:cashcrab/shared/widgets/text_message.dart';
 import 'package:cashcrab/shared/widgets/token_message.dart';
@@ -10,6 +11,7 @@ class Messages extends StatefulWidget {
   final String peerPubkey;
   final String? peerName;
   final String? activeMint;
+  final int activeMintBalance;
   final Function receiveToken;
   final Function sendToken;
   final Function createInvoice;
@@ -19,6 +21,7 @@ class Messages extends StatefulWidget {
   const Messages({
     super.key,
     required this.activeMint,
+    required this.activeMintBalance,
     required this.peerPubkey,
     required this.peerName,
     required this.mints,
@@ -225,6 +228,29 @@ class _MessagesState extends State<Messages> {
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
+                IconButton(
+                  icon: const Icon(Icons.wallet),
+                  onPressed: () {
+                    if (widget.activeMint != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ContactPayment(
+                            peerPubkey: widget.peerPubkey,
+                            peerName: widget.peerName,
+                            api: widget.api,
+                            createInvoice: widget.createInvoice,
+                            sendToken: widget.sendToken,
+                            send: sendMessage,
+                            activeMint: widget.activeMint!,
+                            activeBalance: widget.activeMintBalance,
+                          ),
+                        ),
+                      );
+                    }
+                    // ELSE set mint modal
+                  },
+                ),
                 Flexible(
                   child: TextField(
                     controller: _textEditingController,
@@ -239,7 +265,8 @@ class _MessagesState extends State<Messages> {
                     ),
                   ),
                 ),
-                ElevatedButton(
+                IconButton(
+                  icon: const Icon(Icons.send),
                   onPressed: () async {
                     if (_textEditingController.text.isNotEmpty) {
                       // Handle send button action
@@ -247,7 +274,6 @@ class _MessagesState extends State<Messages> {
                       await sendMessage(msg);
                     }
                   },
-                  child: const Icon(Icons.send),
                 ),
               ],
             ),

@@ -15,11 +15,13 @@ class Contacts extends StatefulWidget {
   final Function createInvoice;
   final Function payInvoice;
   final String? activeMint;
+  final int activeMintBalance;
   final Map<String, int> mints;
 
   const Contacts(
       {super.key,
       required this.activeMint,
+      required this.activeMintBalance,
       required this.mints,
       required this.removeContact,
       required this.receiveToken,
@@ -114,6 +116,7 @@ class _ContactsState extends State<Contacts> {
                         peerPubkey: contact.npub,
                         peerName: contact.name,
                         mints: widget.mints,
+                        activeMintBalance: widget.activeMintBalance,
                       ),
                     ),
                   );
