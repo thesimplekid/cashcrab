@@ -1,5 +1,6 @@
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/bridge_generated.dart';
+import 'package:cashcrab/shared/utils.dart';
 import 'package:flutter/material.dart';
 
 class ContactPayment extends StatefulWidget {
@@ -60,14 +61,6 @@ class _ContactPaymentState extends State<ContactPayment> {
         direction: Direction.Sent,
         time: transaction.time,
         transactionId: transaction.id!);
-  }
-
-  String truncateText(String text) {
-    if (text.length <= 10) {
-      return text; // No truncation needed
-    } else {
-      return "${text.substring(0, 10)} ...";
-    }
   }
 
   @override

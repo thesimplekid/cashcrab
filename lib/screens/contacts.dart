@@ -1,6 +1,7 @@
 import 'package:cashcrab/screens/add_contact.dart';
 import 'package:cashcrab/screens/messages.dart';
 import 'package:cashcrab/shared/colors.dart';
+import 'package:cashcrab/shared/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/bridge_definitions.dart';
@@ -52,14 +53,6 @@ class _ContactsState extends State<Contacts> {
     setState(() {
       conversation = conversation;
     });
-  }
-
-  String truncateText(String text) {
-    if (text.length <= 10) {
-      return text; // No truncation needed
-    } else {
-      return "${text.substring(0, 10)} ...";
-    }
   }
 
   @override

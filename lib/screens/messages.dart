@@ -1,4 +1,5 @@
 import 'package:cashcrab/screens/contact_payment.dart';
+import 'package:cashcrab/shared/utils.dart';
 import 'package:cashcrab/shared/widgets/invoice_message.dart';
 import 'package:cashcrab/shared/widgets/text_message.dart';
 import 'package:cashcrab/shared/widgets/token_message.dart';
@@ -124,14 +125,6 @@ class _MessagesState extends State<Messages> {
     }
 
     return message;
-  }
-
-  String truncateText(String text) {
-    if (text.length <= 10) {
-      return text; // No truncation needed
-    } else {
-      return "${text.substring(0, 10)} ...";
-    }
   }
 
   // Scroll to bottom when new message is added

@@ -14,3 +14,11 @@ String formatTimeAgo(int time) {
     return "$hours hours ago";
   }
 }
+
+String truncateText(String text) {
+  if (text.length <= 10) {
+    return text; // No truncation needed
+  } else {
+    return "${text.substring(0, 10)} ...";
+  }
+}

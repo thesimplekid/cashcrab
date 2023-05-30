@@ -49,7 +49,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
 
   Map<String, int> mints = {};
   int balance = 0;
