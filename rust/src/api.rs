@@ -1,12 +1,11 @@
 use std::sync::Mutex as StdMutex;
-use std::{collections::HashMap, fmt, io, str::FromStr, sync::Arc};
+use std::{collections::HashMap, fmt, str::FromStr, sync::Arc};
 
 use anyhow::{anyhow, bail, Error, Result};
 use bitcoin::{secp256k1::XOnlyPublicKey, Amount};
 use cashu_crab::{
     cashu_wallet::CashuWallet,
     client::Client,
-    error::Error as CashuCrabError,
     types::{Proofs, Token},
 };
 use lazy_static::lazy_static;
@@ -41,44 +40,8 @@ impl fmt::Display for CashuError {
     }
 }
 
-impl From<minreq::Error> for CashuError {
-    fn from(err: minreq::Error) -> Self {
-        Self(err.to_string())
-    }
-}
-
-impl From<io::Error> for CashuError {
-    fn from(err: io::Error) -> Self {
-        Self(err.to_string())
-    }
-}
-
-impl From<serde_json::Error> for CashuError {
-    fn from(err: serde_json::Error) -> Self {
-        Self(err.to_string())
-    }
-}
-
-impl From<CashuCrabError> for CashuError {
-    fn from(err: CashuCrabError) -> Self {
-        Self(err.to_string())
-    }
-}
-
-impl From<tokio::sync::TryLockError> for CashuError {
-    fn from(err: tokio::sync::TryLockError) -> Self {
-        Self(err.to_string())
-    }
-}
-
-impl From<redb::Error> for CashuError {
-    fn from(err: redb::Error) -> Self {
-        Self(err.to_string())
-    }
-}
-
-impl From<lightning_invoice::ParseOrSemanticError> for CashuError {
-    fn from(err: lightning_invoice::ParseOrSemanticError) -> Self {
+impl<T: std::error::Error + ToString> From<T> for CashuError {
+    fn from(err: T) -> Self {
         Self(err.to_string())
     }
 }

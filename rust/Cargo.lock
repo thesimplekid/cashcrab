@@ -15,14 +15,20 @@ dependencies = [
 
 [[package]]
 name = "allo-isolate"
-version = "0.1.15"
+version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1766cae4209194f40c58ac2fbe8dcf5cbd618f0a037f10d0078fea2e90b0249"
+checksum = "9980a41e4f88ed39a4dc1f263f94c89ddf6c4b3c725643ecddbcb07d6f41ad3c"
 dependencies = [
  "anyhow",
  "atomic",
  "chrono",
 ]
+
+[[package]]
+name = "android-tzdata"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e999941b234f3131b00bc13c22d06e8c5ff726d1b6318ac7eb276997bbb4fef0"
 
 [[package]]
 name = "android_system_properties"
@@ -230,13 +236,13 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrono"
-version = "0.4.24"
+version = "0.4.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e3c5919066adf22df73762e50cffcde3a758f2a848b113b586d1f86728b673b"
+checksum = "ec837a71355b28f6556dbd569b37b3f363091c0bd4b2e735674521b4c5fd9bc5"
 dependencies = [
+ "android-tzdata",
  "iana-time-zone",
  "js-sys",
- "num-integer",
  "num-traits",
  "time 0.1.45",
  "wasm-bindgen",
@@ -394,9 +400,9 @@ dependencies = [
 
 [[package]]
 name = "flutter_rust_bridge"
-version = "1.76.0"
+version = "1.77.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcb0e953821fb5fef616e2cc83cf3254de7f60037d41c03553ad88526bb60034"
+checksum = "8525ccd3a804ab5ae55ab9883e56caf2e38ae307539685e3042bcf6fc494b4ce"
 dependencies = [
  "allo-isolate",
  "anyhow",
@@ -419,9 +425,9 @@ dependencies = [
 
 [[package]]
 name = "flutter_rust_bridge_macros"
-version = "1.76.0"
+version = "1.77.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26d19d9339cb40e3478f9eb1089adbc3bafc20514a8747a2c54dbf9d52d915ce"
+checksum = "a493ab6d382cb8ab292dd073f564d66b66edb7051bcb8215a6407b8716b9b992"
 
 [[package]]
 name = "fnv"
@@ -753,12 +759,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.17"
+version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
-dependencies = [
- "cfg-if",
-]
+checksum = "518ef76f2f87365916b142844c16d8fefd85039bc5699050210a7778ee1cd1de"
 
 [[package]]
 name = "memchr"
@@ -783,20 +786,19 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "0.8.6"
+version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b9d9a46eff5b4ff64b45a9e316a6d1e0bc719ef429cbec4dc630684212bfdf9"
+checksum = "927a765cd3fc26206e66b296465fa9d3e5ab003e651c1b3c060e7956d96b19d2"
 dependencies = [
  "libc",
- "log",
  "wasi 0.11.0+wasi-snapshot-preview1",
- "windows-sys 0.45.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
 name = "nostr"
 version = "0.22.0"
-source = "git+https://github.com/rust-nostr/nostr#c91442679e1c02eb4089d5ee595f36313943d4f0"
+source = "git+https://github.com/rust-nostr/nostr?rev=c914426#c91442679e1c02eb4089d5ee595f36313943d4f0"
 dependencies = [
  "aes",
  "base64",
@@ -815,7 +817,7 @@ dependencies = [
 [[package]]
 name = "nostr-sdk"
 version = "0.22.0"
-source = "git+https://github.com/rust-nostr/nostr#c91442679e1c02eb4089d5ee595f36313943d4f0"
+source = "git+https://github.com/rust-nostr/nostr?rev=c914426#c91442679e1c02eb4089d5ee595f36313943d4f0"
 dependencies = [
  "gloo-timers",
  "log",
@@ -829,7 +831,7 @@ dependencies = [
 [[package]]
 name = "nostr-sdk-net"
 version = "0.22.0"
-source = "git+https://github.com/rust-nostr/nostr#c91442679e1c02eb4089d5ee595f36313943d4f0"
+source = "git+https://github.com/rust-nostr/nostr?rev=c914426#c91442679e1c02eb4089d5ee595f36313943d4f0"
 dependencies = [
  "futures-util",
  "thiserror",
@@ -839,18 +841,8 @@ dependencies = [
  "tokio-tungstenite",
  "url",
  "webpki",
- "webpki-roots 0.23.0",
+ "webpki-roots 0.23.1",
  "ws_stream_wasm",
-]
-
-[[package]]
-name = "num-integer"
-version = "0.1.45"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "225d3389fb3509a24c93f5c29eb6bde2586b98d9f016636dff58d7c6f7569cd9"
-dependencies = [
- "autocfg",
- "num-traits",
 ]
 
 [[package]]
@@ -883,9 +875,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.17.1"
+version = "1.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7e5500299e16ebb147ae15a00a942af264cf3688f47923b8fc2cd5858f23ad3"
+checksum = "9670a07f94779e00908f3e686eab508878ebb390ba6e604d3a284c00e8d0487b"
 
 [[package]]
 name = "parking_lot"
@@ -1014,9 +1006,9 @@ dependencies = [
 
 [[package]]
 name = "redb"
-version = "0.17.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7e99e0f3f90de31393b806dbe9bb0e363dd71e1066b558f007daedc276e3ce4"
+checksum = "0e9c3dce996c249d117eefbdffb5dac2f0cdab5691eb439f037d17751b36f0c3"
 dependencies = [
  "libc",
  "pyo3-build-config",
@@ -1444,9 +1436,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.28.1"
+version = "1.28.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0aa32867d44e6f2ce3385e89dceb990188b8bb0fb25b0cf576647a6f98ac5105"
+checksum = "94d7b1cfd2aa4011f2de74c2c4c63665e27a71006b0a192dcd2710272e73dfa2"
 dependencies = [
  "autocfg",
  "bytes",
@@ -1504,7 +1496,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "tungstenite",
- "webpki-roots 0.23.0",
+ "webpki-roots 0.23.1",
 ]
 
 [[package]]
@@ -1694,9 +1686,9 @@ dependencies = [
 
 [[package]]
 name = "webpki-roots"
-version = "0.23.0"
+version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa54963694b65584e170cf5dc46aeb4dcaa5584e652ff5f3952e56d66aff0125"
+checksum = "b03058f88386e5ff5310d9111d53f48b17d732b401aeb83a8d5190f2ac459338"
 dependencies = [
  "rustls-webpki",
 ]

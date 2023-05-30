@@ -20,10 +20,10 @@ tokio = { version = "1.28.1", features = ["sync", "rt-multi-thread"] }
 cashu-crab = { git = "https://github.com/thesimplekid/cashu-crab" }
 allo-isolate = "0.1.14"
 thiserror = "1.0.40"
-redb = "0.17.0"
+redb = "0.20.0"
 log = "0.4.17"
 simplelog = "0.12.1"
 serde = { version = "1.0.163", features=["derive"] }
 bitcoin_hashes = "0.12.0"
-nostr-sdk = { git = "https://github.com/rust-nostr/nostr", default-features = false, features=["nip04", "nip19"]}
+nostr-sdk = { git = "https://github.com/rust-nostr/nostr", rev = "c914426", default-features = false, features=["nip04", "nip19"]}
 hex = "0.4.3"
