@@ -1,11 +1,9 @@
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/bridge_generated.dart';
-import 'package:cashcrab/screens/add_contacts.dart';
+import 'package:cashcrab/screens/mints.dart';
 import 'package:cashcrab/screens/nostr_settings.dart';
 import 'package:cashcrab/shared/colors.dart';
 import 'package:flutter/material.dart';
-
-import '../shared/widgets/add_mint.dart';
 
 // Settings
 class Settings extends StatefulWidget {
@@ -37,7 +35,6 @@ class Settings extends StatefulWidget {
 
 class _SettingsState extends State<Settings> {
   final pubkeyController = TextEditingController();
-  final TextEditingController newRelayController = TextEditingController();
 
   _SettingsState();
   @override
@@ -60,104 +57,73 @@ class _SettingsState extends State<Settings> {
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
-          mainAxisSize:
-              MainAxisSize.min, // Set mainAxisSize to MainAxisSize.min
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            SizedBox(
-              height: 100.0,
-              child: AddMintForm(
-                addMint: widget.addMint,
+            const Padding(
+              padding: EdgeInsets.fromLTRB(0, 16, 0, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Cashu",
+                  textAlign: TextAlign.left,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
               ),
             ),
-            SizedBox(
-              height: 100,
-              child: ListView.builder(
-                itemCount: widget.mints.length,
-                itemBuilder: (BuildContext context, int index) {
-                  int balance = widget.mints[mints[index]] ?? 0;
-                  return CheckboxListTile(
-                    value: widget.activeMint == mints[index],
-                    onChanged: (bool? value) {
-                      if (value != null && value) {
-                        widget.setActiveMint(mints[index]);
-                      }
-                    },
-                    title: Text(
-                      mints[index],
-                      textAlign: TextAlign.left,
-                      style: const TextStyle(fontSize: 14.0),
-                      maxLines: 1,
-                    ),
-                    secondary: GestureDetector(
-                      onTap: () {
-                        if (balance == 0) {
-                          widget.removeMint(mints[index]);
-                        }
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.all(0.0),
-                        child: balance == 0
-                            ? const Icon(
-                                Icons.delete,
-                                color: Colors.red,
-                                size: 30.0,
-                              )
-                            : Text("${balance.toString()} sats"),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: purpleColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TextButton(
+                onPressed: () async {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Mints(
+                        api: widget.api,
+                        addMint: widget.addMint,
+                        removeMint: widget.removeMint,
+                        setActiveMint: widget.setActiveMint,
+                        activeMint: widget.activeMint,
+                        mints: widget.mints,
                       ),
                     ),
                   );
                 },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.balance),
+                        SizedBox(width: 8),
+                        Text(
+                          "Mints",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                    Icon(Icons.arrow_forward),
+                  ],
+                ),
               ),
             ),
-            Divider(
-              color: purpleColor,
-              height: 1,
-            ),
-            const Text("Follow contacts from pubkey"),
-            Stack(
-              children: [
-                TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Paste npub',
-                  ),
-                  controller: pubkeyController,
+            const Padding(
+              padding: EdgeInsets.fromLTRB(0, 16, 0, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Nostr",
+                  textAlign: TextAlign.left,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: ElevatedButton(
-                    style: ButtonStyle(
-                        foregroundColor:
-                            MaterialStateProperty.all<Color>(Colors.white),
-                        backgroundColor:
-                            MaterialStateProperty.all<Color>(purpleColor)),
-                    onPressed: () {
-                      // Check if its a valid url at least
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AddContacts(
-                            api: widget.api,
-                            userPubkey: pubkeyController.text,
-                            loadContacts: widget.loadContacts,
-                            addContact: widget.addContact,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Icon(Icons.search),
-                  ), // Elevated Button
-                ), // Positioned
-              ],
-            ), // Stack
-            const SizedBox(
-              height: 100.0,
-            ),
-            Divider(
-              color: purpleColor,
-              height: 1,
+              ),
             ),
             Container(
+              width: double.infinity,
               decoration: BoxDecoration(
                 color: purpleColor,
                 borderRadius: BorderRadius.circular(10),
@@ -173,7 +139,23 @@ class _SettingsState extends State<Settings> {
                     ),
                   );
                 },
-                child: const Text("Nostr Settings"),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.cell_tower),
+                        SizedBox(width: 8),
+                        Text(
+                          "Relays",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                    Icon(Icons.arrow_forward),
+                  ],
+                ),
               ),
             ),
           ],
@@ -181,76 +163,4 @@ class _SettingsState extends State<Settings> {
       ),
     );
   }
-}
-
-class AddMintForm extends StatefulWidget {
-  final Function addMint;
-  const AddMintForm({super.key, required this.addMint});
-
-  @override
-  State<AddMintForm> createState() => _AddMintFormState();
-}
-
-class _AddMintFormState extends State<AddMintForm> {
-  final addMintController = TextEditingController();
-
-  _AddMintFormState();
-
-  @override
-  void initState() {
-    super.initState();
-
-    addMintController.addListener(() => {});
-  }
-
-  @override
-  void dispose() {
-    addMintController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Stack(children: [
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Add new mint',
-                ),
-                controller: addMintController,
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                      foregroundColor:
-                          MaterialStateProperty.all<Color>(Colors.white),
-                      backgroundColor:
-                          MaterialStateProperty.all<Color>(purpleColor)),
-                  onPressed: () {
-                    // Check if its a valid url at least
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) => AddMintDialog(
-                          "Do you trust this mint?",
-                          "A Mint does not know your activity, but it does control the funds",
-                          addMintController.text,
-                          widget.addMint,
-                          addMintController),
-                    );
-                  },
-                  child: const Icon(Icons.add),
-                ), // Elevated Button
-              ), // Positioned
-            ]) // Stack
-          ],
-        ), // Column
-      ),
-    );
-  } // Widget Build
 }

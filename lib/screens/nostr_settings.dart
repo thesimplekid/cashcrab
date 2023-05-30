@@ -62,9 +62,7 @@ class _NostrSettingsState extends State<NostrSettings> {
               itemCount: relays.length,
               itemBuilder: (BuildContext context, int index) {
                 return GestureDetector(
-                  onTap: () {
-                    _removeRelay(relays[index]);
-                  },
+                  onTap: () {},
                   child: Container(
                     height: 45.0,
                     decoration: const BoxDecoration(),
