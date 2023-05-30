@@ -1,7 +1,8 @@
+use std::collections::HashMap;
+
 use anyhow::Result;
 use cashu_crab::{keyset::Keys, types::Proofs};
 use redb::{ReadableMultimapTable, ReadableTable};
-use std::collections::HashMap;
 
 use super::{CONFIG, DB, KEYSETS, MINT_INFO, MINT_KEYSETS, PROOFS};
 use crate::{
@@ -11,7 +12,7 @@ use crate::{
 };
 
 /// Add proofs
-pub(crate) async fn add_proofs(mint: &str, proofs: Proofs) -> Result<(), CashuError> {
+pub(crate) async fn add_proofs(mint: &str, proofs: &Proofs) -> Result<(), CashuError> {
     let db = DB.lock().await;
     let db = db
         .as_ref()
@@ -21,13 +22,12 @@ pub(crate) async fn add_proofs(mint: &str, proofs: Proofs) -> Result<(), CashuEr
     {
         let mut proof_table = write_txn.open_multimap_table(PROOFS)?;
 
-        for proof in &proofs {
+        for proof in proofs {
             proof_table.insert(mint, serde_json::to_string(&proof)?.as_str())?;
         }
     }
     write_txn.commit()?;
 
-    //Err(CashuError(format!("added Proofs: {:?}", proofs)))
     Ok(())
 }
 
@@ -233,7 +233,7 @@ pub(crate) async fn get_active_mint() -> Result<Option<Mint>, CashuError> {
     if let Some(active_mint) = table.get("active_mint")? {
         let active_mint = active_mint.value();
         let mint_info_table = read_txn.open_table(MINT_INFO)?;
-        // TODO: Reafctor this without the returns
+        // TODO: Refactor this without the returns
         if let Some(mint_info) = mint_info_table.get(active_mint)? {
             return Ok(Some(serde_json::from_str(mint_info.value())?));
         };

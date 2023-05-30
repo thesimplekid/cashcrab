@@ -13,6 +13,7 @@ pub enum TransactionStatus {
     Received,
     Pending,
     Failed,
+    Expired,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

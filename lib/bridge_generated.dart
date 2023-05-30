@@ -277,46 +277,12 @@ class RustImpl implements Rust {
         argNames: ["url"],
       );
 
-  Future<void> addNewWallets({required List<String> mints, dynamic hint}) {
-    var arg0 = _platform.api2wire_StringList(mints);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_add_new_wallets(port_, arg0),
-      parseSuccessData: _wire2api_unit,
-      constMeta: kAddNewWalletsConstMeta,
-      argValues: [mints],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kAddNewWalletsConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "add_new_wallets",
-        argNames: ["mints"],
-      );
-
-  Future<List<String>> setMints({required List<String> mints, dynamic hint}) {
-    var arg0 = _platform.api2wire_StringList(mints);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_set_mints(port_, arg0),
-      parseSuccessData: _wire2api_StringList,
-      constMeta: kSetMintsConstMeta,
-      argValues: [mints],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kSetMintsConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "set_mints",
-        argNames: ["mints"],
-      );
-
-  Future<bool> checkSpendable(
+  Future<TransactionStatus> checkSpendable(
       {required Transaction transaction, dynamic hint}) {
     var arg0 = _platform.api2wire_box_autoadd_transaction(transaction);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_check_spendable(port_, arg0),
-      parseSuccessData: _wire2api_bool,
+      parseSuccessData: _wire2api_transaction_status,
       constMeta: kCheckSpendableConstMeta,
       argValues: [transaction],
       hint: hint,
@@ -561,10 +527,6 @@ class RustImpl implements Rust {
     return (raw as List<dynamic>).cast<String>();
   }
 
-  bool _wire2api_bool(dynamic raw) {
-    return raw as bool;
-  }
-
   CashuTransaction _wire2api_box_autoadd_cashu_transaction(dynamic raw) {
     return _wire2api_cashu_transaction(raw);
   }
@@ -796,15 +758,6 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
   @protected
   ffi.Pointer<wire_uint_8_list> api2wire_String(String raw) {
     return api2wire_uint_8_list(utf8.encoder.convert(raw));
-  }
-
-  @protected
-  ffi.Pointer<wire_StringList> api2wire_StringList(List<String> raw) {
-    final ans = inner.new_StringList_0(raw.length);
-    for (var i = 0; i < raw.length; i++) {
-      ans.ref.ptr[i] = api2wire_String(raw[i]);
-    }
-    return ans;
   }
 
   @protected
@@ -1292,40 +1245,6 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _wire_remove_wallet = _wire_remove_walletPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
-  void wire_add_new_wallets(
-    int port_,
-    ffi.Pointer<wire_StringList> _mints,
-  ) {
-    return _wire_add_new_wallets(
-      port_,
-      _mints,
-    );
-  }
-
-  late final _wire_add_new_walletsPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_StringList>)>>('wire_add_new_wallets');
-  late final _wire_add_new_wallets = _wire_add_new_walletsPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_StringList>)>();
-
-  void wire_set_mints(
-    int port_,
-    ffi.Pointer<wire_StringList> mints,
-  ) {
-    return _wire_set_mints(
-      port_,
-      mints,
-    );
-  }
-
-  late final _wire_set_mintsPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_StringList>)>>('wire_set_mints');
-  late final _wire_set_mints = _wire_set_mintsPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_StringList>)>();
-
   void wire_check_spendable(
     int port_,
     ffi.Pointer<wire_Transaction> transaction,
@@ -1558,20 +1477,6 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _wire_decode_token = _wire_decode_tokenPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
-  ffi.Pointer<wire_StringList> new_StringList_0(
-    int len,
-  ) {
-    return _new_StringList_0(
-      len,
-    );
-  }
-
-  late final _new_StringList_0Ptr = _lookup<
-          ffi.NativeFunction<ffi.Pointer<wire_StringList> Function(ffi.Int32)>>(
-      'new_StringList_0');
-  late final _new_StringList_0 = _new_StringList_0Ptr
-      .asFunction<ffi.Pointer<wire_StringList> Function(int)>();
-
   ffi.Pointer<wire_CashuTransaction> new_box_autoadd_cashu_transaction_0() {
     return _new_box_autoadd_cashu_transaction_0();
   }
@@ -1748,13 +1653,6 @@ final class wire_Message extends ffi.Struct {
   external int tag;
 
   external ffi.Pointer<MessageKind> kind;
-}
-
-final class wire_StringList extends ffi.Struct {
-  external ffi.Pointer<ffi.Pointer<wire_uint_8_list>> ptr;
-
-  @ffi.Int32()
-  external int len;
 }
 
 final class wire_CashuTransaction extends ffi.Struct {

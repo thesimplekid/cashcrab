@@ -43,11 +43,6 @@ typedef struct wire_Message {
   union MessageKind *kind;
 } wire_Message;
 
-typedef struct wire_StringList {
-  struct wire_uint_8_list **ptr;
-  int32_t len;
-} wire_StringList;
-
 typedef struct wire_CashuTransaction {
   struct wire_uint_8_list *id;
   int32_t status;
@@ -129,10 +124,6 @@ void wire_get_wallets(int64_t port_);
 
 void wire_remove_wallet(int64_t port_, struct wire_uint_8_list *url);
 
-void wire_add_new_wallets(int64_t port_, struct wire_StringList *_mints);
-
-void wire_set_mints(int64_t port_, struct wire_StringList *mints);
-
 void wire_check_spendable(int64_t port_, struct wire_Transaction *transaction);
 
 void wire_receive_token(int64_t port_, struct wire_uint_8_list *encoded_token);
@@ -164,8 +155,6 @@ void wire_get_active_mint(int64_t port_);
 void wire_set_active_mint(int64_t port_, struct wire_uint_8_list *mint_url);
 
 void wire_decode_token(int64_t port_, struct wire_uint_8_list *encoded_token);
-
-struct wire_StringList *new_StringList_0(int32_t len);
 
 struct wire_CashuTransaction *new_box_autoadd_cashu_transaction_0(void);
 
@@ -206,8 +195,6 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_add_mint);
     dummy_var ^= ((int64_t) (void*) wire_get_wallets);
     dummy_var ^= ((int64_t) (void*) wire_remove_wallet);
-    dummy_var ^= ((int64_t) (void*) wire_add_new_wallets);
-    dummy_var ^= ((int64_t) (void*) wire_set_mints);
     dummy_var ^= ((int64_t) (void*) wire_check_spendable);
     dummy_var ^= ((int64_t) (void*) wire_receive_token);
     dummy_var ^= ((int64_t) (void*) wire_send);
@@ -221,7 +208,6 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_get_active_mint);
     dummy_var ^= ((int64_t) (void*) wire_set_active_mint);
     dummy_var ^= ((int64_t) (void*) wire_decode_token);
-    dummy_var ^= ((int64_t) (void*) new_StringList_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_cashu_transaction_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_ln_transaction_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_message_0);

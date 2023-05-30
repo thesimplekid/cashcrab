@@ -218,32 +218,6 @@ fn wire_remove_wallet_impl(port_: MessagePort, url: impl Wire2Api<String> + Unwi
         },
     )
 }
-fn wire_add_new_wallets_impl(port_: MessagePort, _mints: impl Wire2Api<Vec<String>> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "add_new_wallets",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api__mints = _mints.wire2api();
-            move |task_callback| add_new_wallets(api__mints)
-        },
-    )
-}
-fn wire_set_mints_impl(port_: MessagePort, mints: impl Wire2Api<Vec<String>> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "set_mints",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_mints = mints.wire2api();
-            move |task_callback| set_mints(api_mints)
-        },
-    )
-}
 fn wire_check_spendable_impl(
     port_: MessagePort,
     transaction: impl Wire2Api<Transaction> + UnwindSafe,
@@ -479,6 +453,7 @@ impl Wire2Api<TransactionStatus> for i32 {
             1 => TransactionStatus::Received,
             2 => TransactionStatus::Pending,
             3 => TransactionStatus::Failed,
+            4 => TransactionStatus::Expired,
             _ => unreachable!("Invalid variant for TransactionStatus: {}", self),
         }
     }
@@ -651,6 +626,7 @@ impl support::IntoDart for TransactionStatus {
             Self::Received => 1,
             Self::Pending => 2,
             Self::Failed => 3,
+            Self::Expired => 4,
         }
         .into_dart()
     }

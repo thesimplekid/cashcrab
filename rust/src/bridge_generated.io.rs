@@ -81,16 +81,6 @@ pub extern "C" fn wire_remove_wallet(port_: i64, url: *mut wire_uint_8_list) {
 }
 
 #[no_mangle]
-pub extern "C" fn wire_add_new_wallets(port_: i64, _mints: *mut wire_StringList) {
-    wire_add_new_wallets_impl(port_, _mints)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_set_mints(port_: i64, mints: *mut wire_StringList) {
-    wire_set_mints_impl(port_, mints)
-}
-
-#[no_mangle]
 pub extern "C" fn wire_check_spendable(port_: i64, transaction: *mut wire_Transaction) {
     wire_check_spendable_impl(port_, transaction)
 }
@@ -168,15 +158,6 @@ pub extern "C" fn wire_decode_token(port_: i64, encoded_token: *mut wire_uint_8_
 // Section: allocate functions
 
 #[no_mangle]
-pub extern "C" fn new_StringList_0(len: i32) -> *mut wire_StringList {
-    let wrap = wire_StringList {
-        ptr: support::new_leak_vec_ptr(<*mut wire_uint_8_list>::new_with_null_ptr(), len),
-        len,
-    };
-    support::new_leak_box_ptr(wrap)
-}
-
-#[no_mangle]
 pub extern "C" fn new_box_autoadd_cashu_transaction_0() -> *mut wire_CashuTransaction {
     support::new_leak_box_ptr(wire_CashuTransaction::new_with_null_ptr())
 }
@@ -213,15 +194,6 @@ impl Wire2Api<String> for *mut wire_uint_8_list {
     fn wire2api(self) -> String {
         let vec: Vec<u8> = self.wire2api();
         String::from_utf8_lossy(&vec).into_owned()
-    }
-}
-impl Wire2Api<Vec<String>> for *mut wire_StringList {
-    fn wire2api(self) -> Vec<String> {
-        let vec = unsafe {
-            let wrap = support::box_from_leak_ptr(self);
-            support::vec_from_leak_ptr(wrap.ptr, wrap.len)
-        };
-        vec.into_iter().map(Wire2Api::wire2api).collect()
     }
 }
 impl Wire2Api<CashuTransaction> for *mut wire_CashuTransaction {
@@ -336,13 +308,6 @@ impl Wire2Api<Vec<u8>> for *mut wire_uint_8_list {
     }
 }
 // Section: wire structs
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_StringList {
-    ptr: *mut *mut wire_uint_8_list,
-    len: i32,
-}
 
 #[repr(C)]
 #[derive(Clone)]

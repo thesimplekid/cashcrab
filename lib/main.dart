@@ -234,10 +234,12 @@ class MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<bool> _checkTransactionStatus(Transaction transaction) async {
-    final spendable = await api.checkSpendable(transaction: transaction);
+  Future<TransactionStatus> _checkTransactionStatus(
+      Transaction transaction) async {
+    final TransactionStatus status =
+        await api.checkSpendable(transaction: transaction);
 
-    if (spendable == false) {
+    if (status != TransactionStatus.Pending) {
       String id = transaction.field0 is LNTransaction
           ? (transaction.field0 as LNTransaction).id!
           : (transaction.field0 as CashuTransaction).id!;
@@ -254,7 +256,7 @@ class MyHomePageState extends State<MyHomePage> {
 
     _getBalances();
 
-    return spendable;
+    return status;
   }
 
   void clearToken() async {
@@ -274,6 +276,10 @@ class MyHomePageState extends State<MyHomePage> {
       String id = transaction.field0 is LNTransaction
           ? (transaction.field0 as LNTransaction).id!
           : (transaction.field0 as CashuTransaction).id!;
+
+      if (activeMint == null) {
+        await api.setActiveMint(mintUrl: tokenData!.mint);
+      }
 
       setState(() {
         transactions[id] = transaction;

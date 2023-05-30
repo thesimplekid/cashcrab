@@ -1,4 +1,5 @@
 use std::sync::Mutex as StdMutex;
+use std::{collections::HashMap, fmt, io, str::FromStr, sync::Arc};
 
 use anyhow::{anyhow, bail, Error, Result};
 use bitcoin::{secp256k1::XOnlyPublicKey, Amount};
@@ -11,12 +12,10 @@ use cashu_crab::{
 use lazy_static::lazy_static;
 use lightning_invoice::{Invoice, InvoiceDescription};
 use nostr_sdk::prelude::{FromBech32, PREFIX_BECH32_PUBLIC_KEY};
-use std::{collections::HashMap, fmt, io, str::FromStr, sync::Arc};
 use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
 use super::types::{InvoiceInfo, TokenData};
-
 use crate::{
     database,
     nostr::{self, init_client},
@@ -352,58 +351,6 @@ pub fn remove_wallet(url: String) -> Result<String> {
     result
 }
 
-/// Check proofs for mints that should be added
-pub fn add_new_wallets(_mints: Vec<String>) -> Result<()> {
-    /*
-    let mut wallets = WALLETS.lock().await;
-    for mint in mints {
-        if let Ok(client) = Client::new(&mint) {
-            if let Ok(mint_keys) = client.get_keys().await {
-                let wallet = CashuWallet::new(client, mint_keys);
-                wallets.insert(mint, Some(wallet));
-            }
-        }
-    }
-    */
-
-    Ok(())
-}
-
-/*
-/// Load Proofs
-pub async fn set_proofs(proofs: &str) -> Result<String, CashuError> {
-    let proofs: HashMap<String, Proofs> = serde_json::from_str(proofs)?;
-
-    let mut c_proofs = PROOFS.lock().await;
-
-    *c_proofs = proofs;
-    Ok(serde_json::to_string(&*c_proofs)?)
-}
-
-/// Get Proofs
-pub async fn get_proofs() -> Result<String, CashuError> {
-    let c_proofs = PROOFS.lock().await;
-
-    Ok(serde_json::to_string(&*c_proofs)?)
-}
-*/
-
-/// Set mints (wallets)
-pub fn set_mints(mints: Vec<String>) -> Result<Vec<String>> {
-    let rt = lock_runtime!();
-
-    let result = rt.block_on(async {
-        add_new_wallets(mints)?;
-
-        let m: Vec<String> = WALLETS.lock().await.keys().cloned().collect();
-
-        Ok(m)
-    });
-
-    drop(rt);
-    result
-}
-
 /// Get wallet for uri
 async fn wallet_for_url(mint_url: &str) -> Result<CashuWallet> {
     let mut wallets = WALLETS.lock().await;
@@ -422,9 +369,8 @@ async fn wallet_for_url(mint_url: &str) -> Result<CashuWallet> {
     Ok(cashu_wallet)
 }
 
-// Check spendable for messages
-
-pub fn check_spendable(transaction: Transaction) -> Result<bool> {
+/// Check spendable for messages
+pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
         match &transaction {
@@ -452,46 +398,50 @@ pub fn check_spendable(transaction: Transaction) -> Result<bool> {
                     database::transactions::update_transaction_status(&transaction).await?;
 
                     // Update Status
-                    Ok(false)
+                    Ok(TransactionStatus::Sent)
                 } else {
-                    Ok(true)
+                    Ok(TransactionStatus::Pending)
                 }
             }
             Transaction::LNTransaction(ln_trans) => {
                 if let Some(mint) = &ln_trans.mint {
                     let wallet = wallet_for_url(&mint).await?;
+                    let invoice = Invoice::from_str(&ln_trans.bolt11)?;
 
                     let proofs = wallet
                         .mint_token(Amount::from_sat(ln_trans.amount), &ln_trans.hash)
-                        .await?;
+                        .await
+                        .unwrap_or_default();
 
-                    database::cashu::add_proofs(&mint, proofs.clone()).await?;
-
-                    // REVIEW:
                     if !proofs.is_empty() {
-                        let updated_transaction = LNTransaction::new(
-                            Some(TransactionStatus::Received),
-                            ln_trans.amount,
-                            ln_trans.mint.clone(),
-                            &ln_trans.bolt11,
-                            &ln_trans.hash,
-                        );
-
+                        database::cashu::add_proofs(&mint, &proofs).await?;
                         database::transactions::update_transaction_status(
-                            &Transaction::LNTransaction(updated_transaction),
+                            &Transaction::LNTransaction(LNTransaction::new(
+                                Some(TransactionStatus::Received),
+                                ln_trans.amount,
+                                ln_trans.mint.clone(),
+                                &ln_trans.bolt11,
+                                &ln_trans.hash,
+                            )),
                         )
                         .await?;
-                        // REVIEW: Change this to an enum.
-                        // It is backwards because if a cashu token is NOT spendable then it is spend
-                        // But the opposite is true for LN if it is paid it is received
-                        Ok(false)
-                    } else {
-                        // TODO: Return could not check error
-                        Ok(true)
+                        return Ok(TransactionStatus::Received);
+                    } else if invoice.is_expired() {
+                        database::transactions::update_transaction_status(
+                            &Transaction::LNTransaction(LNTransaction::new(
+                                Some(TransactionStatus::Expired),
+                                ln_trans.amount,
+                                ln_trans.mint.clone(),
+                                &ln_trans.bolt11,
+                                &ln_trans.hash,
+                            )),
+                        )
+                        .await?;
+                        return Ok(TransactionStatus::Expired);
                     }
-                } else {
-                    Ok(true)
                 }
+
+                Ok(TransactionStatus::Pending)
             }
         }
     });
@@ -509,7 +459,7 @@ pub fn receive_token(encoded_token: String) -> Result<Transaction> {
         let mint_url = wallet.client.mint_url.to_string();
         let received_proofs = wallet.receive(&encoded_token).await?;
 
-        database::cashu::add_proofs(&mint_url, received_proofs.clone()).await?;
+        database::cashu::add_proofs(&mint_url, &received_proofs).await?;
 
         let transaction = Transaction::CashuTransaction(CashuTransaction::new(
             Some(TransactionStatus::Received),
@@ -574,7 +524,7 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
         keep_proofs.extend(r.change_proofs.clone());
 
         // Set wallet proofs to change
-        database::cashu::add_proofs(&active_mint, keep_proofs).await?;
+        database::cashu::add_proofs(&active_mint, &keep_proofs).await?;
 
         // Remove sent proofs
         database::cashu::remove_proofs(&active_mint, send_proofs).await?;
@@ -629,7 +579,7 @@ pub fn mint_token(amount: u64, hash: String, mint: String) -> Result<()> {
         if let Some(Some(wallet)) = wallets.get(&mint) {
             let proofs = wallet.mint_token(Amount::from_sat(amount), &hash).await?;
 
-            database::cashu::add_proofs(&mint, proofs).await?;
+            database::cashu::add_proofs(&mint, &proofs).await?;
 
             return Ok(());
         }

@@ -76,17 +76,9 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kRemoveWalletConstMeta;
 
-  /// Check proofs for mints that should be added
-  Future<void> addNewWallets({required List<String> mints, dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kAddNewWalletsConstMeta;
-
-  /// Set mints (wallets)
-  Future<List<String>> setMints({required List<String> mints, dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kSetMintsConstMeta;
-
-  Future<bool> checkSpendable({required Transaction transaction, dynamic hint});
+  /// Check spendable for messages
+  Future<TransactionStatus> checkSpendable(
+      {required Transaction transaction, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kCheckSpendableConstMeta;
 
@@ -293,4 +285,5 @@ enum TransactionStatus {
   Received,
   Pending,
   Failed,
+  Expired,
 }

@@ -307,6 +307,17 @@ class TransactionList extends StatelessWidget {
                 ),
               );
               break;
+            case TransactionStatus.Expired:
+              statusIcon = Icons.close;
+              amountText = Text(
+                "${transaction.amount} sats",
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w100,
+                  color: Colors.grey,
+                ),
+              );
+              break;
             default:
               amountText = Text(
                 "${transaction.amount} sats",
