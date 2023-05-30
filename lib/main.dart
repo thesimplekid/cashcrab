@@ -53,7 +53,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   Map<String, int> mints = {};
   int balance = 0;
-  Mint? activeMint;
+  String? activeMint;
   int activeBalance = 0;
 
   TokenData? tokenData;
@@ -120,14 +120,14 @@ class MyHomePageState extends State<MyHomePage> {
       contacts: contacts,
       addContact: addContact,
       removeContact: removeContact,
-      activeMint: activeMint?.url,
+      activeMint: activeMint,
       activeMintBalance: activeBalance,
     );
     _homeTab = Home(
       cashu: api,
       balance: balance,
       activeBalance: activeBalance,
-      activeMint: activeMint?.url,
+      activeMint: activeMint,
       tokenData: tokenData,
       pendingTransactions: pendingTransactions,
       transactions: transactions,
@@ -149,7 +149,7 @@ class MyHomePageState extends State<MyHomePage> {
       addContact: addContact,
       addMint: _addNewMint,
       removeMint: removeMint,
-      activeMint: activeMint?.url,
+      activeMint: activeMint,
       setActiveMint: _setActiveMint,
     );
 
@@ -216,7 +216,7 @@ class MyHomePageState extends State<MyHomePage> {
     setState(() {
       balance = bal;
       if (activeMint != null) {
-        activeBalance = mints[activeMint?.url] ?? 0;
+        activeBalance = mints[activeMint] ?? 0;
       }
     });
   }
@@ -274,8 +274,10 @@ class MyHomePageState extends State<MyHomePage> {
       String id = transaction.field0 is LNTransaction
           ? (transaction.field0 as LNTransaction).id!
           : (transaction.field0 as CashuTransaction).id!;
+
       setState(() {
         transactions[id] = transaction;
+        activeMint ??= tokenData!.mint;
       });
 
       await _getBalances();
@@ -288,7 +290,7 @@ class MyHomePageState extends State<MyHomePage> {
     }
 
     Transaction transaction =
-        await api.send(amount: amount, activeMint: activeMint!.url);
+        await api.send(amount: amount, activeMint: activeMint!);
     CashuTransaction t = transaction.field0 as CashuTransaction;
     String id = t.id!;
 
@@ -302,11 +304,10 @@ class MyHomePageState extends State<MyHomePage> {
     return (transaction);
   }
 
-  // Get Proofs
   Future<Mint?> _getActiveMint() async {
     Mint? mint = await api.getActiveMint();
     setState(() {
-      activeMint = mint;
+      activeMint = mint?.url;
     });
     await _getBalances();
     _getBalance();
@@ -320,7 +321,7 @@ class MyHomePageState extends State<MyHomePage> {
     Mint? active = await api.getActiveMint();
 
     setState(() {
-      activeMint = active;
+      activeMint = active!.url;
     });
     await _getBalances();
     _getBalance();
@@ -397,16 +398,14 @@ class MyHomePageState extends State<MyHomePage> {
   Future<void> _loadMints() async {
     List<Mint> gotMints = await api.getMints();
 
-    Map<String, int> _mints = {};
+    Map<String, int> m = {};
     for (var mint in gotMints) {
-      _mints[mint.url] = 0;
+      m[mint.url] = 0;
     }
 
     setState(() {
-      mints = _mints;
+      mints = m;
     });
-
-    print("LoadedMint: $mints.toString()");
   }
 
   Future<void> removeMint(String mintUrl) async {
@@ -414,11 +413,9 @@ class MyHomePageState extends State<MyHomePage> {
     await _getBalances();
 
     if (mints[mintUrl] == 0) {
-      // Remove from rust
-      // await api.deleteMint(mint: mintUrl);
       mints.remove(mintUrl);
       await api.removeWallet(url: mintUrl);
-      if (activeMint != null && mintUrl == activeMint!.url) {
+      if (activeMint != null && mintUrl == activeMint) {
         String? newActive;
 
         List<String> mintUrls = mints.keys.toList();
