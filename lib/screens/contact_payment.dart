@@ -168,7 +168,10 @@ class _ContactPaymentState extends State<ContactPayment> {
                         Message msg = await createRequestMessage(parsedValue);
 
                         await widget.send(msg);
-                        Navigator.pop(context);
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
                       }
                     }
                   },
@@ -189,7 +192,10 @@ class _ContactPaymentState extends State<ContactPayment> {
                         Message msg = await createSendMessage(parsedValue);
 
                         await widget.send(msg);
-                        Navigator.pop(context);
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
                       }
                     }
                   },

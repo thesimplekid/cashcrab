@@ -20,9 +20,12 @@ class AddContactState extends State<AddContact> {
     // addContactController.addListener(_addContact);
   }
 
-  Future<void> _addContact() async {
+  void _addContact(BuildContext context) async {
     String pubkey = addContactController.text;
     await widget.addContact(pubkey);
+    if (context.mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -53,8 +56,9 @@ class AddContactState extends State<AddContact> {
               controller: addContactController,
             ),
             TextButton(
-              onPressed: () async {
-                await _addContact();
+              onPressed: () {
+                final currentContext = context;
+                _addContact(currentContext);
               },
               child: const Text("Add Contact"),
             ),
