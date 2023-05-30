@@ -2,15 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ffi';
 
-import 'package:cashcrab/bridge_definitions.dart';
-import 'package:cashcrab/bridge_generated.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:cashcrab/bridge_definitions.dart';
+import 'package:cashcrab/bridge_generated.dart';
+import 'package:cashcrab/screens/contacts/contacts.dart';
+
 import 'color_schemes.g.dart';
 import 'screens/home.dart';
-import 'screens/settings.dart';
-import 'screens/contacts.dart';
+import 'screens/settings/settings.dart';
 
 const base = "rust";
 final path = Platform.isWindows ? "$base.dll" : "lib$base.so";

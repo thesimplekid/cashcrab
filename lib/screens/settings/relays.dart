@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/shared/colors.dart';
 
-// Relays
+// Nostr Relays
 class Relays extends StatefulWidget {
   final RustImpl api;
   const Relays({super.key, required this.api});
@@ -49,7 +49,7 @@ class _RelaysState extends State<Relays> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Relays")),
+      appBar: AppBar(title: const Text("Nostr Relays")),
       body: Column(
         children: [
           SizedBox(

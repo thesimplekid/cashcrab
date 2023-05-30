@@ -1,10 +1,11 @@
-import 'package:cashcrab/bridge_definitions.dart';
-import 'package:cashcrab/bridge_generated.dart';
 import 'package:flutter/material.dart';
 
-import '../screens/send.dart';
+import 'package:cashcrab/bridge_definitions.dart';
+import 'package:cashcrab/screens/send.dart';
+import 'package:cashcrab/bridge_generated.dart';
+import 'package:cashcrab/screens/ln/invoice_info.dart';
+
 import '../screens/receive.dart';
-import '../screens/invoice_info.dart';
 import '../screens/token_info.dart';
 import '../shared/utils.dart';
 

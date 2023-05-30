@@ -1,9 +1,9 @@
-import 'package:cashcrab/bridge_definitions.dart';
 import 'package:flutter/material.dart';
-import 'package:cashcrab/bridge_generated.dart';
 
-import '../shared/widgets/add_mint.dart';
-import '../screens/create_invoice.dart';
+import 'package:cashcrab/screens/ln/create_invoice.dart';
+import 'package:cashcrab/bridge_definitions.dart';
+import 'package:cashcrab/shared/widgets/add_mint.dart';
+import 'package:cashcrab/bridge_generated.dart';
 
 class ReceviceToken extends StatefulWidget {
   final Function decodeToken;

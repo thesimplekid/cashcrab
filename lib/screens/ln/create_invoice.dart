@@ -1,9 +1,9 @@
-import 'package:cashcrab/bridge_definitions.dart';
+import 'package:cashcrab/screens/ln/invoice_info.dart';
+import 'package:cashcrab/shared/widgets/numeric_input.dart';
 import 'package:flutter/material.dart';
 
-import '../bridge_generated.dart';
-import '../shared/widgets/numeric_input.dart';
-import '../screens/invoice_info.dart';
+import 'package:cashcrab/bridge_definitions.dart';
+import 'package:cashcrab/bridge_generated.dart';
 
 class CreateInvoice extends StatefulWidget {
   final RustImpl cashu;

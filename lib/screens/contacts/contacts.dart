@@ -1,5 +1,5 @@
-import 'package:cashcrab/screens/add_contact.dart';
-import 'package:cashcrab/screens/messages.dart';
+import 'package:cashcrab/screens/contacts/add_contact.dart';
+import 'package:cashcrab/screens/contacts/messages.dart';
 import 'package:cashcrab/shared/colors.dart';
 import 'package:cashcrab/shared/utils.dart';
 import 'package:flutter/material.dart';

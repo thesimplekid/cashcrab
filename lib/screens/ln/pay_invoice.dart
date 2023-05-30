@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cashcrab/bridge_generated.dart';
 
-import '../shared/models/invoice.dart';
+import 'package:cashcrab/shared/models/invoice.dart';
+import 'package:cashcrab/bridge_generated.dart';
 
 class PayInvoice extends StatefulWidget {
   final String? activeMint;

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/bridge_generated.dart';
-import 'package:cashcrab/screens/mints.dart';
-import 'package:cashcrab/screens/relays.dart';
+import 'package:cashcrab/screens/settings/mints.dart';
+import 'package:cashcrab/screens/settings/relays.dart';
 import 'package:cashcrab/shared/colors.dart';
 
 // Settings

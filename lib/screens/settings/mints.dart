@@ -1,8 +1,7 @@
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/shared/colors.dart';
+import 'package:cashcrab/shared/widgets/add_mint.dart';
 import 'package:flutter/material.dart';
-
-import '../shared/widgets/add_mint.dart';
 
 // Mints
 class Mints extends StatefulWidget {

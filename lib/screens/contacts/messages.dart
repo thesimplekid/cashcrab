@@ -1,9 +1,10 @@
-import 'package:cashcrab/screens/contact_payment.dart';
+import 'package:flutter/material.dart';
+
+import 'package:cashcrab/screens/contacts/contact_payment.dart';
 import 'package:cashcrab/shared/utils.dart';
 import 'package:cashcrab/shared/widgets/invoice_message.dart';
 import 'package:cashcrab/shared/widgets/text_message.dart';
 import 'package:cashcrab/shared/widgets/token_message.dart';
-import 'package:flutter/material.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/bridge_definitions.dart';
 

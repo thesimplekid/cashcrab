@@ -1,10 +1,10 @@
-import 'package:cashcrab/bridge_definitions.dart';
 import 'package:flutter/material.dart';
-import 'package:cashcrab/bridge_generated.dart';
 
-import '../screens/token_info.dart';
-import '../screens/pay_invoice.dart';
-import '../shared/widgets/numeric_input.dart';
+import 'package:cashcrab/bridge_definitions.dart';
+import 'package:cashcrab/shared/widgets/numeric_input.dart';
+import 'package:cashcrab/screens/token_info.dart';
+import 'package:cashcrab/screens/ln/pay_invoice.dart';
+import 'package:cashcrab/bridge_generated.dart';
 
 class Send extends StatefulWidget {
   final Function send;
