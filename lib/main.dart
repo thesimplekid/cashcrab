@@ -305,9 +305,12 @@ class MyHomePageState extends State<MyHomePage> {
       pendingTransactions[id] = transaction;
     });
 
+    print(mints);
     // Recaulate balances
     await _getBalances();
     _getBalance();
+
+    print("AFTER ${mints}");
     return (transaction);
   }
 

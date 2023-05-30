@@ -266,7 +266,7 @@ pub fn get_balances() -> Result<String> {
     let result = rt.block_on(async {
         let proofs = database::cashu::get_all_proofs().await?;
 
-        let balances = proofs
+        let mut balances = proofs
             .iter()
             .map(|(mint, proofs)| {
                 let balance = proofs
@@ -275,6 +275,14 @@ pub fn get_balances() -> Result<String> {
                 (mint.to_owned(), balance)
             })
             .collect::<HashMap<_, _>>();
+
+        let mints = WALLETS.lock().await;
+
+        let mints: Vec<String> = mints.keys().cloned().collect();
+
+        for mint in mints {
+            balances.entry(mint).or_insert(0);
+        }
 
         Ok(serde_json::to_string(&balances)?)
     });
