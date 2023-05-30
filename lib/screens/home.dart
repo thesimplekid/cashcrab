@@ -165,31 +165,7 @@ class _HomeState extends State<Home> {
             ),
           ),
           Row(
-            // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Flexible(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 70),
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Send(
-                          cashu: widget.cashu,
-                          wallets: widget.mints,
-                          decodeToken: widget.decodeToken,
-                          send: widget.send,
-                          activeMint: widget.activeMint,
-                          activeBalance: widget.activeBalance,
-                        ),
-                      ),
-                    );
-                  },
-                  child: const Text('Send'),
-                ),
-              ),
               Flexible(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -213,6 +189,29 @@ class _HomeState extends State<Home> {
                     );
                   },
                   child: const Text('Receive'),
+                ),
+              ),
+              Flexible(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 70),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Send(
+                          cashu: widget.cashu,
+                          wallets: widget.mints,
+                          decodeToken: widget.decodeToken,
+                          send: widget.send,
+                          activeMint: widget.activeMint,
+                          activeBalance: widget.activeBalance,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Send'),
                 ),
               ),
             ], // Button row children
