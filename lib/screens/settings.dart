@@ -1,9 +1,10 @@
+import 'package:flutter/material.dart';
+
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/screens/mints.dart';
-import 'package:cashcrab/screens/nostr_settings.dart';
+import 'package:cashcrab/screens/relays.dart';
 import 'package:cashcrab/shared/colors.dart';
-import 'package:flutter/material.dart';
 
 // Settings
 class Settings extends StatefulWidget {
@@ -133,7 +134,7 @@ class _SettingsState extends State<Settings> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => NostrSettings(
+                      builder: (context) => Relays(
                         api: widget.api,
                       ),
                     ),
