@@ -120,6 +120,7 @@ class MyHomePageState extends State<MyHomePage> {
       payInvoice: payInvoice,
       contacts: contacts,
       addContact: addContact,
+      loadContacts: _loadContacts,
       removeContact: removeContact,
       activeMint: activeMint,
       activeMintBalance: activeBalance,

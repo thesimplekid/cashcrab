@@ -20,14 +20,6 @@ class AddContactState extends State<AddContact> {
     // addContactController.addListener(_addContact);
   }
 
-  void _addContact(BuildContext context) async {
-    String pubkey = addContactController.text;
-    await widget.addContact(pubkey);
-    if (context.mounted) {
-      Navigator.pop(context);
-    }
-  }
-
   @override
   void dispose() {
     // Clean up the controller when the widget is removed from the widget tree.
@@ -56,9 +48,15 @@ class AddContactState extends State<AddContact> {
               controller: addContactController,
             ),
             TextButton(
-              onPressed: () {
-                final currentContext = context;
-                _addContact(currentContext);
+              onPressed: () async {
+                if (context.mounted) {
+                  String pubkey = addContactController.text;
+                  widget.addContact(pubkey).then((_) {
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
+                  });
+                }
               },
               child: const Text("Add Contact"),
             ),

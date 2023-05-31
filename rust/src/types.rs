@@ -264,6 +264,8 @@ pub struct Contact {
     pub picture: Option<Picture>,
     /// Lud16
     pub lud16: Option<String>,
+    /// create_at
+    pub created_at: Option<u64>,
 }
 
 impl Contact {

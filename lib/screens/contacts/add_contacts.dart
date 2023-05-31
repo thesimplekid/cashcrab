@@ -1,12 +1,14 @@
+import 'package:flutter/material.dart';
+
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/shared/colors.dart';
-import 'package:flutter/material.dart';
 
 // Settings
 class AddContacts extends StatefulWidget {
   final RustImpl api;
   final String userPubkey;
+  final String? username;
   final Function loadContacts;
   final Function addContact;
 
@@ -14,6 +16,7 @@ class AddContacts extends StatefulWidget {
     super.key,
     required this.api,
     required this.userPubkey,
+    required this.username,
     required this.loadContacts,
     required this.addContact,
   });
@@ -26,16 +29,19 @@ class _AddContactsState extends State<AddContacts> {
   List<Contact> pubContacts = [];
   List<Contact> contacts = [];
 
+  bool _isMounted = false;
   _AddContactsState();
 
   @override
   void initState() {
     super.initState();
     _loadContacts();
+    _isMounted = true;
   }
 
   @override
   void dispose() {
+    _isMounted = false;
     super.dispose();
   }
 
@@ -53,16 +59,26 @@ class _AddContactsState extends State<AddContacts> {
     List<Contact> c = await widget.api.fetchContacts(pubkey: widget.userPubkey);
     List<Contact> apContacts = await widget.api.getContacts();
 
-    setState(() {
-      pubContacts = c;
-      contacts = apContacts;
-    });
+    if (_isMounted) {
+      setState(() {
+        pubContacts = c;
+        contacts = apContacts;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    String barTitle;
+
+    if (widget.username != null) {
+      barTitle = "${widget.username}'s contacts";
+    } else {
+      barTitle = "Contacts";
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Nostr Settings")),
+      appBar: AppBar(title: Text(barTitle)),
       body: Column(
         children: [
           Flexible(

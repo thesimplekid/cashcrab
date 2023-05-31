@@ -7,10 +7,9 @@ use lazy_static::lazy_static;
 use nostr_sdk::prelude::*;
 use tokio::{sync::Mutex, task::JoinHandle};
 
-use crate::types::Picture;
 use crate::{
     database,
-    types::{self, CashuTransaction, Conversation, Direction, Message, Transaction},
+    types::{self, CashuTransaction, Conversation, Direction, Message, Picture, Transaction},
     utils::unix_time,
 };
 
@@ -181,6 +180,7 @@ async fn handle_metadata(event: Event) -> Result<Option<types::Contact>> {
             name: info.name,
             picture,
             lud16: info.lud16,
+            created_at: Some(event.created_at.as_u64()),
         };
 
         Ok(Some(contact))
@@ -211,6 +211,7 @@ async fn handle_event(event: Event, keys: &Keys) -> Result<()> {
     Ok(())
 }
 
+/// Add Relay
 pub(crate) async fn add_relay(relay: String) -> Result<()> {
     let client = SEND_CLIENT.clone();
 
@@ -235,6 +236,7 @@ pub(crate) async fn add_relay(relay: String) -> Result<()> {
     Ok(())
 }
 
+/// Remove relay
 pub(crate) async fn remove_relay(relay: String) -> Result<()> {
     let client = SEND_CLIENT.clone();
 
@@ -259,6 +261,7 @@ pub(crate) async fn remove_relay(relay: String) -> Result<()> {
     Ok(())
 }
 
+/// Get relays
 pub(crate) async fn get_relays() -> Result<Vec<String>> {
     let client = SEND_CLIENT.clone();
 
@@ -393,6 +396,7 @@ pub(crate) async fn get_contacts(pubkey: &XOnlyPublicKey) -> Result<Vec<XOnlyPub
     Ok(pubkeys)
 }
 
+/// Set contact list
 pub(crate) async fn set_contact_list() -> Result<()> {
     let mut client = SEND_CLIENT.lock().await;
 
@@ -416,6 +420,7 @@ pub(crate) async fn set_contact_list() -> Result<()> {
     Ok(())
 }
 
+/// Send message
 pub async fn send_message(receiver: XOnlyPublicKey, message: &Message) -> Result<Conversation> {
     let mut client = SEND_CLIENT.lock().await;
 

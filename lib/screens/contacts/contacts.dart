@@ -1,5 +1,6 @@
 import 'package:cashcrab/screens/contacts/add_contact.dart';
 import 'package:cashcrab/screens/contacts/messages.dart';
+import 'package:cashcrab/screens/contacts/profile.dart';
 import 'package:cashcrab/shared/colors.dart';
 import 'package:cashcrab/shared/utils.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ class Contacts extends StatefulWidget {
   final RustImpl api;
   final List<Contact> contacts;
   final Function addContact;
+  final Function loadContacts;
   final Function removeContact;
   final Function receiveToken;
   final Function sendToken;
@@ -22,6 +24,7 @@ class Contacts extends StatefulWidget {
   const Contacts(
       {super.key,
       required this.activeMint,
+      required this.loadContacts,
       required this.activeMintBalance,
       required this.mints,
       required this.removeContact,
@@ -119,8 +122,24 @@ class _ContactsState extends State<Contacts> {
                 },
                 child: Row(
                   children: [
-                    CircleAvatar(
-                        radius: 25, backgroundImage: NetworkImage(imagePath)),
+                    GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => Profile(
+                                api: widget.api,
+                                contact: contact,
+                                imagePath: imagePath!,
+                                loadContacts: widget.loadContacts,
+                                addContact: widget.addContact,
+                              ),
+                            ),
+                          );
+                        },
+                        child: CircleAvatar(
+                            radius: 25,
+                            backgroundImage: NetworkImage(imagePath))),
                     Column(
                       children: [
                         Row(

@@ -156,6 +156,7 @@ pub fn add_contact(pubkey: String) -> Result<()> {
             false => XOnlyPublicKey::from_str(&pubkey)?,
         };
         let contacts = nostr::get_metadata(vec![x_pubkey]).await?;
+
         database::message::add_contacts(contacts).await?;
         nostr::set_contact_list().await?;
         Ok(())
