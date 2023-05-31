@@ -5,6 +5,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub(crate) mod cashu;
+pub(crate) mod contacts;
 pub(crate) mod message;
 pub(crate) mod nostr;
 pub(crate) mod transactions;

@@ -27,13 +27,14 @@ use crate::types::InvoiceInfo;
 use crate::types::LNTransaction;
 use crate::types::Message;
 use crate::types::Mint;
+use crate::types::Picture;
 use crate::types::TokenData;
 use crate::types::Transaction;
 use crate::types::TransactionStatus;
 
 // Section: wire functions
 
-fn wire_init_db_impl(port_: MessagePort, path: impl Wire2Api<String> + UnwindSafe) {
+fn wire_init_db_impl(port_: MessagePort, storage_path: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "init_db",
@@ -41,19 +42,22 @@ fn wire_init_db_impl(port_: MessagePort, path: impl Wire2Api<String> + UnwindSaf
             mode: FfiCallMode::Normal,
         },
         move || {
-            let api_path = path.wire2api();
-            move |task_callback| init_db(api_path)
+            let api_storage_path = storage_path.wire2api();
+            move |task_callback| init_db(api_storage_path)
         },
     )
 }
-fn wire_init_nostr_impl(port_: MessagePort) {
+fn wire_init_nostr_impl(port_: MessagePort, storage_path: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "init_nostr",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
-        move || move |task_callback| init_nostr(),
+        move || {
+            let api_storage_path = storage_path.wire2api();
+            move |task_callback| init_nostr(api_storage_path)
+        },
     )
 }
 fn wire_get_relays_impl(port_: MessagePort) {
@@ -139,6 +143,35 @@ fn wire_get_contacts_impl(port_: MessagePort) {
             mode: FfiCallMode::Normal,
         },
         move || move |task_callback| get_contacts(),
+    )
+}
+fn wire_get_contact_picture_id_impl(
+    port_: MessagePort,
+    pubkey: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_contact_picture_id",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_pubkey = pubkey.wire2api();
+            move |task_callback| get_contact_picture_id(api_pubkey)
+        },
+    )
+}
+fn wire_fetch_picture_impl(port_: MessagePort, url: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "fetch_picture",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_url = url.wire2api();
+            move |task_callback| fetch_picture(api_url)
+        },
     )
 }
 fn wire_send_message_impl(
@@ -595,6 +628,18 @@ impl support::IntoDart for Mint {
     }
 }
 impl support::IntoDartExceptPrimitive for Mint {}
+
+impl support::IntoDart for Picture {
+    fn into_dart(self) -> support::DartAbi {
+        vec![
+            self.url.into_dart(),
+            self.hash.into_dart(),
+            self.updated.into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for Picture {}
 
 impl support::IntoDart for TokenData {
     fn into_dart(self) -> support::DartAbi {

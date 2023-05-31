@@ -67,6 +67,8 @@ class _ContactsState extends State<Contacts> {
             itemCount: widget.contacts.length,
             itemBuilder: (BuildContext context, int index) {
               Contact contact = widget.contacts[index];
+              String? imagePath = contact.picture?.url;
+              imagePath ??= "https://robohash.org/${contact.pubkey}";
               return GestureDetector(
                 onLongPress: () {
                   showDialog(
@@ -108,35 +110,42 @@ class _ContactsState extends State<Contacts> {
                         payInvoice: widget.payInvoice,
                         peerPubkey: contact.npub,
                         peerName: contact.name,
+                        imagePath: imagePath!,
                         mints: widget.mints,
                         activeMintBalance: widget.activeMintBalance,
                       ),
                     ),
                   );
                 },
-                child: Column(
+                child: Row(
                   children: [
-                    Row(
+                    CircleAvatar(
+                        radius: 25, backgroundImage: NetworkImage(imagePath)),
+                    Column(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                contact.name ?? "null",
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              Text(truncateText(contact.npub)),
-                            ],
-                          ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    contact.name ?? "null",
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(truncateText(contact.npub)),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

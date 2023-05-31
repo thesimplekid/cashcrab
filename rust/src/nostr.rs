@@ -7,6 +7,7 @@ use lazy_static::lazy_static;
 use nostr_sdk::prelude::*;
 use tokio::{sync::Mutex, task::JoinHandle};
 
+use crate::types::Picture;
 use crate::{
     database,
     types::{self, CashuTransaction, Conversation, Direction, Message, Transaction},
@@ -165,6 +166,11 @@ async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp
 /// Handle metadata event
 async fn handle_metadata(event: Event) -> Result<Option<types::Contact>> {
     if let Ok(info) = Metadata::from_json(&event.clone().content) {
+        let picture = match info.picture {
+            Some(picture_url) => Some(Picture::new(&picture_url)),
+            None => None,
+        };
+
         let contact = types::Contact {
             pubkey: event.pubkey.to_string(),
             npub: event
@@ -173,7 +179,7 @@ async fn handle_metadata(event: Event) -> Result<Option<types::Contact>> {
                 .to_bech32()
                 .unwrap_or(event.pubkey.to_string()),
             name: info.name,
-            picture: info.picture,
+            picture,
             lud16: info.lud16,
         };
 

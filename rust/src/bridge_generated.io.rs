@@ -2,13 +2,13 @@ use super::*;
 // Section: wire functions
 
 #[no_mangle]
-pub extern "C" fn wire_init_db(port_: i64, path: *mut wire_uint_8_list) {
-    wire_init_db_impl(port_, path)
+pub extern "C" fn wire_init_db(port_: i64, storage_path: *mut wire_uint_8_list) {
+    wire_init_db_impl(port_, storage_path)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_init_nostr(port_: i64) {
-    wire_init_nostr_impl(port_)
+pub extern "C" fn wire_init_nostr(port_: i64, storage_path: *mut wire_uint_8_list) {
+    wire_init_nostr_impl(port_, storage_path)
 }
 
 #[no_mangle]
@@ -44,6 +44,16 @@ pub extern "C" fn wire_remove_contact(port_: i64, pubkey: *mut wire_uint_8_list)
 #[no_mangle]
 pub extern "C" fn wire_get_contacts(port_: i64) {
     wire_get_contacts_impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_get_contact_picture_id(port_: i64, pubkey: *mut wire_uint_8_list) {
+    wire_get_contact_picture_id_impl(port_, pubkey)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_fetch_picture(port_: i64, url: *mut wire_uint_8_list) {
+    wire_fetch_picture_impl(port_, url)
 }
 
 #[no_mangle]

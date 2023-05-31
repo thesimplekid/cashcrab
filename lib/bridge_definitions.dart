@@ -12,11 +12,11 @@ import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'bridge_definitions.freezed.dart';
 
 abstract class Rust {
-  Future<void> initDb({required String path, dynamic hint});
+  Future<void> initDb({required String storagePath, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kInitDbConstMeta;
 
-  Future<String> initNostr({dynamic hint});
+  Future<void> initNostr({required String storagePath, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kInitNostrConstMeta;
 
@@ -48,6 +48,15 @@ abstract class Rust {
   Future<List<Contact>> getContacts({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetContactsConstMeta;
+
+  Future<String?> getContactPictureId({required String pubkey, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetContactPictureIdConstMeta;
+
+  /// Fetech and save image from url
+  Future<String> fetchPicture({required String url, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kFetchPictureConstMeta;
 
   Future<Conversation> sendMessage(
       {required String pubkey, required Message message, dynamic hint});
@@ -162,11 +171,21 @@ class CashuTransaction {
   });
 }
 
+/// Contact info
 class Contact {
+  /// Nostr Hex Pubkey
   final String pubkey;
+
+  /// Nostr NPub
   final String npub;
+
+  /// Username
   final String? name;
-  final String? picture;
+
+  /// Picture Info
+  final Picture? picture;
+
+  /// Lud16
   final String? lud16;
 
   const Contact({
@@ -253,6 +272,19 @@ class Mint {
     required this.url,
     this.activeKeyset,
     required this.keysets,
+  });
+}
+
+/// Profile Picture Info
+class Picture {
+  final String url;
+  final String? hash;
+  final int updated;
+
+  const Picture({
+    required this.url,
+    this.hash,
+    required this.updated,
   });
 }
 

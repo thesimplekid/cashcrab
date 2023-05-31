@@ -1,13 +1,20 @@
+use std::fs;
+use std::io::Cursor;
+use std::path::PathBuf;
 use std::sync::Mutex as StdMutex;
 use std::{collections::HashMap, fmt, str::FromStr, sync::Arc};
 
 use anyhow::{anyhow, bail, Error, Result};
 use bitcoin::{secp256k1::XOnlyPublicKey, Amount};
+use bitcoin_hashes::sha256;
+use bitcoin_hashes::Hash;
 use cashu_crab::{
     cashu_wallet::CashuWallet,
     client::Client,
     types::{Proofs, Token},
 };
+use image::io::Reader as ImageReader;
+use image::ImageFormat;
 use lazy_static::lazy_static;
 use lightning_invoice::{Invoice, InvoiceDescription};
 use nostr_sdk::prelude::{FromBech32, PREFIX_BECH32_PUBLIC_KEY};
@@ -15,6 +22,7 @@ use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
 use super::types::{InvoiceInfo, TokenData};
+use crate::utils::convert_str_to_xonly;
 use crate::{
     database,
     nostr::{self, init_client},
@@ -50,6 +58,7 @@ lazy_static! {
     static ref WALLETS: Arc<Mutex<HashMap<String, Option<CashuWallet>>>> =
         Arc::new(Mutex::new(HashMap::new()));
     static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(Runtime::new().unwrap()));
+    static ref PROFILE_PICTURES: Arc<StdMutex<Option<PathBuf>>> = Arc::new(StdMutex::new(None));
 }
 
 macro_rules! lock_runtime {
@@ -64,10 +73,11 @@ macro_rules! lock_runtime {
     };
 }
 
-pub fn init_db(path: String) -> Result<()> {
+pub fn init_db(storage_path: String) -> Result<()> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
-        database::init_db(&path).await?;
+        database::init_db(&storage_path).await?;
+
         Ok(())
     });
 
@@ -75,14 +85,18 @@ pub fn init_db(path: String) -> Result<()> {
     result
 }
 
-pub fn init_nostr() -> Result<String> {
+pub fn init_nostr(storage_path: String) -> Result<()> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
         let key = database::nostr::get_key().await?;
         // TODO: get relays
         init_client(&key).await?;
+        let profile_pic_path = PathBuf::from_str(&storage_path)?.join("profile_pictures");
+        // fs::create_dir(&profile_pic_path)?;
+        let mut p = PROFILE_PICTURES.lock().unwrap();
+        *p = Some(profile_pic_path);
 
-        Ok("".to_string())
+        Ok(())
     });
 
     drop(rt);
@@ -178,14 +192,59 @@ pub fn get_contacts() -> Result<Vec<types::Contact>> {
     result
 }
 
+pub fn get_contact_picture_id(pubkey: String) -> Result<Option<String>> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        let pubkey = convert_str_to_xonly(&pubkey)?;
+        let contact = database::contacts::get_contact(&pubkey).await?;
+        contact
+            .and_then(|c| c.picture.map(|pic| Ok(pic.hash)))
+            .unwrap_or(Ok(None))
+    });
+
+    drop(rt);
+    result
+}
+
+/// Fetech and save image from url
+pub fn fetch_picture(url: String) -> Result<String> {
+    let rt = lock_runtime!();
+
+    let profile_path = PROFILE_PICTURES.lock().unwrap();
+    let profile_pictures_path = match profile_path.as_ref() {
+        Some(path) => path.clone(),
+        None => bail!("profile picture path not set"),
+    };
+
+    drop(profile_path);
+
+    let result = rt.block_on(async {
+        let image_hash;
+        let response = minreq::get(url).send()?;
+        let response_bytes = response.as_bytes();
+
+        let img = ImageReader::new(Cursor::new(response_bytes))
+            .with_guessed_format()?
+            .decode()?;
+
+        image_hash = sha256::Hash::hash(img.as_bytes());
+        let image_path = profile_pictures_path
+            .join(image_hash.to_string())
+            .join(".png");
+
+        img.save_with_format(image_path, ImageFormat::Png)?;
+
+        Ok(image_hash.to_string())
+    });
+
+    drop(rt);
+    result
+}
+
 pub fn send_message(pubkey: String, message: Message) -> Result<Conversation> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
-        let x_pubkey = match pubkey.starts_with(PREFIX_BECH32_PUBLIC_KEY) {
-            true => XOnlyPublicKey::from_bech32(&pubkey)?,
-            false => XOnlyPublicKey::from_str(&pubkey)?,
-        };
-
+        let x_pubkey = convert_str_to_xonly(&pubkey)?;
         database::message::add_message(x_pubkey, &message).await?;
         let conversation = nostr::send_message(x_pubkey, &message).await?;
         Ok(conversation)

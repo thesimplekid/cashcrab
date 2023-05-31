@@ -12,6 +12,7 @@ class Messages extends StatefulWidget {
   final RustImpl api;
   final String peerPubkey;
   final String? peerName;
+  final String imagePath;
   final String? activeMint;
   final int activeMintBalance;
   final Function receiveToken;
@@ -26,6 +27,7 @@ class Messages extends StatefulWidget {
     required this.activeMintBalance,
     required this.peerPubkey,
     required this.peerName,
+    required this.imagePath,
     required this.mints,
     required this.receiveToken,
     required this.sendToken,
@@ -161,7 +163,14 @@ class _MessagesState extends State<Messages> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.peerName ?? truncateText(widget.peerPubkey)),
+        title: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+          CircleAvatar(
+              radius: 20, backgroundImage: NetworkImage(widget.imagePath)),
+          const SizedBox(
+            width: 5,
+          ),
+          Text(widget.peerName ?? truncateText(widget.peerPubkey))
+        ]),
       ),
       body: Column(
         children: [

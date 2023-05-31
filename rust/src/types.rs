@@ -233,12 +233,36 @@ impl Conversation {
     }
 }
 
+/// Profile Picture Info
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Picture {
+    pub url: String,
+    pub hash: Option<String>,
+    pub updated: u64,
+}
+
+impl Picture {
+    pub fn new(url: &str) -> Self {
+        Self {
+            url: url.to_string(),
+            hash: None,
+            updated: unix_time(),
+        }
+    }
+}
+
+/// Contact info
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Contact {
+    /// Nostr Hex Pubkey
     pub pubkey: String,
+    /// Nostr NPub
     pub npub: String,
+    /// Username
     pub name: Option<String>,
-    pub picture: Option<String>,
+    /// Picture Info
+    pub picture: Option<Picture>,
+    /// Lud16
     pub lud16: Option<String>,
 }
 

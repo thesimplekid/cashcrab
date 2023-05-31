@@ -25,13 +25,13 @@ class RustImpl implements Rust {
   factory RustImpl.wasm(FutureOr<WasmModule> module) =>
       RustImpl(module as ExternalLibrary);
   RustImpl.raw(this._platform);
-  Future<void> initDb({required String path, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(path);
+  Future<void> initDb({required String storagePath, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(storagePath);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_init_db(port_, arg0),
       parseSuccessData: _wire2api_unit,
       constMeta: kInitDbConstMeta,
-      argValues: [path],
+      argValues: [storagePath],
       hint: hint,
     ));
   }
@@ -39,15 +39,16 @@ class RustImpl implements Rust {
   FlutterRustBridgeTaskConstMeta get kInitDbConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
         debugName: "init_db",
-        argNames: ["path"],
+        argNames: ["storagePath"],
       );
 
-  Future<String> initNostr({dynamic hint}) {
+  Future<void> initNostr({required String storagePath, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(storagePath);
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_init_nostr(port_),
-      parseSuccessData: _wire2api_String,
+      callFfi: (port_) => _platform.inner.wire_init_nostr(port_, arg0),
+      parseSuccessData: _wire2api_unit,
       constMeta: kInitNostrConstMeta,
-      argValues: [],
+      argValues: [storagePath],
       hint: hint,
     ));
   }
@@ -55,7 +56,7 @@ class RustImpl implements Rust {
   FlutterRustBridgeTaskConstMeta get kInitNostrConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
         debugName: "init_nostr",
-        argNames: [],
+        argNames: ["storagePath"],
       );
 
   Future<List<String>> getRelays({dynamic hint}) {
@@ -173,6 +174,41 @@ class RustImpl implements Rust {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "get_contacts",
         argNames: [],
+      );
+
+  Future<String?> getContactPictureId({required String pubkey, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(pubkey);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_get_contact_picture_id(port_, arg0),
+      parseSuccessData: _wire2api_opt_String,
+      constMeta: kGetContactPictureIdConstMeta,
+      argValues: [pubkey],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetContactPictureIdConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_contact_picture_id",
+        argNames: ["pubkey"],
+      );
+
+  Future<String> fetchPicture({required String url, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(url);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_fetch_picture(port_, arg0),
+      parseSuccessData: _wire2api_String,
+      constMeta: kFetchPictureConstMeta,
+      argValues: [url],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kFetchPictureConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "fetch_picture",
+        argNames: ["url"],
       );
 
   Future<Conversation> sendMessage(
@@ -539,6 +575,10 @@ class RustImpl implements Rust {
     return _wire2api_mint(raw);
   }
 
+  Picture _wire2api_box_autoadd_picture(dynamic raw) {
+    return _wire2api_picture(raw);
+  }
+
   Transaction _wire2api_box_autoadd_transaction(dynamic raw) {
     return _wire2api_transaction(raw);
   }
@@ -565,7 +605,7 @@ class RustImpl implements Rust {
       pubkey: _wire2api_String(arr[0]),
       npub: _wire2api_String(arr[1]),
       name: _wire2api_opt_String(arr[2]),
-      picture: _wire2api_opt_String(arr[3]),
+      picture: _wire2api_opt_box_autoadd_picture(arr[3]),
       lud16: _wire2api_opt_String(arr[4]),
     );
   }
@@ -674,8 +714,23 @@ class RustImpl implements Rust {
     return raw == null ? null : _wire2api_box_autoadd_mint(raw);
   }
 
+  Picture? _wire2api_opt_box_autoadd_picture(dynamic raw) {
+    return raw == null ? null : _wire2api_box_autoadd_picture(raw);
+  }
+
   Transaction? _wire2api_opt_box_autoadd_transaction(dynamic raw) {
     return raw == null ? null : _wire2api_box_autoadd_transaction(raw);
+  }
+
+  Picture _wire2api_picture(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return Picture(
+      url: _wire2api_String(arr[0]),
+      hash: _wire2api_opt_String(arr[1]),
+      updated: _wire2api_u64(arr[2]),
+    );
   }
 
   TokenData _wire2api_token_data(dynamic raw) {
@@ -1004,11 +1059,11 @@ class RustWire implements FlutterRustBridgeWireBase {
 
   void wire_init_db(
     int port_,
-    ffi.Pointer<wire_uint_8_list> path,
+    ffi.Pointer<wire_uint_8_list> storage_path,
   ) {
     return _wire_init_db(
       port_,
-      path,
+      storage_path,
     );
   }
 
@@ -1021,17 +1076,20 @@ class RustWire implements FlutterRustBridgeWireBase {
 
   void wire_init_nostr(
     int port_,
+    ffi.Pointer<wire_uint_8_list> storage_path,
   ) {
     return _wire_init_nostr(
       port_,
+      storage_path,
     );
   }
 
-  late final _wire_init_nostrPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_init_nostr');
-  late final _wire_init_nostr =
-      _wire_init_nostrPtr.asFunction<void Function(int)>();
+  late final _wire_init_nostrPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_init_nostr');
+  late final _wire_init_nostr = _wire_init_nostrPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_relays(
     int port_,
@@ -1145,6 +1203,40 @@ class RustWire implements FlutterRustBridgeWireBase {
           'wire_get_contacts');
   late final _wire_get_contacts =
       _wire_get_contactsPtr.asFunction<void Function(int)>();
+
+  void wire_get_contact_picture_id(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> pubkey,
+  ) {
+    return _wire_get_contact_picture_id(
+      port_,
+      pubkey,
+    );
+  }
+
+  late final _wire_get_contact_picture_idPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_get_contact_picture_id');
+  late final _wire_get_contact_picture_id = _wire_get_contact_picture_idPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_fetch_picture(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> url,
+  ) {
+    return _wire_fetch_picture(
+      port_,
+      url,
+    );
+  }
+
+  late final _wire_fetch_picturePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_fetch_picture');
+  late final _wire_fetch_picture = _wire_fetch_picturePtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_send_message(
     int port_,

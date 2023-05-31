@@ -92,9 +92,9 @@ uintptr_t new_dart_opaque(Dart_Handle handle);
 
 intptr_t init_frb_dart_api_dl(void *obj);
 
-void wire_init_db(int64_t port_, struct wire_uint_8_list *path);
+void wire_init_db(int64_t port_, struct wire_uint_8_list *storage_path);
 
-void wire_init_nostr(int64_t port_);
+void wire_init_nostr(int64_t port_, struct wire_uint_8_list *storage_path);
 
 void wire_get_relays(int64_t port_);
 
@@ -109,6 +109,10 @@ void wire_add_contact(int64_t port_, struct wire_uint_8_list *pubkey);
 void wire_remove_contact(int64_t port_, struct wire_uint_8_list *pubkey);
 
 void wire_get_contacts(int64_t port_);
+
+void wire_get_contact_picture_id(int64_t port_, struct wire_uint_8_list *pubkey);
+
+void wire_fetch_picture(int64_t port_, struct wire_uint_8_list *url);
 
 void wire_send_message(int64_t port_,
                        struct wire_uint_8_list *pubkey,
@@ -189,6 +193,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_add_contact);
     dummy_var ^= ((int64_t) (void*) wire_remove_contact);
     dummy_var ^= ((int64_t) (void*) wire_get_contacts);
+    dummy_var ^= ((int64_t) (void*) wire_get_contact_picture_id);
+    dummy_var ^= ((int64_t) (void*) wire_fetch_picture);
     dummy_var ^= ((int64_t) (void*) wire_send_message);
     dummy_var ^= ((int64_t) (void*) wire_get_conversation);
     dummy_var ^= ((int64_t) (void*) wire_get_balances);
