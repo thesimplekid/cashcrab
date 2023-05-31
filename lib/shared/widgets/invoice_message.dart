@@ -19,6 +19,24 @@ class InvoiceMessageWidget extends StatelessWidget {
       bubbleColor = Colors.grey;
     }
 
+    Color buttonColor;
+    String buttonText;
+
+    switch (transaction?.status) {
+      case TransactionStatus.Pending:
+        buttonColor = messageAction;
+        buttonText = "Pay Invoice";
+        break;
+      case TransactionStatus.Expired:
+        buttonColor = expiredColor;
+        buttonText = "Expired";
+
+        break;
+      default:
+        buttonColor = paidColor;
+        buttonText = "Paid";
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -41,14 +59,15 @@ class InvoiceMessageWidget extends StatelessWidget {
                           transaction?.amount);
                     },
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          transaction?.status != TransactionStatus.Pending
-                              ? paidColor
-                              : messageAction),
+                      backgroundColor:
+                          MaterialStateProperty.all<Color>(buttonColor),
                     ),
-                    child: Text(transaction?.status == TransactionStatus.Pending
-                        ? 'Pay Invoice'
-                        : 'Paid'),
+                    child: Text(
+                      buttonText,
+                      style: const TextStyle(
+                        color: Color(0xFFEDDFEF), // Set the desired text color
+                      ),
+                    ),
                   )
                 ],
               ),
