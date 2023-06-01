@@ -671,7 +671,7 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
 
         let transaction = Transaction::LNTransaction(LNTransaction::new(
             Some(TransactionStatus::Sent),
-            total_spent,
+            amount,
             Some(fee),
             Some(mint),
             &invoice.to_string(),
