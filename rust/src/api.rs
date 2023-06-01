@@ -669,7 +669,7 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
         let total_spent = sent_amount - change_amount;
         let fee = total_spent - amount;
 
-        let transation = Transaction::LNTransaction(LNTransaction::new(
+        let transaction = Transaction::LNTransaction(LNTransaction::new(
             Some(TransactionStatus::Sent),
             total_spent,
             Some(fee),
@@ -678,9 +678,9 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
             &invoice.payment_hash().to_string(),
         ));
 
-        database::transactions::add_transaction(&transation).await?;
+        database::transactions::add_transaction(&transaction).await?;
 
-        Ok(transation)
+        Ok(transaction)
     });
 
     drop(rt);
