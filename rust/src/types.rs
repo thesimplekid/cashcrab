@@ -102,6 +102,7 @@ pub struct LNTransaction {
     pub status: TransactionStatus,
     pub time: u64,
     pub amount: u64,
+    pub fee: Option<u64>,
     pub mint: Option<String>,
     pub bolt11: String,
     pub hash: String,
@@ -111,6 +112,7 @@ impl LNTransaction {
     pub fn new(
         status: Option<TransactionStatus>,
         amount: u64,
+        fee: Option<u64>,
         mint: Option<String>,
         bolt11: &str,
         hash: &str,
@@ -125,6 +127,7 @@ impl LNTransaction {
             status,
             time: unix_time(),
             amount,
+            fee,
             mint,
             bolt11: bolt11.to_string(),
             hash: hash.to_string(),

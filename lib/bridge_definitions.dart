@@ -233,6 +233,7 @@ class LNTransaction {
   final TransactionStatus status;
   final int time;
   final int amount;
+  final int? fee;
   final String? mint;
   final String bolt11;
   final String hash;
@@ -242,6 +243,7 @@ class LNTransaction {
     required this.status,
     required this.time,
     required this.amount,
+    this.fee,
     this.mint,
     required this.bolt11,
     required this.hash,

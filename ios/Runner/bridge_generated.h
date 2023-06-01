@@ -61,6 +61,7 @@ typedef struct wire_LNTransaction {
   int32_t status;
   uint64_t time;
   uint64_t amount;
+  uint64_t *fee;
   struct wire_uint_8_list *mint;
   struct wire_uint_8_list *bolt11;
   struct wire_uint_8_list *hash;
@@ -168,6 +169,8 @@ struct wire_Message *new_box_autoadd_message_0(void);
 
 struct wire_Transaction *new_box_autoadd_transaction_0(void);
 
+uint64_t *new_box_autoadd_u64_0(uint64_t value);
+
 struct wire_uint_8_list *new_uint_8_list_0(int32_t len);
 
 union MessageKind *inflate_Message_Text(void);
@@ -218,6 +221,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_ln_transaction_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_message_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_transaction_0);
+    dummy_var ^= ((int64_t) (void*) new_box_autoadd_u64_0);
     dummy_var ^= ((int64_t) (void*) new_uint_8_list_0);
     dummy_var ^= ((int64_t) (void*) inflate_Message_Text);
     dummy_var ^= ((int64_t) (void*) inflate_Message_Invoice);

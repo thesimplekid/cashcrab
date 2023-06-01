@@ -112,6 +112,7 @@ async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp
             None,
             invoice_amount(invoice.amount_milli_satoshis()).unwrap_or(0),
             None,
+            None,
             msg,
             "",
         ));

@@ -571,6 +571,7 @@ impl support::IntoDart for LNTransaction {
             self.status.into_dart(),
             self.time.into_dart(),
             self.amount.into_dart(),
+            self.fee.into_dart(),
             self.mint.into_dart(),
             self.bolt11.into_dart(),
             self.hash.into_dart(),

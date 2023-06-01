@@ -280,6 +280,7 @@ class TransactionList extends StatelessWidget {
           switch (transaction.status) {
             case TransactionStatus.Sent:
               statusIcon = Icons.call_made;
+
               amountText = Text(
                 "${transaction.amount} sats",
                 style: const TextStyle(

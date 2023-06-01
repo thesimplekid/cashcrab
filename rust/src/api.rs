@@ -454,6 +454,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
                             &Transaction::LNTransaction(LNTransaction::new(
                                 Some(TransactionStatus::Received),
                                 ln_trans.amount,
+                                ln_trans.fee,
                                 ln_trans.mint.clone(),
                                 &ln_trans.bolt11,
                                 &ln_trans.hash,
@@ -466,6 +467,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
                             &Transaction::LNTransaction(LNTransaction::new(
                                 Some(TransactionStatus::Expired),
                                 ln_trans.amount,
+                                ln_trans.fee,
                                 ln_trans.mint.clone(),
                                 &ln_trans.bolt11,
                                 &ln_trans.hash,
@@ -592,6 +594,7 @@ pub fn request_mint(amount: u64, mint_url: String) -> Result<Transaction> {
         let transaction = LNTransaction::new(
             None,
             amount,
+            None,
             Some(mint_url),
             &invoice.pr.to_string(),
             &invoice.hash,
@@ -664,11 +667,13 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
 
         // Amount spent including fees
         let total_spent = sent_amount - change_amount;
+        let fee = total_spent - amount;
 
         let transation = Transaction::LNTransaction(LNTransaction::new(
             Some(TransactionStatus::Sent),
             total_spent,
-            None,
+            Some(fee),
+            Some(mint),
             &invoice.to_string(),
             &invoice.payment_hash().to_string(),
         ));

@@ -662,16 +662,17 @@ class RustImpl implements Rust {
 
   LNTransaction _wire2api_ln_transaction(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
     return LNTransaction(
       id: _wire2api_opt_String(arr[0]),
       status: _wire2api_transaction_status(arr[1]),
       time: _wire2api_u64(arr[2]),
       amount: _wire2api_u64(arr[3]),
-      mint: _wire2api_opt_String(arr[4]),
-      bolt11: _wire2api_String(arr[5]),
-      hash: _wire2api_String(arr[6]),
+      fee: _wire2api_opt_box_autoadd_u64(arr[4]),
+      mint: _wire2api_opt_String(arr[5]),
+      bolt11: _wire2api_String(arr[6]),
+      hash: _wire2api_String(arr[7]),
     );
   }
 
@@ -856,8 +857,18 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
   }
 
   @protected
+  ffi.Pointer<ffi.Uint64> api2wire_box_autoadd_u64(int raw) {
+    return inner.new_box_autoadd_u64_0(api2wire_u64(raw));
+  }
+
+  @protected
   ffi.Pointer<wire_uint_8_list> api2wire_opt_String(String? raw) {
     return raw == null ? ffi.nullptr : api2wire_String(raw);
+  }
+
+  @protected
+  ffi.Pointer<ffi.Uint64> api2wire_opt_box_autoadd_u64(int? raw) {
+    return raw == null ? ffi.nullptr : api2wire_box_autoadd_u64(raw);
   }
 
   @protected
@@ -911,6 +922,7 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
     wireObj.status = api2wire_transaction_status(apiObj.status);
     wireObj.time = api2wire_u64(apiObj.time);
     wireObj.amount = api2wire_u64(apiObj.amount);
+    wireObj.fee = api2wire_opt_box_autoadd_u64(apiObj.fee);
     wireObj.mint = api2wire_opt_String(apiObj.mint);
     wireObj.bolt11 = api2wire_String(apiObj.bolt11);
     wireObj.hash = api2wire_String(apiObj.hash);
@@ -1620,6 +1632,20 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _new_box_autoadd_transaction_0 = _new_box_autoadd_transaction_0Ptr
       .asFunction<ffi.Pointer<wire_Transaction> Function()>();
 
+  ffi.Pointer<ffi.Uint64> new_box_autoadd_u64_0(
+    int value,
+  ) {
+    return _new_box_autoadd_u64_0(
+      value,
+    );
+  }
+
+  late final _new_box_autoadd_u64_0Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Uint64> Function(ffi.Uint64)>>(
+          'new_box_autoadd_u64_0');
+  late final _new_box_autoadd_u64_0 = _new_box_autoadd_u64_0Ptr
+      .asFunction<ffi.Pointer<ffi.Uint64> Function(int)>();
+
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,
   ) {
@@ -1788,6 +1814,8 @@ final class wire_LNTransaction extends ffi.Struct {
 
   @ffi.Uint64()
   external int amount;
+
+  external ffi.Pointer<ffi.Uint64> fee;
 
   external ffi.Pointer<wire_uint_8_list> mint;
 

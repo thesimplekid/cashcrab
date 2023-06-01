@@ -188,6 +188,11 @@ pub extern "C" fn new_box_autoadd_transaction_0() -> *mut wire_Transaction {
 }
 
 #[no_mangle]
+pub extern "C" fn new_box_autoadd_u64_0(value: u64) -> *mut u64 {
+    support::new_leak_box_ptr(value)
+}
+
+#[no_mangle]
 pub extern "C" fn new_uint_8_list_0(len: i32) -> *mut wire_uint_8_list {
     let ans = wire_uint_8_list {
         ptr: support::new_leak_vec_ptr(Default::default(), len),
@@ -230,6 +235,11 @@ impl Wire2Api<Transaction> for *mut wire_Transaction {
         Wire2Api::<Transaction>::wire2api(*wrap).into()
     }
 }
+impl Wire2Api<u64> for *mut u64 {
+    fn wire2api(self) -> u64 {
+        unsafe { *support::box_from_leak_ptr(self) }
+    }
+}
 impl Wire2Api<CashuTransaction> for wire_CashuTransaction {
     fn wire2api(self) -> CashuTransaction {
         CashuTransaction {
@@ -250,6 +260,7 @@ impl Wire2Api<LNTransaction> for wire_LNTransaction {
             status: self.status.wire2api(),
             time: self.time.wire2api(),
             amount: self.amount.wire2api(),
+            fee: self.fee.wire2api(),
             mint: self.mint.wire2api(),
             bolt11: self.bolt11.wire2api(),
             hash: self.hash.wire2api(),
@@ -337,6 +348,7 @@ pub struct wire_LNTransaction {
     status: i32,
     time: u64,
     amount: u64,
+    fee: *mut u64,
     mint: *mut wire_uint_8_list,
     bolt11: *mut wire_uint_8_list,
     hash: *mut wire_uint_8_list,
@@ -450,6 +462,7 @@ impl NewWithNullPtr for wire_LNTransaction {
             status: Default::default(),
             time: Default::default(),
             amount: Default::default(),
+            fee: core::ptr::null_mut(),
             mint: core::ptr::null_mut(),
             bolt11: core::ptr::null_mut(),
             hash: core::ptr::null_mut(),

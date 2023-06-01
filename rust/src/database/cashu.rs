@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::{bail, Result};
+use anyhow::Result;
 use cashu_crab::{keyset::Keys, types::Proofs};
 use redb::{ReadableMultimapTable, ReadableTable};
 
