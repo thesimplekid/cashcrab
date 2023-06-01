@@ -1,3 +1,4 @@
+import 'package:cashcrab/screens/ln/paying_invoice.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cashcrab/shared/models/invoice.dart';
@@ -29,7 +30,6 @@ class PayInvoiceState extends State<PayInvoice> {
   @override
   void initState() {
     super.initState();
-
     // Start listening to changes.
     receiveController.addListener(_decodeInvoice);
   }
@@ -84,12 +84,17 @@ class PayInvoiceState extends State<PayInvoice> {
                   Text('${invoice!.amount.toString()} sats'),
                   ElevatedButton(
                     onPressed: () async {
-                      await widget.payInvoice(
-                          invoice!.invoice, null, invoice!.amount);
-
-                      if (context.mounted) {
-                        Navigator.popUntil(context, ModalRoute.withName('/'));
-                      }
+                      FocusScope.of(context).unfocus();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PayingInvoice(
+                              invoice: invoice!.invoice!,
+                              amount: invoice!.amount,
+                              api: widget.cashu,
+                              payInvoice: widget.payInvoice),
+                        ),
+                      );
                     },
                     child: const Text('Pay'),
                   ),

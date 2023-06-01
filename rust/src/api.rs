@@ -632,6 +632,21 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
         let invoice = str::parse::<Invoice>(&invoice)?;
+
+        if invoice.is_expired() {
+            let transaction = Transaction::LNTransaction(LNTransaction::new(
+                Some(TransactionStatus::Expired),
+                amount,
+                None,
+                Some(mint),
+                &invoice.to_string(),
+                &invoice.payment_hash().to_string(),
+            ));
+            database::transactions::add_transaction(&transaction).await?;
+
+            return Ok(transaction);
+        }
+
         let wallet = wallet_for_url(&mint).await?;
 
         let fees = wallet.check_fee(invoice.clone()).await?;
@@ -641,40 +656,51 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
 
         let (send_proofs, _keep_proofs) =
             select_send_proofs(&mint, amount_with_fee, &proofs).await?;
-        let change = wallet.melt(invoice.clone(), send_proofs.clone()).await?;
 
-        // Remove proofs to be sent
-        database::cashu::remove_proofs(&mint, &send_proofs).await?;
+        let transaction = match wallet.melt(invoice.clone(), send_proofs.clone()).await {
+            Ok(melted) => {
+                // Remove proofs to be sent
+                database::cashu::remove_proofs(&mint, &send_proofs).await?;
 
-        let change_amount;
-        if let Some(change) = change.change {
-            // keep_proofs.extend(change);
-            database::cashu::add_proofs(&mint, &change).await?;
-            change_amount = change
-                .iter()
-                .fold(0, |acc, proof| acc + proof.amount.to_sat());
-        } else {
-            change_amount = 0;
-        }
+                let change_amount;
+                if let Some(change) = melted.change {
+                    // keep_proofs.extend(change);
+                    database::cashu::add_proofs(&mint, &change).await?;
+                    change_amount = change
+                        .iter()
+                        .fold(0, |acc, proof| acc + proof.amount.to_sat());
+                } else {
+                    change_amount = 0;
+                }
 
-        // Amount spent
-        // sum of send_proofs - sum of change proofs
-        let sent_amount = send_proofs
-            .iter()
-            .fold(0, |acc, proof| acc + proof.amount.to_sat());
+                // Amount spent
+                // sum of send_proofs - sum of change proofs
+                let sent_amount = send_proofs
+                    .iter()
+                    .fold(0, |acc, proof| acc + proof.amount.to_sat());
 
-        // Amount spent including fees
-        let total_spent = sent_amount - change_amount;
-        let fee = total_spent - amount;
+                // Amount spent including fees
+                let total_spent = sent_amount - change_amount;
+                let fee = total_spent - amount;
 
-        let transaction = Transaction::LNTransaction(LNTransaction::new(
-            Some(TransactionStatus::Sent),
-            amount,
-            Some(fee),
-            Some(mint),
-            &invoice.to_string(),
-            &invoice.payment_hash().to_string(),
-        ));
+                Transaction::LNTransaction(LNTransaction::new(
+                    Some(TransactionStatus::Sent),
+                    amount,
+                    Some(fee),
+                    Some(mint),
+                    &invoice.to_string(),
+                    &invoice.payment_hash().to_string(),
+                ))
+            }
+            Err(_err) => Transaction::LNTransaction(LNTransaction::new(
+                Some(TransactionStatus::Failed),
+                amount,
+                None,
+                Some(mint),
+                &invoice.to_string(),
+                &invoice.payment_hash().to_string(),
+            )),
+        };
 
         database::transactions::add_transaction(&transaction).await?;
 

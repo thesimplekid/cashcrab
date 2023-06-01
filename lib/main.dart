@@ -197,20 +197,23 @@ class MyHomePageState extends State<MyHomePage> {
     return lnt;
   }
 
-  Future<void> payInvoice(String bolt11, String? mint, int amount) async {
+  Future<LNTransaction?> payInvoice(
+      String bolt11, String? mint, int amount) async {
     mint ??= activeMint;
+    LNTransaction? lnt;
     try {
       Transaction transaction =
           await api.melt(invoice: bolt11, mint: mint!, amount: amount);
 
       setState(() {
-        LNTransaction lnt = transaction.field0 as LNTransaction;
-        transactions[lnt.id!] = transaction;
+        lnt = transaction.field0 as LNTransaction;
+        transactions[lnt!.id!] = transaction;
       });
     } catch (e) {
       print(e);
     }
     await _getBalances();
+    return lnt;
   }
 
   Future<void> _getBalances() async {
