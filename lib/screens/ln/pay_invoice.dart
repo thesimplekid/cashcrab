@@ -1,6 +1,9 @@
-import 'package:cashcrab/screens/ln/paying_invoice.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import 'package:mobile_scanner/mobile_scanner.dart';
+
+import 'package:cashcrab/screens/ln/paying_invoice.dart';
 import 'package:cashcrab/shared/models/invoice.dart';
 import 'package:cashcrab/bridge_generated.dart';
 
@@ -23,38 +26,31 @@ class PayInvoice extends StatefulWidget {
 }
 
 class PayInvoiceState extends State<PayInvoice> {
-  final receiveController = TextEditingController();
-
   Invoice? invoice;
 
   @override
   void initState() {
     super.initState();
-    // Start listening to changes.
-    receiveController.addListener(_decodeInvoice);
   }
 
-  Future<void> _decodeInvoice() async {
-    if (receiveController.text.isNotEmpty) {
-      String encodedInvoice = receiveController.text;
-      final data = await widget.cashu.decodeInvoice(invoice: encodedInvoice);
-      Invoice newInvoice = Invoice(
-        amount: data.amount,
-        invoice: encodedInvoice,
-        hash: data.hash,
-        mintUrl: null,
-        memo: data.memo,
-      );
+  Future<void> _decodeInvoice(String encodedInvoice) async {
+    // TODO: Try catach
+    final data = await widget.cashu.decodeInvoice(invoice: encodedInvoice);
+    Invoice newInvoice = Invoice(
+      amount: data.amount,
+      invoice: encodedInvoice,
+      hash: data.hash,
+      mintUrl: null,
+      memo: data.memo,
+    );
 
-      setState(() {
-        invoice = newInvoice;
-      });
-    }
+    setState(() {
+      invoice = newInvoice;
+    });
   }
 
   @override
   void dispose() {
-    receiveController.dispose();
     super.dispose();
   }
 
@@ -67,14 +63,30 @@ class PayInvoiceState extends State<PayInvoice> {
       body: Center(
         child: Column(
           children: [
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'bolt11 invoice',
+            Flexible(
+              child: MobileScanner(
+                fit: BoxFit.contain,
+                onDetect: (capture) {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  // final Uint8List? image = capture.image;
+                  for (final barcode in barcodes) {
+                    debugPrint('Barcode found! ${barcode.rawValue}');
+                    if (barcode.rawValue != null) {
+                      _decodeInvoice(barcode.rawValue!);
+                    }
+                  }
+                },
               ),
-              onChanged: (value) async {
-                await _decodeInvoice();
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                ClipboardData? clipboardData =
+                    await Clipboard.getData('text/plain');
+                if (clipboardData != null && clipboardData.text != null) {
+                  await _decodeInvoice(clipboardData.text!);
+                }
               },
-              controller: receiveController,
+              child: const Text('Paste from Clipboard'),
             ),
             if (invoice != null)
               Column(
