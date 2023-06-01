@@ -206,13 +206,13 @@ impl Message {
         match self {
             Self::Text { content, .. } => Ok(Some(content.to_owned())),
             Self::Invoice { transaction_id, .. } => {
-                match database::transactions::get_transaction(&transaction_id).await? {
+                match database::transactions::get_transaction(transaction_id).await? {
                     Some(transaction) => Ok(Some(transaction.content())),
                     None => Ok(None),
                 }
             }
             Self::Token { transaction_id, .. } => {
-                match database::transactions::get_transaction(&transaction_id).await? {
+                match database::transactions::get_transaction(transaction_id).await? {
                     Some(transaction) => Ok(Some(transaction.content())),
                     None => Ok(None),
                 }

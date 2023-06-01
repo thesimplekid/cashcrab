@@ -87,6 +87,8 @@ class InvoiceInfoState extends State<InvoiceInfoScreen> {
                           "Invoice amount: ${displayInvoice!.amount.toString()}"),
                     ],
                   ), // Wrap
+                  if (displayInvoice!.fee != null)
+                    Text("Routing fee: ${displayInvoice!.fee}")
                 ],
               ),
             ),

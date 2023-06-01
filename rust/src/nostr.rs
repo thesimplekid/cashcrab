@@ -165,19 +165,12 @@ async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp
 
 /// Handle metadata event
 async fn handle_metadata(event: Event) -> Result<Option<types::Contact>> {
-    if let Ok(info) = Metadata::from_json(&event.clone().content) {
-        let picture = match info.picture {
-            Some(picture_url) => Some(Picture::new(&picture_url)),
-            None => None,
-        };
+    if let Ok(info) = Metadata::from_json(&event.content) {
+        let picture = info.picture.map(|picture_url| Picture::new(&picture_url));
 
         let contact = types::Contact {
             pubkey: event.pubkey.to_string(),
-            npub: event
-                .clone()
-                .pubkey
-                .to_bech32()
-                .unwrap_or(event.pubkey.to_string()),
+            npub: event.pubkey.to_bech32().unwrap_or(event.pubkey.to_string()),
             name: info.name,
             picture,
             lud16: info.lud16,

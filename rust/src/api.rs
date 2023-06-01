@@ -93,7 +93,7 @@ pub fn init_nostr(storage_path: String) -> Result<()> {
         init_client(&key).await?;
         let profile_pic_path = PathBuf::from_str(&storage_path)?.join("profile_pictures");
 
-        if !fs::metadata(&profile_pic_path).is_ok() {
+        if fs::metadata(&profile_pic_path).is_err() {
             fs::create_dir(&profile_pic_path)?;
         }
 
@@ -224,7 +224,6 @@ pub fn fetch_picture(url: String) -> Result<String> {
     drop(profile_path);
 
     let result = rt.block_on(async {
-        let image_hash;
         let response = minreq::get(url).send()?;
         let response_bytes = response.as_bytes();
 
@@ -232,7 +231,7 @@ pub fn fetch_picture(url: String) -> Result<String> {
             .with_guessed_format()?
             .decode()?;
 
-        image_hash = sha256::Hash::hash(img.as_bytes());
+        let image_hash = sha256::Hash::hash(img.as_bytes());
         let image_path = profile_pictures_path
             .join(image_hash.to_string())
             .join(".png");
@@ -273,8 +272,7 @@ pub fn get_conversation(pubkey: String) -> Result<Conversation> {
             .filter(|enum_value| {
                 matches!(enum_value, Message::Invoice { .. } | Message::Token { .. })
             })
-            .map(|x| x.id())
-            .flatten()
+            .flat_map(|x| x.id())
             .collect();
 
         let transactions = database::transactions::get_transactions(transaction_messages).await?;
@@ -440,7 +438,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
             }
             Transaction::LNTransaction(ln_trans) => {
                 if let Some(mint) = &ln_trans.mint {
-                    let wallet = wallet_for_url(&mint).await?;
+                    let wallet = wallet_for_url(mint).await?;
                     let invoice = Invoice::from_str(&ln_trans.bolt11)?;
 
                     let proofs = wallet
@@ -449,7 +447,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
                         .unwrap_or_default();
 
                     if !proofs.is_empty() {
-                        database::cashu::add_proofs(&mint, &proofs).await?;
+                        database::cashu::add_proofs(mint, &proofs).await?;
                         database::transactions::update_transaction_status(
                             &Transaction::LNTransaction(LNTransaction::new(
                                 Some(TransactionStatus::Received),

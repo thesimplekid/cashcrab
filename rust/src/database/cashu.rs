@@ -153,11 +153,9 @@ pub(crate) async fn get_keyset(mint: &str) -> Result<HashMap<String, u64>> {
 
     let mut keyset_map = HashMap::new();
 
-    for k in keysets {
-        if let Ok(k) = k {
-            let (key, value) = k.value();
-            keyset_map.insert(key.to_string(), value);
-        }
+    for k in keysets.flatten() {
+        let (key, value) = k.value();
+        keyset_map.insert(key.to_string(), value);
     }
 
     Ok(keyset_map)
