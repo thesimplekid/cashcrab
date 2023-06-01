@@ -25,6 +25,7 @@ class Home extends StatefulWidget {
   final Function addMint;
   final Function checkTransactionStatus;
   final Function createInvoice;
+  final Function payInvoice;
 
   const Home(
       {super.key,
@@ -42,6 +43,7 @@ class Home extends StatefulWidget {
       required this.addMint,
       required this.checkTransactionStatus,
       required this.createInvoice,
+      required this.payInvoice,
       this.tokenData});
 
   @override
@@ -205,6 +207,7 @@ class _HomeState extends State<Home> {
                           cashu: widget.cashu,
                           wallets: widget.mints,
                           decodeToken: widget.decodeToken,
+                          payInvoice: widget.payInvoice,
                           send: widget.send,
                           activeMint: widget.activeMint,
                           activeBalance: widget.activeBalance,

@@ -141,6 +141,7 @@ class MyHomePageState extends State<MyHomePage> {
       addMint: _addNewMint,
       checkTransactionStatus: _checkTransactionStatus,
       createInvoice: createInvoice,
+      payInvoice: payInvoice,
     );
 
     _settingsTab = Settings(
@@ -196,10 +197,14 @@ class MyHomePageState extends State<MyHomePage> {
     return lnt;
   }
 
-  Future<void> payInvoice(String bolt11, String mint, int amount) async {
-    await api.melt(invoice: bolt11, mint: mint, amount: amount);
-
-    setState(() {});
+  Future<void> payInvoice(String bolt11, String? mint, int amount) async {
+    mint ??= activeMint;
+    try {
+      await api.melt(invoice: bolt11, mint: mint!, amount: amount);
+    } catch (e) {
+      print(e);
+    }
+    await _getBalances();
   }
 
   Future<void> _getBalances() async {

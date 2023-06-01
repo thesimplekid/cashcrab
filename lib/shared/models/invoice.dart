@@ -3,12 +3,12 @@ class Invoice {
   String hash;
   String? memo;
   int amount;
-  String mintUrl;
+  String? mintUrl;
 
   Invoice(
       {required this.hash,
       required this.amount,
-      required this.mintUrl,
+      this.mintUrl,
       this.memo,
       this.invoice});
 
@@ -17,8 +17,10 @@ class Invoice {
       'invoice': invoice,
       'hash': hash,
       'amount': amount,
-      'mint_url': mintUrl,
     };
+    if (mintUrl != null) {
+      json['mint_url'] = mintUrl;
+    }
     if (memo != null) {
       json['memo'] = memo;
     }
@@ -30,7 +32,7 @@ class Invoice {
       invoice: json['invoice'],
       hash: json['hash'],
       amount: json['amount'],
-      mintUrl: json['mint_url'],
+      mintUrl: json.containsKey('mint_url') ? json['mint_url'] : null,
       memo: json.containsKey('memo') ? json['memo'] : null,
     );
   }

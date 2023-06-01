@@ -401,7 +401,7 @@ pub(crate) async fn set_contact_list() -> Result<()> {
     let mut client = SEND_CLIENT.lock().await;
 
     if let Some(client) = client.as_mut() {
-        let contacts = database::message::get_contacts().await?;
+        let contacts = database::contacts::get_contacts().await?;
 
         let contacts: Vec<nostr_sdk::Contact> = contacts
             .iter()

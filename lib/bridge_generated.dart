@@ -411,7 +411,7 @@ class RustImpl implements Rust {
         argNames: ["amount", "hash", "mint"],
       );
 
-  Future<void> melt(
+  Future<Transaction> melt(
       {required int amount,
       required String invoice,
       required String mint,
@@ -421,7 +421,7 @@ class RustImpl implements Rust {
     var arg2 = _platform.api2wire_String(mint);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_melt(port_, arg0, arg1, arg2),
-      parseSuccessData: _wire2api_unit,
+      parseSuccessData: _wire2api_transaction,
       constMeta: kMeltConstMeta,
       argValues: [amount, invoice, mint],
       hint: hint,
@@ -583,6 +583,10 @@ class RustImpl implements Rust {
     return _wire2api_transaction(raw);
   }
 
+  int _wire2api_box_autoadd_u64(dynamic raw) {
+    return _wire2api_u64(raw);
+  }
+
   CashuTransaction _wire2api_cashu_transaction(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 6)
@@ -599,14 +603,15 @@ class RustImpl implements Rust {
 
   Contact _wire2api_contact(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 5)
-      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
     return Contact(
       pubkey: _wire2api_String(arr[0]),
       npub: _wire2api_String(arr[1]),
       name: _wire2api_opt_String(arr[2]),
       picture: _wire2api_opt_box_autoadd_picture(arr[3]),
       lud16: _wire2api_opt_String(arr[4]),
+      createdAt: _wire2api_opt_box_autoadd_u64(arr[5]),
     );
   }
 
@@ -720,6 +725,10 @@ class RustImpl implements Rust {
 
   Transaction? _wire2api_opt_box_autoadd_transaction(dynamic raw) {
     return raw == null ? null : _wire2api_box_autoadd_transaction(raw);
+  }
+
+  int? _wire2api_opt_box_autoadd_u64(dynamic raw) {
+    return raw == null ? null : _wire2api_box_autoadd_u64(raw);
   }
 
   Picture _wire2api_picture(dynamic raw) {

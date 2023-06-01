@@ -92,7 +92,11 @@ pub fn init_nostr(storage_path: String) -> Result<()> {
         // TODO: get relays
         init_client(&key).await?;
         let profile_pic_path = PathBuf::from_str(&storage_path)?.join("profile_pictures");
-        // fs::create_dir(&profile_pic_path)?;
+
+        if !fs::metadata(&profile_pic_path).is_ok() {
+            fs::create_dir(&profile_pic_path)?;
+        }
+
         let mut p = PROFILE_PICTURES.lock().unwrap();
         *p = Some(profile_pic_path);
 
@@ -157,7 +161,7 @@ pub fn add_contact(pubkey: String) -> Result<()> {
         };
         let contacts = nostr::get_metadata(vec![x_pubkey]).await?;
 
-        database::message::add_contacts(contacts).await?;
+        database::contacts::add_contacts(contacts).await?;
         nostr::set_contact_list().await?;
         Ok(())
     });
@@ -173,7 +177,7 @@ pub fn remove_contact(pubkey: String) -> Result<()> {
             true => XOnlyPublicKey::from_bech32(&pubkey)?,
             false => XOnlyPublicKey::from_str(&pubkey)?,
         };
-        database::message::remove_contact(&x_pubkey).await?;
+        database::contacts::remove_contact(&x_pubkey).await?;
         nostr::set_contact_list().await?;
         Ok(())
     });
@@ -185,7 +189,7 @@ pub fn remove_contact(pubkey: String) -> Result<()> {
 pub fn get_contacts() -> Result<Vec<types::Contact>> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
-        let contacts = database::message::get_contacts().await?;
+        let contacts = database::contacts::get_contacts().await?;
         Ok(contacts)
     });
 
@@ -558,7 +562,7 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
         database::cashu::add_proofs(&active_mint, &keep_proofs).await?;
 
         // Remove sent proofs
-        database::cashu::remove_proofs(&active_mint, send_proofs).await?;
+        database::cashu::remove_proofs(&active_mint, &send_proofs).await?;
 
         let token = wallet.proofs_to_token(r.send_proofs, None)?;
         let transaction = CashuTransaction::new(
@@ -623,24 +627,55 @@ pub fn mint_token(amount: u64, hash: String, mint: String) -> Result<()> {
 }
 
 // TODO: Melt, untested as legend.lnbits has LN issues
-pub fn melt(amount: u64, invoice: String, mint: String) -> Result<()> {
+pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
+        let invoice = str::parse::<Invoice>(&invoice)?;
         let wallet = wallet_for_url(&mint).await?;
 
-        let invoice = str::parse::<Invoice>(&invoice)?;
+        let fees = wallet.check_fee(invoice.clone()).await?;
+        let amount_with_fee = amount + fees.to_sat();
+
         let proofs = database::cashu::get_proofs(&mint).await?;
 
-        let (send_proofs, mut keep_proofs) = select_send_proofs(&mint, amount, &proofs).await?;
-        let change = wallet.melt(invoice, send_proofs.clone()).await?;
-        if let Some(change) = change.change {
-            keep_proofs.extend(change);
-        }
+        let (send_proofs, _keep_proofs) =
+            select_send_proofs(&mint, amount_with_fee, &proofs).await?;
+        let change = wallet.melt(invoice.clone(), send_proofs.clone()).await?;
 
         // Remove proofs to be sent
-        database::cashu::remove_proofs(&mint, send_proofs).await?;
+        database::cashu::remove_proofs(&mint, &send_proofs).await?;
 
-        Ok(())
+        let change_amount;
+        if let Some(change) = change.change {
+            // keep_proofs.extend(change);
+            database::cashu::add_proofs(&mint, &change).await?;
+            change_amount = change
+                .iter()
+                .fold(0, |acc, proof| acc + proof.amount.to_sat());
+        } else {
+            change_amount = 0;
+        }
+
+        // Amount spent
+        // sum of send_proofs - sum of change proofs
+        let sent_amount = send_proofs
+            .iter()
+            .fold(0, |acc, proof| acc + proof.amount.to_sat());
+
+        // Amount spent including fees
+        let total_spent = sent_amount - change_amount;
+
+        let transation = Transaction::LNTransaction(LNTransaction::new(
+            Some(TransactionStatus::Sent),
+            total_spent,
+            None,
+            &invoice.to_string(),
+            &invoice.payment_hash().to_string(),
+        ));
+
+        database::transactions::add_transaction(&transation).await?;
+
+        Ok(transation)
     });
 
     drop(rt);

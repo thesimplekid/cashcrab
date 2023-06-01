@@ -7,12 +7,14 @@ class PayInvoice extends StatefulWidget {
   final String? activeMint;
   final Map<String, int> mints;
   final RustImpl cashu;
+  final Function payInvoice;
 
   const PayInvoice({
     super.key,
     required this.activeMint,
     required this.cashu,
     required this.mints,
+    required this.payInvoice,
   });
 
   @override
@@ -23,46 +25,35 @@ class PayInvoiceState extends State<PayInvoice> {
   final receiveController = TextEditingController();
 
   Invoice? invoice;
-  late String _mint;
 
   @override
   void initState() {
     super.initState();
-    if (widget.activeMint == null) {
-      _mint = widget.mints.keys.toList()[0];
-    } else {
-      _mint = widget.activeMint!;
-    }
 
     // Start listening to changes.
     receiveController.addListener(_decodeInvoice);
   }
 
   Future<void> _decodeInvoice() async {
-    String encodedInvoice = receiveController.text;
-    final data = await widget.cashu.decodeInvoice(invoice: encodedInvoice);
-    Invoice newInvoice = Invoice(
-      amount: data.amount,
-      invoice: encodedInvoice,
-      hash: data.hash,
-      mintUrl: _mint,
-      memo: data.memo,
-    );
+    if (receiveController.text.isNotEmpty) {
+      String encodedInvoice = receiveController.text;
+      final data = await widget.cashu.decodeInvoice(invoice: encodedInvoice);
+      Invoice newInvoice = Invoice(
+        amount: data.amount,
+        invoice: encodedInvoice,
+        hash: data.hash,
+        mintUrl: null,
+        memo: data.memo,
+      );
 
-    setState(() {
-      invoice = newInvoice;
-    });
-  }
-
-  void payInvoice() async {
-    await widget.cashu
-        .melt(amount: invoice!.amount, invoice: invoice!.invoice!, mint: _mint);
+      setState(() {
+        invoice = newInvoice;
+      });
+    }
   }
 
   @override
   void dispose() {
-    // Clean up the controller when the widget is removed from the widget tree.
-    // This also removes the _printLatestValue listener.
     receiveController.dispose();
     super.dispose();
   }
@@ -88,11 +79,17 @@ class PayInvoiceState extends State<PayInvoice> {
             if (invoice != null)
               Column(
                 children: [
-                  Text('Mint: ${invoice!.mintUrl}'),
+                  if (invoice?.mintUrl != null)
+                    Text('Mint: ${invoice!.mintUrl}'),
                   Text('${invoice!.amount.toString()} sats'),
                   ElevatedButton(
-                    onPressed: () {
-                      payInvoice();
+                    onPressed: () async {
+                      await widget.payInvoice(
+                          invoice!.invoice, null, invoice!.amount);
+
+                      if (context.mounted) {
+                        Navigator.popUntil(context, ModalRoute.withName('/'));
+                      }
                     },
                     child: const Text('Pay'),
                   ),

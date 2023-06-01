@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use cashu_crab::{keyset::Keys, types::Proofs};
 use redb::{ReadableMultimapTable, ReadableTable};
 
@@ -81,7 +81,7 @@ pub(crate) async fn get_all_proofs() -> Result<HashMap<String, Proofs>, CashuErr
 }
 
 /// Remove proofs
-pub(crate) async fn remove_proofs(mint: &str, proofs: Proofs) -> Result<(), CashuError> {
+pub(crate) async fn remove_proofs(mint: &str, proofs: &Proofs) -> Result<()> {
     let db = DB.lock().await;
     let db = db
         .as_ref()

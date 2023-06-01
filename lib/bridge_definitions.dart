@@ -115,7 +115,7 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kMintTokenConstMeta;
 
-  Future<void> melt(
+  Future<Transaction> melt(
       {required int amount,
       required String invoice,
       required String mint,
@@ -188,12 +188,16 @@ class Contact {
   /// Lud16
   final String? lud16;
 
+  /// create_at
+  final int? createdAt;
+
   const Contact({
     required this.pubkey,
     required this.npub,
     this.name,
     this.picture,
     this.lud16,
+    this.createdAt,
   });
 }
 

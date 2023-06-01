@@ -10,6 +10,7 @@ class Send extends StatefulWidget {
   final Function send;
   final int activeBalance;
   final Function decodeToken;
+  final Function payInvoice;
   final String? activeMint;
   final RustImpl cashu;
   final Map<String, int> wallets;
@@ -19,6 +20,7 @@ class Send extends StatefulWidget {
       required this.send,
       required this.activeBalance,
       required this.decodeToken,
+      required this.payInvoice,
       required this.activeMint,
       required this.cashu,
       required this.wallets});
@@ -98,6 +100,7 @@ class SendState extends State<Send> {
                     MaterialPageRoute(
                       builder: (context) => PayInvoice(
                         activeMint: widget.activeMint,
+                        payInvoice: widget.payInvoice,
                         cashu: widget.cashu,
                         mints: widget.wallets,
                       ),

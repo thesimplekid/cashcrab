@@ -527,6 +527,7 @@ impl support::IntoDart for Contact {
             self.name.into_dart(),
             self.picture.into_dart(),
             self.lud16.into_dart(),
+            self.created_at.into_dart(),
         ]
         .into_dart()
     }
