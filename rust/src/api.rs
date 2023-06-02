@@ -22,6 +22,7 @@ use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
 use super::types::{InvoiceInfo, TokenData};
+use crate::types::InvoiceStatus;
 use crate::utils::convert_str_to_xonly;
 use crate::{
     database,
@@ -720,12 +721,18 @@ pub fn decode_invoice(encoded_invoice: String) -> Result<InvoiceInfo> {
         InvoiceDescription::Hash(_) => None,
     };
 
+    let status = match invoice.is_expired() {
+        true => InvoiceStatus::Expired,
+        false => InvoiceStatus::Unpaid,
+    };
+
     Ok(InvoiceInfo {
         bolt11: encoded_invoice,
         amount: invoice.amount_milli_satoshis().unwrap() / 1000,
         hash: invoice.payment_hash().to_string(),
         memo,
         mint: None,
+        status,
     })
 }
 

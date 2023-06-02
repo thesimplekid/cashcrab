@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:cashcrab/bridge_definitions.dart';
-import 'package:cashcrab/shared/widgets/numeric_input.dart';
-import 'package:cashcrab/screens/token_info.dart';
-import 'package:cashcrab/screens/ln/pay_invoice.dart';
 import 'package:cashcrab/bridge_generated.dart';
+import 'package:cashcrab/screens/cashu/create_token.dart';
+import 'package:cashcrab/screens/ln/confirm_pay_invoice.dart';
 
 class Send extends StatefulWidget {
   final Function send;
@@ -40,6 +42,23 @@ class SendState extends State<Send> {
     super.initState();
   }
 
+  Future<void> _decodeInvoice(String encodedInvoice) async {
+    // TODO: Try catach
+    final data = await widget.api.decodeInvoice(encodedInvoice: encodedInvoice);
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ConfirmPayInvoice(
+              invoice: data,
+              api: widget.api,
+              activeMint: widget.activeMint,
+              payInvoice: widget.payInvoice),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,73 +69,65 @@ class SendState extends State<Send> {
         child: Column(
           children: [
             const Text(
-              "Send ECash",
+              "Scan Lightning Invoice",
               style: TextStyle(fontSize: 20),
             ),
-            SizedBox(
-              height: 100,
-              child: NumericInput(
-                onValueChanged: (String value) {
-                  if (value.isNotEmpty) {
-                    amountToSend = int.tryParse(value) ?? amountToSend;
+            Flexible(
+              child: MobileScanner(
+                fit: BoxFit.contain,
+                onDetect: (capture) {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  for (final barcode in barcodes) {
+                    debugPrint('Barcode found! ${barcode.rawValue}');
+                    if (barcode.rawValue != null) {
+                      _decodeInvoice(barcode.rawValue!);
+                    }
                   }
                 },
               ),
             ),
+            const SizedBox(height: 3),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 70),
+              ),
+              onPressed: () async {
+                ClipboardData? clipboardData =
+                    await Clipboard.getData('text/plain');
+                if (clipboardData != null && clipboardData.text != null) {
+                  await _decodeInvoice(clipboardData.text!);
+                }
+              },
+              child: const Text(
+                'Paste from Clipboard',
+                style: TextStyle(fontSize: 20),
+              ),
+            ),
+            const SizedBox(height: 3),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 70),
               ),
               onPressed: () {
                 // TODO: Alert dialog id balance not enough
-                if (amountToSend <= widget.activeBalance && amountToSend > 0) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TokenInfo(
-                        amount: amountToSend,
-                        mintUrl: widget.activeMint,
-                        send: widget.send,
-                        decodeToken: widget.decodeToken,
-                      ),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateCashuToken(
+                      send: widget.send,
+                      activeMint: widget.activeMint,
+                      activeBalance: widget.activeBalance,
+                      decodeToken: widget.decodeToken,
+                      api: widget.api,
+                      payInvoice: widget.payInvoice,
+                      wallets: widget.wallets,
                     ),
-                  );
-                }
+                  ),
+                );
               },
               child: const Text(
                 'Create Token',
                 style: TextStyle(fontSize: 20),
-              ),
-            ),
-            const SizedBox(height: 50),
-            Flexible(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 70),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PayInvoice(
-                        activeMint: widget.activeMint,
-                        payInvoice: widget.payInvoice,
-                        api: widget.api,
-                        mints: widget.wallets,
-                      ),
-                    ),
-                  );
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.bolt),
-                    Text(
-                      'Pay via Lightning',
-                      style: TextStyle(fontSize: 20),
-                    )
-                  ],
-                ),
               ),
             ),
           ],

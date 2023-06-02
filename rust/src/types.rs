@@ -284,6 +284,7 @@ pub struct InvoiceInfo {
     pub hash: String,
     pub memo: Option<String>,
     pub mint: Option<String>,
+    pub status: InvoiceStatus,
 }
 
 pub struct TokenData {
