@@ -59,6 +59,22 @@ class RustImpl implements Rust {
         argNames: ["storagePath"],
       );
 
+  Future<KeyData?> getKeys({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_keys(port_),
+      parseSuccessData: _wire2api_opt_box_autoadd_key_data,
+      constMeta: kGetKeysConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetKeysConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_keys",
+        argNames: [],
+      );
+
   Future<List<String>> getRelays({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_relays(port_),
@@ -568,6 +584,10 @@ class RustImpl implements Rust {
     return _wire2api_cashu_transaction(raw);
   }
 
+  KeyData _wire2api_box_autoadd_key_data(dynamic raw) {
+    return _wire2api_key_data(raw);
+  }
+
   LNTransaction _wire2api_box_autoadd_ln_transaction(dynamic raw) {
     return _wire2api_ln_transaction(raw);
   }
@@ -636,14 +656,29 @@ class RustImpl implements Rust {
 
   InvoiceInfo _wire2api_invoice_info(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 5)
-      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
     return InvoiceInfo(
       bolt11: _wire2api_String(arr[0]),
       amount: _wire2api_u64(arr[1]),
       hash: _wire2api_String(arr[2]),
       memo: _wire2api_opt_String(arr[3]),
       mint: _wire2api_opt_String(arr[4]),
+      status: _wire2api_invoice_status(arr[5]),
+    );
+  }
+
+  InvoiceStatus _wire2api_invoice_status(dynamic raw) {
+    return InvoiceStatus.values[raw as int];
+  }
+
+  KeyData _wire2api_key_data(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return KeyData(
+      npub: _wire2api_String(arr[0]),
+      nsec: _wire2api_opt_String(arr[1]),
     );
   }
 
@@ -717,6 +752,10 @@ class RustImpl implements Rust {
 
   String? _wire2api_opt_String(dynamic raw) {
     return raw == null ? null : _wire2api_String(raw);
+  }
+
+  KeyData? _wire2api_opt_box_autoadd_key_data(dynamic raw) {
+    return raw == null ? null : _wire2api_box_autoadd_key_data(raw);
   }
 
   Mint? _wire2api_opt_box_autoadd_mint(dynamic raw) {
@@ -1114,6 +1153,20 @@ class RustWire implements FlutterRustBridgeWireBase {
               ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_init_nostr');
   late final _wire_init_nostr = _wire_init_nostrPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_get_keys(
+    int port_,
+  ) {
+    return _wire_get_keys(
+      port_,
+    );
+  }
+
+  late final _wire_get_keysPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_keys');
+  late final _wire_get_keys =
+      _wire_get_keysPtr.asFunction<void Function(int)>();
 
   void wire_get_relays(
     int port_,

@@ -20,6 +20,10 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kInitNostrConstMeta;
 
+  Future<KeyData?> getKeys({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetKeysConstMeta;
+
   Future<List<String>> getRelays({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetRelaysConstMeta;
@@ -223,6 +227,7 @@ class InvoiceInfo {
   final String hash;
   final String? memo;
   final String? mint;
+  final InvoiceStatus status;
 
   const InvoiceInfo({
     required this.bolt11,
@@ -230,6 +235,23 @@ class InvoiceInfo {
     required this.hash,
     this.memo,
     this.mint,
+    required this.status,
+  });
+}
+
+enum InvoiceStatus {
+  Paid,
+  Unpaid,
+  Expired,
+}
+
+class KeyData {
+  final String npub;
+  final String? nsec;
+
+  const KeyData({
+    required this.npub,
+    this.nsec,
   });
 }
 

@@ -1,3 +1,4 @@
+import 'package:cashcrab/screens/settings/keys.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cashcrab/bridge_definitions.dart';
@@ -149,6 +150,43 @@ class _SettingsState extends State<Settings> {
                         SizedBox(width: 8),
                         Text(
                           "Relays",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                    Icon(Icons.arrow_forward),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: purpleColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TextButton(
+                onPressed: () async {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Keys(
+                        api: widget.api,
+                      ),
+                    ),
+                  );
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.key),
+                        SizedBox(width: 8),
+                        Text(
+                          "Keys",
                           textAlign: TextAlign.left,
                           style: TextStyle(fontSize: 18),
                         ),

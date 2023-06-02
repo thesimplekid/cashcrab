@@ -24,6 +24,8 @@ use crate::types::Contact;
 use crate::types::Conversation;
 use crate::types::Direction;
 use crate::types::InvoiceInfo;
+use crate::types::InvoiceStatus;
+use crate::types::KeyData;
 use crate::types::LNTransaction;
 use crate::types::Message;
 use crate::types::Mint;
@@ -58,6 +60,16 @@ fn wire_init_nostr_impl(port_: MessagePort, storage_path: impl Wire2Api<String> 
             let api_storage_path = storage_path.wire2api();
             move |task_callback| init_nostr(api_storage_path)
         },
+    )
+}
+fn wire_get_keys_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_keys",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| get_keys(),
     )
 }
 fn wire_get_relays_impl(port_: MessagePort) {
@@ -563,11 +575,30 @@ impl support::IntoDart for InvoiceInfo {
             self.hash.into_dart(),
             self.memo.into_dart(),
             self.mint.into_dart(),
+            self.status.into_dart(),
         ]
         .into_dart()
     }
 }
 impl support::IntoDartExceptPrimitive for InvoiceInfo {}
+
+impl support::IntoDart for InvoiceStatus {
+    fn into_dart(self) -> support::DartAbi {
+        match self {
+            Self::Paid => 0,
+            Self::Unpaid => 1,
+            Self::Expired => 2,
+        }
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for InvoiceStatus {}
+impl support::IntoDart for KeyData {
+    fn into_dart(self) -> support::DartAbi {
+        vec![self.npub.into_dart(), self.nsec.into_dart()].into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for KeyData {}
 
 impl support::IntoDart for LNTransaction {
     fn into_dart(self) -> support::DartAbi {

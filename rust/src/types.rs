@@ -293,3 +293,9 @@ pub struct TokenData {
     pub amount: u64,
     pub memo: Option<String>, // spendable: Option<bool>,
 }
+
+#[derive(Debug, Clone)]
+pub struct KeyData {
+    pub npub: String,
+    pub nsec: Option<String>,
+}

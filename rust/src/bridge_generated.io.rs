@@ -12,6 +12,11 @@ pub extern "C" fn wire_init_nostr(port_: i64, storage_path: *mut wire_uint_8_lis
 }
 
 #[no_mangle]
+pub extern "C" fn wire_get_keys(port_: i64) {
+    wire_get_keys_impl(port_)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_get_relays(port_: i64) {
     wire_get_relays_impl(port_)
 }

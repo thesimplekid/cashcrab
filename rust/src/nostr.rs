@@ -9,7 +9,9 @@ use tokio::{sync::Mutex, task::JoinHandle};
 
 use crate::{
     database,
-    types::{self, CashuTransaction, Conversation, Direction, Message, Picture, Transaction},
+    types::{
+        self, CashuTransaction, Conversation, Direction, KeyData, Message, Picture, Transaction,
+    },
     utils::unix_time,
 };
 
@@ -99,6 +101,23 @@ pub(crate) async fn init_client(private_key: &Option<String>) -> Result<()> {
 /// Msats to sats
 fn invoice_amount(amount_msat: Option<u64>) -> Option<u64> {
     amount_msat.map(|amount_msat| amount_msat / 1000)
+}
+
+pub(crate) async fn get_keys() -> Result<Option<KeyData>> {
+    let client = SEND_CLIENT.lock().await;
+
+    if let Some(client) = client.as_ref() {
+        let npub = client.keys().public_key().to_bech32()?;
+
+        let nsec = match client.keys().secret_key() {
+            Ok(sec) => Some(sec.to_bech32()?),
+            Err(_) => None,
+        };
+
+        return Ok(Some(KeyData { npub, nsec }));
+    }
+
+    Ok(None)
 }
 
 /// Handle Direct message

@@ -22,7 +22,7 @@ use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
 use super::types::{InvoiceInfo, TokenData};
-use crate::types::InvoiceStatus;
+use crate::types::{InvoiceStatus, KeyData};
 use crate::utils::convert_str_to_xonly;
 use crate::{
     database,
@@ -105,6 +105,14 @@ pub fn init_nostr(storage_path: String) -> Result<()> {
     });
 
     drop(rt);
+    result
+}
+
+pub fn get_keys() -> Result<Option<KeyData>> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async { nostr::get_keys().await });
+    drop(rt);
+
     result
 }
 
