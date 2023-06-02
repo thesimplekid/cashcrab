@@ -356,7 +356,10 @@ fn wire_melt_impl(
         },
     )
 }
-fn wire_decode_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
+fn wire_decode_invoice_impl(
+    port_: MessagePort,
+    encoded_invoice: impl Wire2Api<String> + UnwindSafe,
+) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "decode_invoice",
@@ -364,8 +367,8 @@ fn wire_decode_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> +
             mode: FfiCallMode::Normal,
         },
         move || {
-            let api_invoice = invoice.wire2api();
-            move |task_callback| decode_invoice(api_invoice)
+            let api_encoded_invoice = encoded_invoice.wire2api();
+            move |task_callback| decode_invoice(api_encoded_invoice)
         },
     )
 }
@@ -555,9 +558,11 @@ impl support::IntoDartExceptPrimitive for Direction {}
 impl support::IntoDart for InvoiceInfo {
     fn into_dart(self) -> support::DartAbi {
         vec![
+            self.bolt11.into_dart(),
             self.amount.into_dart(),
             self.hash.into_dart(),
             self.memo.into_dart(),
+            self.mint.into_dart(),
         ]
         .into_dart()
     }

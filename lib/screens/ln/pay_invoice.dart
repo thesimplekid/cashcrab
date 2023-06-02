@@ -3,20 +3,19 @@ import 'package:flutter/services.dart';
 
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import 'package:cashcrab/screens/ln/paying_invoice.dart';
-import 'package:cashcrab/shared/models/invoice.dart';
 import 'package:cashcrab/bridge_generated.dart';
+import 'package:cashcrab/screens/ln/confirm_pay_invoice.dart';
 
 class PayInvoice extends StatefulWidget {
   final String? activeMint;
   final Map<String, int> mints;
-  final RustImpl cashu;
+  final RustImpl api;
   final Function payInvoice;
 
   const PayInvoice({
     super.key,
     required this.activeMint,
-    required this.cashu,
+    required this.api,
     required this.mints,
     required this.payInvoice,
   });
@@ -26,8 +25,6 @@ class PayInvoice extends StatefulWidget {
 }
 
 class PayInvoiceState extends State<PayInvoice> {
-  Invoice? invoice;
-
   @override
   void initState() {
     super.initState();
@@ -35,18 +32,19 @@ class PayInvoiceState extends State<PayInvoice> {
 
   Future<void> _decodeInvoice(String encodedInvoice) async {
     // TODO: Try catach
-    final data = await widget.cashu.decodeInvoice(invoice: encodedInvoice);
-    Invoice newInvoice = Invoice(
-      amount: data.amount,
-      invoice: encodedInvoice,
-      hash: data.hash,
-      mintUrl: null,
-      memo: data.memo,
-    );
-
-    setState(() {
-      invoice = newInvoice;
-    });
+    final data = await widget.api.decodeInvoice(encodedInvoice: encodedInvoice);
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ConfirmPayInvoice(
+              invoice: data,
+              api: widget.api,
+              activeMint: widget.activeMint,
+              payInvoice: widget.payInvoice),
+        ),
+      );
+    }
   }
 
   @override
@@ -68,7 +66,6 @@ class PayInvoiceState extends State<PayInvoice> {
                 fit: BoxFit.contain,
                 onDetect: (capture) {
                   final List<Barcode> barcodes = capture.barcodes;
-                  // final Uint8List? image = capture.image;
                   for (final barcode in barcodes) {
                     debugPrint('Barcode found! ${barcode.rawValue}');
                     if (barcode.rawValue != null) {
@@ -88,30 +85,6 @@ class PayInvoiceState extends State<PayInvoice> {
               },
               child: const Text('Paste from Clipboard'),
             ),
-            if (invoice != null)
-              Column(
-                children: [
-                  if (invoice?.mintUrl != null)
-                    Text('Mint: ${invoice!.mintUrl}'),
-                  Text('${invoice!.amount.toString()} sats'),
-                  ElevatedButton(
-                    onPressed: () async {
-                      FocusScope.of(context).unfocus();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PayingInvoice(
-                              invoice: invoice!.invoice!,
-                              amount: invoice!.amount,
-                              api: widget.cashu,
-                              payInvoice: widget.payInvoice),
-                        ),
-                      );
-                    },
-                    child: const Text('Pay'),
-                  ),
-                ],
-              ),
           ],
         ),
       ),

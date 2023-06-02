@@ -434,13 +434,14 @@ class RustImpl implements Rust {
         argNames: ["amount", "invoice", "mint"],
       );
 
-  Future<InvoiceInfo> decodeInvoice({required String invoice, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(invoice);
+  Future<InvoiceInfo> decodeInvoice(
+      {required String encodedInvoice, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(encodedInvoice);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_decode_invoice(port_, arg0),
       parseSuccessData: _wire2api_invoice_info,
       constMeta: kDecodeInvoiceConstMeta,
-      argValues: [invoice],
+      argValues: [encodedInvoice],
       hint: hint,
     ));
   }
@@ -448,7 +449,7 @@ class RustImpl implements Rust {
   FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
         debugName: "decode_invoice",
-        argNames: ["invoice"],
+        argNames: ["encodedInvoice"],
       );
 
   Future<List<Transaction>> getTransactions({dynamic hint}) {
@@ -635,12 +636,14 @@ class RustImpl implements Rust {
 
   InvoiceInfo _wire2api_invoice_info(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return InvoiceInfo(
-      amount: _wire2api_u64(arr[0]),
-      hash: _wire2api_String(arr[1]),
-      memo: _wire2api_opt_String(arr[2]),
+      bolt11: _wire2api_String(arr[0]),
+      amount: _wire2api_u64(arr[1]),
+      hash: _wire2api_String(arr[2]),
+      memo: _wire2api_opt_String(arr[3]),
+      mint: _wire2api_opt_String(arr[4]),
     );
   }
 
@@ -1482,11 +1485,11 @@ class RustWire implements FlutterRustBridgeWireBase {
 
   void wire_decode_invoice(
     int port_,
-    ffi.Pointer<wire_uint_8_list> invoice,
+    ffi.Pointer<wire_uint_8_list> encoded_invoice,
   ) {
     return _wire_decode_invoice(
       port_,
-      invoice,
+      encoded_invoice,
     );
   }
 

@@ -712,8 +712,8 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
 }
 
 /// Decode invoice
-pub fn decode_invoice(invoice: String) -> Result<InvoiceInfo> {
-    let invoice = str::parse::<Invoice>(&invoice)?;
+pub fn decode_invoice(encoded_invoice: String) -> Result<InvoiceInfo> {
+    let invoice = str::parse::<Invoice>(&encoded_invoice)?;
 
     let memo = match invoice.description() {
         lightning_invoice::InvoiceDescription::Direct(memo) => Some(memo.clone().into_inner()),
@@ -721,10 +721,11 @@ pub fn decode_invoice(invoice: String) -> Result<InvoiceInfo> {
     };
 
     Ok(InvoiceInfo {
-        // FIXME: Convert this conrrectlly
+        bolt11: encoded_invoice,
         amount: invoice.amount_milli_satoshis().unwrap() / 1000,
         hash: invoice.payment_hash().to_string(),
         memo,
+        mint: None,
     })
 }
 

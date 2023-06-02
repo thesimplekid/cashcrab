@@ -126,7 +126,7 @@ class MyHomePageState extends State<MyHomePage> {
       activeMintBalance: activeBalance,
     );
     _homeTab = Home(
-      cashu: api,
+      api: api,
       balance: balance,
       activeBalance: activeBalance,
       activeMint: activeMint,
@@ -210,7 +210,7 @@ class MyHomePageState extends State<MyHomePage> {
         transactions[lnt!.id!] = transaction;
       });
     } catch (e) {
-      print(e);
+      debugPrint(e.toString());
     }
     await _getBalances();
     return lnt;
@@ -245,7 +245,7 @@ class MyHomePageState extends State<MyHomePage> {
       });
       return data;
     } catch (e) {
-      print('Failed to decode token: $e');
+      debugPrint('Failed to decode token: $e');
       return null;
     }
   }
@@ -320,12 +320,11 @@ class MyHomePageState extends State<MyHomePage> {
       pendingTransactions[id] = transaction;
     });
 
-    print(mints);
     // Recaulate balances
     await _getBalances();
     _getBalance();
 
-    print("AFTER ${mints}");
+    debugPrint("AFTER $mints");
     return (transaction);
   }
 

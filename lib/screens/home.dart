@@ -13,7 +13,7 @@ class Home extends StatefulWidget {
   final int balance;
   final int activeBalance;
   final String? activeMint;
-  final RustImpl cashu;
+  final RustImpl api;
   final Map<String, Transaction> pendingTransactions;
   final Map<String, Transaction> transactions;
   final Map<String, int> mints;
@@ -34,7 +34,7 @@ class Home extends StatefulWidget {
       required this.activeMint,
       required this.pendingTransactions,
       required this.transactions,
-      required this.cashu,
+      required this.api,
       required this.mints,
       required this.decodeToken,
       required this.receiveToken,
@@ -181,7 +181,7 @@ class _HomeState extends State<Home> {
                       MaterialPageRoute(
                         builder: (context) => ReceviceToken(
                           activeWallet: widget.activeMint,
-                          cashu: widget.cashu,
+                          cashu: widget.api,
                           decodeToken: widget.decodeToken,
                           receiveToken: widget.receiveToken,
                           mints: widget.mints,
@@ -204,7 +204,7 @@ class _HomeState extends State<Home> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => Send(
-                          cashu: widget.cashu,
+                          api: widget.api,
                           wallets: widget.mints,
                           decodeToken: widget.decodeToken,
                           payInvoice: widget.payInvoice,

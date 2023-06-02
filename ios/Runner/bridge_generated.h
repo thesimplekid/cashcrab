@@ -147,7 +147,7 @@ void wire_melt(int64_t port_,
                struct wire_uint_8_list *invoice,
                struct wire_uint_8_list *mint);
 
-void wire_decode_invoice(int64_t port_, struct wire_uint_8_list *invoice);
+void wire_decode_invoice(int64_t port_, struct wire_uint_8_list *encoded_invoice);
 
 void wire_get_transactions(int64_t port_);
 

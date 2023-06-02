@@ -131,8 +131,8 @@ pub extern "C" fn wire_melt(
 }
 
 #[no_mangle]
-pub extern "C" fn wire_decode_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
-    wire_decode_invoice_impl(port_, invoice)
+pub extern "C" fn wire_decode_invoice(port_: i64, encoded_invoice: *mut wire_uint_8_list) {
+    wire_decode_invoice_impl(port_, encoded_invoice)
 }
 
 #[no_mangle]

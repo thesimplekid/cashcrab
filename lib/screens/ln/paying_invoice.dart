@@ -1,7 +1,6 @@
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:flutter/material.dart';
 
-import 'package:cashcrab/shared/models/invoice.dart';
 import 'package:cashcrab/bridge_generated.dart';
 
 class PayingInvoice extends StatefulWidget {
@@ -27,7 +26,7 @@ class PayingInvoice extends StatefulWidget {
 class PayingInvoiceState extends State<PayingInvoice> {
   final receiveController = TextEditingController();
 
-  Invoice? invoice;
+  InvoiceInfo? invoice;
   LNTransaction? lnt;
 
   bool paying = true;
@@ -52,17 +51,11 @@ class PayingInvoiceState extends State<PayingInvoice> {
   Future<void> _decodeInvoice() async {
     if (receiveController.text.isNotEmpty) {
       String encodedInvoice = receiveController.text;
-      final data = await widget.api.decodeInvoice(invoice: encodedInvoice);
-      Invoice newInvoice = Invoice(
-        amount: data.amount,
-        invoice: encodedInvoice,
-        hash: data.hash,
-        mintUrl: null,
-        memo: data.memo,
-      );
+      final data =
+          await widget.api.decodeInvoice(encodedInvoice: encodedInvoice);
 
       setState(() {
-        invoice = newInvoice;
+        invoice = data;
       });
     }
   }
@@ -103,7 +96,7 @@ class PayingInvoiceState extends State<PayingInvoice> {
             ),
             SizedBox(height: 5),
             Text(
-              "Sucessfully Paid",
+              "Successfully Paid",
               style: TextStyle(
                 fontSize: 30.0,
                 fontWeight: FontWeight.bold,

@@ -279,9 +279,11 @@ impl Contact {
 }
 
 pub struct InvoiceInfo {
+    pub bolt11: String,
     pub amount: u64,
     pub hash: String,
     pub memo: Option<String>,
+    pub mint: Option<String>,
 }
 
 pub struct TokenData {

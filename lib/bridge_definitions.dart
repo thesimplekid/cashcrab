@@ -124,7 +124,8 @@ abstract class Rust {
   FlutterRustBridgeTaskConstMeta get kMeltConstMeta;
 
   /// Decode invoice
-  Future<InvoiceInfo> decodeInvoice({required String invoice, dynamic hint});
+  Future<InvoiceInfo> decodeInvoice(
+      {required String encodedInvoice, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta;
 
@@ -217,14 +218,18 @@ enum Direction {
 }
 
 class InvoiceInfo {
+  final String bolt11;
   final int amount;
   final String hash;
   final String? memo;
+  final String? mint;
 
   const InvoiceInfo({
+    required this.bolt11,
     required this.amount,
     required this.hash,
     this.memo,
+    this.mint,
   });
 }
 

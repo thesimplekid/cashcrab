@@ -12,7 +12,7 @@ class Send extends StatefulWidget {
   final Function decodeToken;
   final Function payInvoice;
   final String? activeMint;
-  final RustImpl cashu;
+  final RustImpl api;
   final Map<String, int> wallets;
 
   const Send(
@@ -22,7 +22,7 @@ class Send extends StatefulWidget {
       required this.decodeToken,
       required this.payInvoice,
       required this.activeMint,
-      required this.cashu,
+      required this.api,
       required this.wallets});
 
   @override
@@ -101,7 +101,7 @@ class SendState extends State<Send> {
                       builder: (context) => PayInvoice(
                         activeMint: widget.activeMint,
                         payInvoice: widget.payInvoice,
-                        cashu: widget.cashu,
+                        api: widget.api,
                         mints: widget.wallets,
                       ),
                     ),
