@@ -116,6 +116,14 @@ pub fn get_keys() -> Result<Option<KeyData>> {
     result
 }
 
+pub fn nostr_logout() -> Result<()> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async { nostr::log_out().await });
+    drop(rt);
+
+    result
+}
+
 pub fn get_relays() -> Result<Vec<String>> {
     let rt = lock_runtime!();
     let result = rt.block_on(async { nostr::get_relays().await });

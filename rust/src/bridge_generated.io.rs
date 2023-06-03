@@ -17,6 +17,11 @@ pub extern "C" fn wire_get_keys(port_: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_nostr_logout(port_: i64) {
+    wire_nostr_logout_impl(port_)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_get_relays(port_: i64) {
     wire_get_relays_impl(port_)
 }

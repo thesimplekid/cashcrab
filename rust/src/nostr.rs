@@ -5,7 +5,10 @@ use anyhow::{bail, Result};
 use cashu_crab::types::Token;
 use lazy_static::lazy_static;
 use nostr_sdk::prelude::*;
-use tokio::{sync::Mutex, task::JoinHandle};
+use tokio::{
+    sync::{mpsc, Mutex},
+    task::JoinHandle,
+};
 
 use crate::{
     database,
@@ -18,6 +21,8 @@ use crate::{
 lazy_static! {
     static ref LISTEN_CLIENT: Arc<Mutex<Option<Client>>> = Arc::new(Mutex::new(None));
     static ref SEND_CLIENT: Arc<Mutex<Option<Client>>> = Arc::new(Mutex::new(None));
+    static ref SENDER: Arc<Mutex<Option<mpsc::Sender<String>>>> = Arc::new(Mutex::new(None));
+    static ref RECEIVER: Arc<Mutex<Option<mpsc::Receiver<String>>>> = Arc::new(Mutex::new(None));
 }
 
 #[derive(Clone)]
@@ -39,6 +44,14 @@ fn handle_keys(private_key: &Option<String>) -> Result<Keys> {
 
 /// Init Nostr Client
 pub(crate) async fn init_client(private_key: &Option<String>) -> Result<()> {
+    let (sender, receiver) = mpsc::channel::<String>(100);
+
+    let mut sender_channel = SENDER.lock().await;
+    *sender_channel = Some(sender);
+
+    let mut reciever_channel = RECEIVER.lock().await;
+    *reciever_channel = Some(receiver);
+
     let keys = handle_keys(private_key)?;
 
     if private_key.is_none() {
@@ -94,6 +107,26 @@ pub(crate) async fn init_client(private_key: &Option<String>) -> Result<()> {
     // if let Err(err) = refresh_contacts().await {
     //     bail!(err);
     // }
+
+    Ok(())
+}
+
+pub(crate) async fn log_out() -> Result<()> {
+    let mut client = SEND_CLIENT.lock().await;
+    if let Some(client) = client.as_ref() {
+        client.disconnect().await?;
+    }
+    *client = None;
+
+    let sender = SENDER.lock().await;
+    let sender = sender.as_ref().unwrap();
+    sender.send("SHUTDOWN".to_string()).await?;
+
+    let mut client = LISTEN_CLIENT.lock().await;
+    if let Some(client) = client.as_ref() {
+        client.disconnect().await?;
+    }
+    *client = None;
 
     Ok(())
 }
@@ -305,7 +338,21 @@ pub(crate) async fn handle_notifications() -> Result<()> {
                             // bail!(err);
                         }
                     }
-                    Ok(())
+
+                    // Obtain a mutable reference to the channel inside the `Arc`
+
+                    let mut rec = RECEIVER.lock().await;
+                    let rec = rec.as_mut().unwrap();
+
+                    // Use the mutable reference to the channel
+                    if let Ok(msg) = rec.try_recv() {
+                        if msg == "SHUTDOWN" {
+                            return Ok(true);
+                        }
+                        // Process the received message
+                    }
+
+                    Ok(false)
                 })
                 .await?;
         }

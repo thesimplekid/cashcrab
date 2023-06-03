@@ -197,6 +197,63 @@ class _SettingsState extends State<Settings> {
                 ),
               ),
             ),
+            const SizedBox(height: 2),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: purpleColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TextButton(
+                onPressed: () async {
+                  bool confirmed = await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text('Log Out?'),
+                        content: const Text(
+                            'Have you saved your private key securly securly? It will be erased.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(false); // User canceled
+                            },
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(true); // User confirmed
+                            },
+                            child: const Text('Log Out'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+
+                  if (confirmed == true) {
+                    widget.api.nostrLogout();
+                  }
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.logout),
+                        SizedBox(width: 8),
+                        Text(
+                          "Log Out",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                    Icon(Icons.arrow_forward),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),

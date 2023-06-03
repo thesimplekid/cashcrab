@@ -72,6 +72,16 @@ fn wire_get_keys_impl(port_: MessagePort) {
         move || move |task_callback| get_keys(),
     )
 }
+fn wire_nostr_logout_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "nostr_logout",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| nostr_logout(),
+    )
+}
 fn wire_get_relays_impl(port_: MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {

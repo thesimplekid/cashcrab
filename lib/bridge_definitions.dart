@@ -24,6 +24,10 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kGetKeysConstMeta;
 
+  Future<void> nostrLogout({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kNostrLogoutConstMeta;
+
   Future<List<String>> getRelays({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetRelaysConstMeta;

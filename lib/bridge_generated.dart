@@ -75,6 +75,22 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Future<void> nostrLogout({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_nostr_logout(port_),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kNostrLogoutConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kNostrLogoutConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "nostr_logout",
+        argNames: [],
+      );
+
   Future<List<String>> getRelays({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_relays(port_),
@@ -1167,6 +1183,20 @@ class RustWire implements FlutterRustBridgeWireBase {
           'wire_get_keys');
   late final _wire_get_keys =
       _wire_get_keysPtr.asFunction<void Function(int)>();
+
+  void wire_nostr_logout(
+    int port_,
+  ) {
+    return _wire_nostr_logout(
+      port_,
+    );
+  }
+
+  late final _wire_nostr_logoutPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_nostr_logout');
+  late final _wire_nostr_logout =
+      _wire_nostr_logoutPtr.asFunction<void Function(int)>();
 
   void wire_get_relays(
     int port_,
