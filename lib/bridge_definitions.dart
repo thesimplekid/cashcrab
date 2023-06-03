@@ -16,7 +16,8 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kInitDbConstMeta;
 
-  Future<void> initNostr({required String storagePath, dynamic hint});
+  Future<String> initNostr(
+      {required String storagePath, String? privateKey, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kInitNostrConstMeta;
 

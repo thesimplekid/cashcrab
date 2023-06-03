@@ -7,8 +7,12 @@ pub extern "C" fn wire_init_db(port_: i64, storage_path: *mut wire_uint_8_list) 
 }
 
 #[no_mangle]
-pub extern "C" fn wire_init_nostr(port_: i64, storage_path: *mut wire_uint_8_list) {
-    wire_init_nostr_impl(port_, storage_path)
+pub extern "C" fn wire_init_nostr(
+    port_: i64,
+    storage_path: *mut wire_uint_8_list,
+    private_key: *mut wire_uint_8_list,
+) {
+    wire_init_nostr_impl(port_, storage_path, private_key)
 }
 
 #[no_mangle]

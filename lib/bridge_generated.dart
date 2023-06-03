@@ -42,13 +42,15 @@ class RustImpl implements Rust {
         argNames: ["storagePath"],
       );
 
-  Future<void> initNostr({required String storagePath, dynamic hint}) {
+  Future<String> initNostr(
+      {required String storagePath, String? privateKey, dynamic hint}) {
     var arg0 = _platform.api2wire_String(storagePath);
+    var arg1 = _platform.api2wire_opt_String(privateKey);
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_init_nostr(port_, arg0),
-      parseSuccessData: _wire2api_unit,
+      callFfi: (port_) => _platform.inner.wire_init_nostr(port_, arg0, arg1),
+      parseSuccessData: _wire2api_String,
       constMeta: kInitNostrConstMeta,
-      argValues: [storagePath],
+      argValues: [storagePath, privateKey],
       hint: hint,
     ));
   }
@@ -56,7 +58,7 @@ class RustImpl implements Rust {
   FlutterRustBridgeTaskConstMeta get kInitNostrConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
         debugName: "init_nostr",
-        argNames: ["storagePath"],
+        argNames: ["storagePath", "privateKey"],
       );
 
   Future<KeyData?> getKeys({dynamic hint}) {
@@ -1156,19 +1158,22 @@ class RustWire implements FlutterRustBridgeWireBase {
   void wire_init_nostr(
     int port_,
     ffi.Pointer<wire_uint_8_list> storage_path,
+    ffi.Pointer<wire_uint_8_list> private_key,
   ) {
     return _wire_init_nostr(
       port_,
       storage_path,
+      private_key,
     );
   }
 
   late final _wire_init_nostrPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_init_nostr');
-  late final _wire_init_nostr = _wire_init_nostrPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_init_nostr');
+  late final _wire_init_nostr = _wire_init_nostrPtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_keys(
     int port_,

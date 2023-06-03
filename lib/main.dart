@@ -4,6 +4,7 @@ import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/bridge_generated.dart';
@@ -84,7 +85,11 @@ class MyHomePageState extends State<MyHomePage> {
 
   Future<void> _initDB() async {
     await api.initDb(storagePath: await _localPath);
-    await api.initNostr(storagePath: await _localPath);
+    String? key = await getNostrKey();
+    String privKey =
+        await api.initNostr(storagePath: await _localPath, privateKey: key);
+
+    saveNostrKey(privKey);
 
     _loadMints();
 
@@ -154,6 +159,7 @@ class MyHomePageState extends State<MyHomePage> {
       removeMint: removeMint,
       activeMint: activeMint,
       setActiveMint: _setActiveMint,
+      nostrLogOut: nostrLogout,
     );
 
     _widgetOptions = <Widget>[
@@ -184,6 +190,26 @@ class MyHomePageState extends State<MyHomePage> {
         onTap: _onItemTapped,
       ),
     );
+  }
+
+  void saveNostrKey(String key) async {
+    const storage = FlutterSecureStorage();
+    await storage.write(key: "nostr_private_key", value: key);
+  }
+
+  Future<String?> getNostrKey() async {
+    const storage = FlutterSecureStorage();
+    return await storage.read(key: "nostr_private_key");
+  }
+
+  void deleteNostrKey() async {
+    const storage = FlutterSecureStorage();
+    await storage.delete(key: "nostr_private_key");
+  }
+
+  void nostrLogout() async {
+    deleteNostrKey();
+    await api.nostrLogout();
   }
 
   Future<LNTransaction> createInvoice(int amount, String mint) async {

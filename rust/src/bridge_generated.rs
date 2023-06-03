@@ -49,7 +49,11 @@ fn wire_init_db_impl(port_: MessagePort, storage_path: impl Wire2Api<String> + U
         },
     )
 }
-fn wire_init_nostr_impl(port_: MessagePort, storage_path: impl Wire2Api<String> + UnwindSafe) {
+fn wire_init_nostr_impl(
+    port_: MessagePort,
+    storage_path: impl Wire2Api<String> + UnwindSafe,
+    private_key: impl Wire2Api<Option<String>> + UnwindSafe,
+) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "init_nostr",
@@ -58,7 +62,8 @@ fn wire_init_nostr_impl(port_: MessagePort, storage_path: impl Wire2Api<String> 
         },
         move || {
             let api_storage_path = storage_path.wire2api();
-            move |task_callback| init_nostr(api_storage_path)
+            let api_private_key = private_key.wire2api();
+            move |task_callback| init_nostr(api_storage_path, api_private_key)
         },
     )
 }

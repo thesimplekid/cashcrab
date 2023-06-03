@@ -95,7 +95,9 @@ intptr_t init_frb_dart_api_dl(void *obj);
 
 void wire_init_db(int64_t port_, struct wire_uint_8_list *storage_path);
 
-void wire_init_nostr(int64_t port_, struct wire_uint_8_list *storage_path);
+void wire_init_nostr(int64_t port_,
+                     struct wire_uint_8_list *storage_path,
+                     struct wire_uint_8_list *private_key);
 
 void wire_get_keys(int64_t port_);
 

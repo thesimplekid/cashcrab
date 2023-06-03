@@ -47,6 +47,7 @@ dependencies:
   build_runner: ^2.3.3
   qr_flutter: ^4.1.0
   mobile_scanner: ^3.2.0
+  flutter_secure_storage: ^8.0.0
 
 dev_dependencies:
   flutter_test:

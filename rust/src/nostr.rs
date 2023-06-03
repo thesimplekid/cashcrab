@@ -43,22 +43,16 @@ fn handle_keys(private_key: &Option<String>) -> Result<Keys> {
 }
 
 /// Init Nostr Client
-pub(crate) async fn init_client(private_key: &Option<String>) -> Result<()> {
+pub(crate) async fn init_client(private_key: &Option<String>) -> Result<String> {
     let (sender, receiver) = mpsc::channel::<String>(100);
 
     let mut sender_channel = SENDER.lock().await;
     *sender_channel = Some(sender);
 
-    let mut reciever_channel = RECEIVER.lock().await;
-    *reciever_channel = Some(receiver);
+    let mut receiver_channel = RECEIVER.lock().await;
+    *receiver_channel = Some(receiver);
 
     let keys = handle_keys(private_key)?;
-
-    if private_key.is_none() {
-        if let Ok(secret_key) = keys.secret_key() {
-            database::nostr::save_key(&secret_key.display_secret().to_string()).await?;
-        }
-    }
 
     let mut relays = database::nostr::get_relays().await?;
 
@@ -108,7 +102,7 @@ pub(crate) async fn init_client(private_key: &Option<String>) -> Result<()> {
     //     bail!(err);
     // }
 
-    Ok(())
+    Ok(keys.secret_key()?.display_secret().to_string())
 }
 
 pub(crate) async fn log_out() -> Result<()> {

@@ -16,6 +16,7 @@ class Settings extends StatefulWidget {
   final Function setActiveMint;
   final Function loadContacts;
   final Function addContact;
+  final Function nostrLogOut;
   final String? activeMint;
   final Map<String, int> mints;
 
@@ -27,6 +28,7 @@ class Settings extends StatefulWidget {
       required this.removeMint,
       required this.setActiveMint,
       required this.activeMint,
+      required this.nostrLogOut,
       required this.loadContacts,
       required this.addContact,
       required this.mints});
@@ -212,7 +214,7 @@ class _SettingsState extends State<Settings> {
                       return AlertDialog(
                         title: const Text('Log Out?'),
                         content: const Text(
-                            'Have you saved your private key securly securly? It will be erased.'),
+                            'Have you saved your private key securely securely? It will be erased.'),
                         actions: [
                           TextButton(
                             onPressed: () {
@@ -232,7 +234,7 @@ class _SettingsState extends State<Settings> {
                   );
 
                   if (confirmed == true) {
-                    widget.api.nostrLogout();
+                    await widget.nostrLogOut();
                   }
                 },
                 child: const Row(

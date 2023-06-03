@@ -86,12 +86,10 @@ pub fn init_db(storage_path: String) -> Result<()> {
     result
 }
 
-pub fn init_nostr(storage_path: String) -> Result<()> {
+pub fn init_nostr(storage_path: String, private_key: Option<String>) -> Result<String> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
-        let key = database::nostr::get_key().await?;
-        // TODO: get relays
-        init_client(&key).await?;
+        let key = init_client(&private_key).await?;
         let profile_pic_path = PathBuf::from_str(&storage_path)?.join("profile_pictures");
 
         if fs::metadata(&profile_pic_path).is_err() {
@@ -101,7 +99,7 @@ pub fn init_nostr(storage_path: String) -> Result<()> {
         let mut p = PROFILE_PICTURES.lock().unwrap();
         *p = Some(profile_pic_path);
 
-        Ok(())
+        Ok(key)
     });
 
     drop(rt);
