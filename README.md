@@ -5,9 +5,6 @@
 
 A [Cashu](https://github.com/cashubtc/cashu) wallet with a flutter UI and with as much logic as possible in rust using [cashu-crab](https://github.com/thesimplekid/cashu-crab). 
 
-> **Warning**
-> In process of moving from https://github.com/thesimplekid/crabstash to this flutter_rust_bridge version.
-
 ## Flutter Rust Bridge
 
 Generate Dart from rust
