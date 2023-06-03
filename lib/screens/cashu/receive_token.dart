@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/shared/widgets/add_mint.dart';
 import 'package:cashcrab/bridge_generated.dart';
+import 'package:flutter/services.dart';
 
 class ReceiveToken extends StatefulWidget {
   final Function decodeToken;
@@ -31,21 +32,19 @@ class ReceiveTokenState extends State<ReceiveToken> {
   final receiveController = TextEditingController();
 
   TokenData? tokenData;
+  bool showTokenText = true;
 
   @override
   void initState() {
     super.initState();
-
-    // Start listening to changes.
-    receiveController.addListener(_decodeToken);
   }
 
-  Future<void> _decodeToken() async {
-    String tokenText = receiveController.text;
+  Future<void> _decodeToken(String tokenText) async {
     TokenData? newTokenData = await widget.decodeToken(tokenText);
     if (newTokenData != null) {
       setState(() {
         tokenData = newTokenData;
+        showTokenText = false;
       });
     }
   }
@@ -71,17 +70,37 @@ class ReceiveTokenState extends State<ReceiveToken> {
               "Receive",
               style: TextStyle(fontSize: 20),
             ),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Paste Token',
+            if (showTokenText)
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Paste Token',
+                ),
+                onChanged: (value) async {
+                  if (value.length > 10) {
+                    String tokenText = receiveController.text;
+                    await _decodeToken(tokenText);
+                  }
+                },
+                controller: receiveController,
               ),
-              onChanged: (value) async {
-                if (value.length > 10) {
-                  await _decodeToken();
-                }
-              },
-              controller: receiveController,
-            ),
+            const SizedBox(height: 3),
+            if (showTokenText)
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 70),
+                ),
+                onPressed: () async {
+                  ClipboardData? clipboardData =
+                      await Clipboard.getData('text/plain');
+                  if (clipboardData != null && clipboardData.text != null) {
+                    await _decodeToken(clipboardData.text!);
+                  }
+                },
+                child: const Text(
+                  'Paste from Clipboard',
+                  style: TextStyle(fontSize: 20),
+                ),
+              ),
             const SizedBox(
               height: 50,
             ),
@@ -108,7 +127,7 @@ class ReceiveTokenState extends State<ReceiveToken> {
                           );
                         } else {
                           widget.receiveToken(tokenData?.encodedToken);
-                          Navigator.of(context).pop();
+                          Navigator.popUntil(context, (route) => route.isFirst);
                         }
                       }
                     },
