@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:cashcrab/screens/ln/create_invoice.dart';
-import 'package:cashcrab/bridge_definitions.dart';
-import 'package:cashcrab/shared/widgets/add_mint.dart';
 import 'package:cashcrab/bridge_generated.dart';
+import 'package:cashcrab/screens/ln/invoice_info.dart';
+import 'package:cashcrab/screens/cashu/receive_token.dart';
 
-class ReceviceToken extends StatefulWidget {
+class Receive extends StatefulWidget {
   final Function decodeToken;
   final Function receiveToken;
   final Function addMint;
@@ -14,7 +13,7 @@ class ReceviceToken extends StatefulWidget {
   final RustImpl cashu;
   final String? activeWallet;
 
-  const ReceviceToken(
+  const Receive(
       {super.key,
       required this.decodeToken,
       required this.activeWallet,
@@ -25,38 +24,26 @@ class ReceviceToken extends StatefulWidget {
       required this.createInvoice});
 
   @override
-  ReceiveTokenState createState() => ReceiveTokenState();
+  ReceiveState createState() => ReceiveState();
 }
 
-class ReceiveTokenState extends State<ReceviceToken> {
-  final receiveController = TextEditingController();
-
-  TokenData? tokenData;
+class ReceiveState extends State<Receive> {
+  // int amountToSend = 0;
+  late TextEditingController _controller;
+  bool _isPlaceholderVisible = true;
 
   @override
   void initState() {
     super.initState();
-
-    // Start listening to changes.
-    receiveController.addListener(_decodeToken);
-  }
-
-  Future<void> _decodeToken() async {
-    String tokenText = receiveController.text;
-    TokenData? newTokenData = await widget.decodeToken(tokenText);
-    if (newTokenData != null) {
-      setState(() {
-        tokenData = newTokenData;
-      });
-    }
+    _controller = TextEditingController(text: '');
   }
 
   @override
   void dispose() {
     // Clean up the controller when the widget is removed from the widget tree.
     // This also removes the _printLatestValue listener.
-    receiveController.dispose();
     super.dispose();
+    _controller.dispose;
   }
 
   @override
@@ -66,94 +53,176 @@ class ReceiveTokenState extends State<ReceviceToken> {
         title: const Text('Receive'),
       ),
       body: Center(
-        child: Column(
-          children: [
-            const Text(
-              "Receive ECash",
-              style: TextStyle(fontSize: 20),
-            ),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Paste Token',
-              ),
-              onChanged: (value) async {
-                if (value.length > 10) {
-                  await _decodeToken();
-                }
-              },
-              controller: receiveController,
-            ),
-            const SizedBox(
-              height: 50,
-            ),
-            if (tokenData == null)
-              Column(
-                children: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 70),
-                    ),
-                    onPressed: () {
-                      if (widget.activeWallet != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CreateInvoice(
-                              cashu: widget.cashu,
-                              mints: widget.mints,
-                              activeMint: widget.activeWallet!,
-                              createInvoice: widget.createInvoice,
+        child: SizedBox(
+          child: Column(
+            children: [
+              Flexible(
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: TextField(
+                                controller: _controller,
+                                textAlign: TextAlign.center,
+                                keyboardType: TextInputType.number,
+                                showCursor: false,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _isPlaceholderVisible = value.isEmpty;
+                                  });
+
+                                  if (_isPlaceholderVisible) {
+                                    _controller.text = '0';
+                                  }
+                                },
+                                style: const TextStyle(
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: _isPlaceholderVisible ? '0' : '',
+                                  border: InputBorder.none,
+                                ),
+                              ),
                             ),
                           ),
-                        );
-                      }
-                    },
-                    child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.bolt),
-                          Text(
-                            'Receive via Lighting',
-                            style: TextStyle(fontSize: 20),
-                          ),
-                        ]),
+                        ],
+                      ),
+                      const Text("sats")
+                    ],
                   ),
-                ],
+                ),
               ),
-            if (tokenData != null)
-              Column(
-                children: [
-                  Text('Mint:  ${tokenData!.mint}'),
-                  Text("${tokenData!.amount.toString()} sats"),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Check token is valid
+              const SizedBox(height: 3),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 70),
+                ),
+                onPressed: () {
+                  String value = _controller.text;
 
-                      if (tokenData != null) {
-                        // Check if mint is trusted
-                        if (!widget.mints.containsKey(tokenData!.mint)) {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) => AddMintDialog(
-                                "Do you trust this mint?",
-                                "A Mint does not know your activity, but it does control the funds",
-                                tokenData!.mint,
-                                widget.addMint,
-                                null),
-                          );
-                        } else {
-                          widget.receiveToken(tokenData?.encodedToken);
-                          Navigator.of(context).pop();
-                        }
-                      }
-                    },
-                    child: const Text('Redeam'),
+                  if (value.isNotEmpty) {
+                    final amountToSend = int.tryParse(value);
+                    if (amountToSend != null && amountToSend > 0) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => InvoiceInfoScreen(
+                            mintUrl: widget.activeWallet,
+                            amount: amountToSend,
+                            createInvoice: widget.createInvoice,
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text(
+                  'Create Invoice',
+                  style: TextStyle(fontSize: 20),
+                ),
+              ), // Send button
+              const SizedBox(height: 3),
+              if (_controller.text.isEmpty)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 70),
                   ),
-                ],
-              ),
-          ],
+                  onPressed: () {
+                    if (widget.activeWallet != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ReceiveToken(
+                            cashu: widget.cashu,
+                            mints: widget.mints,
+                            createInvoice: widget.createInvoice,
+                            decodeToken: widget.decodeToken,
+                            activeWallet: widget.activeWallet,
+                            addMint: widget.addMint,
+                            receiveToken: widget.receiveToken,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Receive Token',
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 3),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class MintDropdownButton extends StatefulWidget {
+  final List<String> mints;
+  final Function setMint;
+  final String activeMint;
+  const MintDropdownButton(
+      {super.key,
+      required this.mints,
+      required this.activeMint,
+      required this.setMint});
+
+  @override
+  State<MintDropdownButton> createState() => _MintDropdownButtonState();
+}
+
+class _MintDropdownButtonState extends State<MintDropdownButton> {
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<String>(
+      value: widget.activeMint,
+      icon: const Icon(Icons.arrow_downward),
+      elevation: 6,
+      style: const TextStyle(color: Colors.deepPurple),
+      underline: Container(
+        height: 2,
+        color: Colors.deepPurpleAccent,
+      ),
+      onChanged: (String? value) {
+        if (value != null) {
+          widget.setMint(value);
+        }
+      },
+      items: widget.mints.map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.90,
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 20.0,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }

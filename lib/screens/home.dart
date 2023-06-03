@@ -179,7 +179,7 @@ class _HomeState extends State<Home> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ReceviceToken(
+                        builder: (context) => Receive(
                           activeWallet: widget.activeMint,
                           cashu: widget.api,
                           decodeToken: widget.decodeToken,
