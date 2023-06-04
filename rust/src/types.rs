@@ -299,3 +299,8 @@ pub struct KeyData {
     pub npub: String,
     pub nsec: Option<String>,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum ChannelMessage {
+    Shutdown,
+}

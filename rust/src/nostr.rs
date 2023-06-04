@@ -5,11 +5,13 @@ use anyhow::{bail, Result};
 use cashu_crab::types::Token;
 use lazy_static::lazy_static;
 use nostr_sdk::prelude::*;
+use tokio::select;
 use tokio::{
     sync::{mpsc, Mutex},
     task::JoinHandle,
 };
 
+use crate::types::ChannelMessage;
 use crate::{
     database,
     types::{
@@ -21,8 +23,10 @@ use crate::{
 lazy_static! {
     static ref LISTEN_CLIENT: Arc<Mutex<Option<Client>>> = Arc::new(Mutex::new(None));
     static ref SEND_CLIENT: Arc<Mutex<Option<Client>>> = Arc::new(Mutex::new(None));
-    static ref SENDER: Arc<Mutex<Option<mpsc::Sender<String>>>> = Arc::new(Mutex::new(None));
-    static ref RECEIVER: Arc<Mutex<Option<mpsc::Receiver<String>>>> = Arc::new(Mutex::new(None));
+    static ref SENDER: Arc<Mutex<Option<mpsc::Sender<ChannelMessage>>>> =
+        Arc::new(Mutex::new(None));
+    static ref RECEIVER: Arc<Mutex<Option<mpsc::Receiver<ChannelMessage>>>> =
+        Arc::new(Mutex::new(None));
 }
 
 #[derive(Clone)]
@@ -44,7 +48,7 @@ fn handle_keys(private_key: &Option<String>) -> Result<Keys> {
 
 /// Init Nostr Client
 pub(crate) async fn init_client(private_key: &Option<String>) -> Result<String> {
-    let (sender, receiver) = mpsc::channel::<String>(100);
+    let (sender, receiver) = mpsc::channel::<ChannelMessage>(100);
 
     let mut sender_channel = SENDER.lock().await;
     *sender_channel = Some(sender);
@@ -114,7 +118,7 @@ pub(crate) async fn log_out() -> Result<()> {
 
     let sender = SENDER.lock().await;
     let sender = sender.as_ref().unwrap();
-    sender.send("SHUTDOWN".to_string()).await?;
+    sender.send(ChannelMessage::Shutdown).await?;
 
     let mut client = LISTEN_CLIENT.lock().await;
     if let Some(client) = client.as_ref() {
@@ -323,33 +327,38 @@ pub(crate) async fn handle_notifications() -> Result<()> {
 
     let _result: JoinHandle<Result<()>> = tokio::spawn(async move {
         let mut client_guard = client.lock().await;
+        let mut receiver = RECEIVER.lock().await;
+        let receiver = receiver.as_mut().unwrap();
 
         if let Some(client) = client_guard.as_mut() {
-            client
-                .handle_notifications(|notification| async {
-                    if let RelayPoolNotification::Event(_url, event) = notification {
-                        if let Err(_err) = handle_event(event, &client.keys()).await {
-                            // bail!(err);
+            let mut stop_listen = false;
+            loop {
+                select! {
+                    msg = receiver.recv() => {
+                        if let Some(msg) = msg {
+                            match msg {
+                                ChannelMessage::Shutdown => stop_listen = true
+                            }
                         }
                     }
+                    _ = async {
+                        client.handle_notifications(|notification| async {
+                            if let RelayPoolNotification::Event(_url, event) = notification {
+                                if let Err(_err) = handle_event(event, &client.keys()).await {
+                                    // Handle the error if needed
+                                }
+                            }
+                            Ok(stop_listen)
+                        }).await
+                    } => {}
+                }
 
-                    // Obtain a mutable reference to the channel inside the `Arc`
-
-                    let mut rec = RECEIVER.lock().await;
-                    let rec = rec.as_mut().unwrap();
-
-                    // Use the mutable reference to the channel
-                    if let Ok(msg) = rec.try_recv() {
-                        if msg == "SHUTDOWN" {
-                            return Ok(true);
-                        }
-                        // Process the received message
-                    }
-
-                    Ok(false)
-                })
-                .await?;
+                if stop_listen {
+                    break;
+                }
+            }
         }
+
         Ok(())
     });
 
