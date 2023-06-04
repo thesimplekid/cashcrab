@@ -130,16 +130,6 @@ class _MessagesState extends State<Messages> {
     return message;
   }
 
-  // Scroll to bottom when new message is added
-  void _scrollToBottom() {
-    _scrollController.animateTo(
-      _scrollController.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-  }
-
-// Call _scrollToBottom() after adding new message
   void _addMessage(Conversation addedConversation) {
     setState(() {
       messages = messages + addedConversation.messages;
@@ -156,7 +146,6 @@ class _MessagesState extends State<Messages> {
         });
       }
     });
-    _scrollToBottom();
   }
 
   @override
@@ -260,6 +249,7 @@ class _MessagesState extends State<Messages> {
                     onChanged: (value) {
                       setState(() {});
                     },
+                    maxLines: null,
                     decoration: InputDecoration(
                       labelText: 'Message',
                       border: OutlineInputBorder(
