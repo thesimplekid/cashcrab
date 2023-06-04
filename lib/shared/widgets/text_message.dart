@@ -1,6 +1,7 @@
+import 'package:flutter/material.dart';
+
 import 'package:cashcrab/bridge_definitions.dart';
 import 'package:cashcrab/shared/colors.dart';
-import 'package:flutter/material.dart';
 
 class TextMessageWidget extends StatelessWidget {
   final Direction direction;
@@ -18,33 +19,41 @@ class TextMessageWidget extends StatelessWidget {
       bubbleColor = Colors.grey;
     }
 
-    return Align(
-      alignment: direction == Direction.Sent
-          ? Alignment.centerRight
-          : Alignment.centerLeft,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (direction == Direction.Sent) const Spacer(),
-          Expanded(
-            // Add Expanded widget
-            child: Container(
+    return Row(
+      mainAxisAlignment: direction == Direction.Sent
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
+      children: [
+        if (direction == Direction.Sent) const Spacer(),
+        Stack(
+          alignment: direction == Direction.Sent
+              ? Alignment.centerRight
+              : Alignment.centerLeft,
+          children: [
+            Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: bubbleColor,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(
-                content,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                ),
+                child: Text(
+                  content,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                  softWrap: true,
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+        if (direction == Direction.Received) const Spacer(),
+      ],
     );
   }
 }
