@@ -445,6 +445,30 @@ class RustImpl implements Rust {
         argNames: ["amount", "hash", "mint"],
       );
 
+  Future<void> mintSwap(
+      {required String fromMint,
+      required String toMint,
+      required int amount,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_String(fromMint);
+    var arg1 = _platform.api2wire_String(toMint);
+    var arg2 = _platform.api2wire_u64(amount);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_mint_swap(port_, arg0, arg1, arg2),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kMintSwapConstMeta,
+      argValues: [fromMint, toMint, amount],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kMintSwapConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "mint_swap",
+        argNames: ["fromMint", "toMint", "amount"],
+      );
+
   Future<Transaction> melt(
       {required int amount,
       required String invoice,
@@ -1545,6 +1569,28 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _wire_mint_token = _wire_mint_tokenPtr.asFunction<
       void Function(int, int, ffi.Pointer<wire_uint_8_list>,
           ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_mint_swap(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> from_mint,
+    ffi.Pointer<wire_uint_8_list> to_mint,
+    int amount,
+  ) {
+    return _wire_mint_swap(
+      port_,
+      from_mint,
+      to_mint,
+      amount,
+    );
+  }
+
+  late final _wire_mint_swapPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>,
+              ffi.Pointer<wire_uint_8_list>, ffi.Uint64)>>('wire_mint_swap');
+  late final _wire_mint_swap = _wire_mint_swapPtr.asFunction<
+      void Function(int, ffi.Pointer<wire_uint_8_list>,
+          ffi.Pointer<wire_uint_8_list>, int)>();
 
   void wire_melt(
     int port_,

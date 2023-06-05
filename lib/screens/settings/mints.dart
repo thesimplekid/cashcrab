@@ -1,3 +1,5 @@
+import 'package:cashcrab/shared/widgets/mint_drop_down.dart';
+import 'package:cashcrab/shared/widgets/numeric_input.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cashcrab/bridge_generated.dart';
@@ -10,6 +12,7 @@ class Mints extends StatefulWidget {
   final Function addMint;
   final Function removeMint;
   final Function setActiveMint;
+  final Function mintSwap;
   final String? activeMint;
   final Map<String, int> mints;
 
@@ -19,6 +22,7 @@ class Mints extends StatefulWidget {
       required this.addMint,
       required this.removeMint,
       required this.setActiveMint,
+      required this.mintSwap,
       required this.activeMint,
       required this.mints});
 
@@ -28,6 +32,10 @@ class Mints extends StatefulWidget {
 
 class _MintsState extends State<Mints> {
   final TextEditingController newRelayController = TextEditingController();
+
+  String? fromMint;
+  String? toMint;
+  int amount = 0;
 
   _MintsState();
   @override
@@ -39,6 +47,27 @@ class _MintsState extends State<Mints> {
   void dispose() {
     newRelayController.dispose();
     super.dispose();
+  }
+
+  void setFromMint(String mint) {
+    setState(() {
+      fromMint = mint;
+    });
+  }
+
+  void setToMint(String mint) {
+    setState(() {
+      toMint = mint;
+    });
+  }
+
+  void setSwapAmount(String value) {
+    final swapAmount = int.tryParse(value);
+    if (swapAmount != null && swapAmount > 0) {
+      setState(() {
+        amount = swapAmount;
+      });
+    }
   }
 
   @override
@@ -95,6 +124,36 @@ class _MintsState extends State<Mints> {
                 },
               ),
             ),
+            const SizedBox(height: 3),
+            const Text("Mint Swap"),
+            const Text("Swap fund from one mint to another"),
+            MintDropdownButton(
+                mints: mints, setMint: setFromMint, activeMint: fromMint),
+            const SizedBox(height: 3),
+            MintDropdownButton(
+              mints: mints,
+              setMint: setToMint,
+              activeMint: toMint,
+            ),
+            NumericInput(
+              onValueChanged: setSwapAmount,
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 70),
+              ),
+              onPressed: () async {
+                print(fromMint);
+                print(toMint);
+                print(amount);
+                await widget.mintSwap(fromMint, toMint, amount);
+                print("swaped");
+              },
+              child: const Text(
+                'Swap',
+                style: TextStyle(fontSize: 20),
+              ),
+            ), // Send button
           ],
         ),
       ),

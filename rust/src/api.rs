@@ -637,12 +637,106 @@ pub fn mint_token(amount: u64, hash: String, mint: String) -> Result<()> {
         bail!("Could not get invoice".to_string())
     });
 
-    drop(rt);
-
     result
 }
 
-// TODO: Melt, untested as legend.lnbits has LN issues
+pub fn mint_swap(from_mint: String, to_mint: String, amount: u64) -> Result<()> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        let amount = Amount::from_sat(amount);
+        // Request mint from from
+        let from_wallet = wallet_for_url(&from_mint).await?;
+        let invoice = from_wallet.request_mint(amount).await?;
+        // pay invoice from
+
+        let _pay_transaction = pay_invoice(&invoice.pr, &from_mint).await?;
+
+        let proofs = from_wallet.mint_token(amount, &invoice.hash).await?;
+        database::cashu::add_proofs(&to_mint, &proofs).await?;
+        database::transactions::update_transaction_status(&Transaction::LNTransaction(
+            LNTransaction::new(
+                Some(TransactionStatus::Received),
+                amount.to_sat(),
+                None,
+                Some(to_mint.to_string()),
+                &invoice.pr.to_string(),
+                &invoice.hash,
+            ),
+        ))
+        .await?;
+        // mint from to
+        Ok(())
+    });
+
+    drop(rt);
+    result
+}
+
+async fn pay_invoice(invoice: &Invoice, mint: &str) -> Result<Transaction> {
+    if invoice.is_expired() {
+        bail!("Invoice expired");
+    }
+
+    let amount = invoice.amount_milli_satoshis().unwrap() / 1000;
+
+    let wallet = wallet_for_url(&mint).await?;
+
+    let fees = wallet.check_fee(invoice.clone()).await?;
+    let amount_with_fee = amount + fees.to_sat();
+
+    let proofs = database::cashu::get_proofs(&mint).await?;
+
+    let (send_proofs, _keep_proofs) = select_send_proofs(&mint, amount_with_fee, &proofs).await?;
+    let transaction = match wallet.melt(invoice.clone(), send_proofs.clone()).await {
+        Ok(melted) => {
+            // Remove proofs to be sent
+            database::cashu::remove_proofs(&mint, &send_proofs).await?;
+
+            let change_amount;
+            if let Some(change) = melted.change {
+                // keep_proofs.extend(change);
+                database::cashu::add_proofs(&mint, &change).await?;
+                change_amount = change
+                    .iter()
+                    .fold(0, |acc, proof| acc + proof.amount.to_sat());
+            } else {
+                change_amount = 0;
+            }
+
+            // Amount spent
+            // sum of send_proofs - sum of change proofs
+            let sent_amount = send_proofs
+                .iter()
+                .fold(0, |acc, proof| acc + proof.amount.to_sat());
+
+            // Amount spent including fees
+            let total_spent = sent_amount - change_amount;
+            let fee = total_spent - amount;
+
+            Transaction::LNTransaction(LNTransaction::new(
+                Some(TransactionStatus::Sent),
+                amount,
+                Some(fee),
+                Some(mint.to_string()),
+                &invoice.to_string(),
+                &invoice.payment_hash().to_string(),
+            ))
+        }
+        Err(_err) => Transaction::LNTransaction(LNTransaction::new(
+            Some(TransactionStatus::Failed),
+            amount,
+            None,
+            Some(mint.to_string()),
+            &invoice.to_string(),
+            &invoice.payment_hash().to_string(),
+        )),
+    };
+
+    database::transactions::add_transaction(&transaction).await?;
+
+    Ok(transaction)
+}
+
 pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
@@ -728,6 +822,7 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
 
 /// Decode invoice
 pub fn decode_invoice(encoded_invoice: String) -> Result<InvoiceInfo> {
+    let encoded_invoice = encoded_invoice.replace("lightning:", "");
     let invoice = str::parse::<Invoice>(&encoded_invoice)?;
 
     let memo = match invoice.description() {

@@ -148,6 +148,11 @@ void wire_mint_token(int64_t port_,
                      struct wire_uint_8_list *hash,
                      struct wire_uint_8_list *mint);
 
+void wire_mint_swap(int64_t port_,
+                    struct wire_uint_8_list *from_mint,
+                    struct wire_uint_8_list *to_mint,
+                    uint64_t amount);
+
 void wire_melt(int64_t port_,
                uint64_t amount,
                struct wire_uint_8_list *invoice,
@@ -217,6 +222,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_send);
     dummy_var ^= ((int64_t) (void*) wire_request_mint);
     dummy_var ^= ((int64_t) (void*) wire_mint_token);
+    dummy_var ^= ((int64_t) (void*) wire_mint_swap);
     dummy_var ^= ((int64_t) (void*) wire_melt);
     dummy_var ^= ((int64_t) (void*) wire_decode_invoice);
     dummy_var ^= ((int64_t) (void*) wire_get_transactions);

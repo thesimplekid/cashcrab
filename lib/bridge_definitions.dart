@@ -124,6 +124,14 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kMintTokenConstMeta;
 
+  Future<void> mintSwap(
+      {required String fromMint,
+      required String toMint,
+      required int amount,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kMintSwapConstMeta;
+
   Future<Transaction> melt(
       {required int amount,
       required String invoice,

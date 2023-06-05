@@ -17,6 +17,7 @@ class Settings extends StatefulWidget {
   final Function loadContacts;
   final Function addContact;
   final Function nostrLogOut;
+  final Function mintSwap;
   final String? activeMint;
   final Map<String, int> mints;
 
@@ -31,6 +32,7 @@ class Settings extends StatefulWidget {
       required this.nostrLogOut,
       required this.loadContacts,
       required this.addContact,
+      required this.mintSwap,
       required this.mints});
 
   @override
@@ -92,6 +94,7 @@ class _SettingsState extends State<Settings> {
                         setActiveMint: widget.setActiveMint,
                         activeMint: widget.activeMint,
                         mints: widget.mints,
+                        mintSwap: widget.mintSwap,
                       ),
                     ),
                   );

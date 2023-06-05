@@ -363,6 +363,26 @@ fn wire_mint_token_impl(
         },
     )
 }
+fn wire_mint_swap_impl(
+    port_: MessagePort,
+    from_mint: impl Wire2Api<String> + UnwindSafe,
+    to_mint: impl Wire2Api<String> + UnwindSafe,
+    amount: impl Wire2Api<u64> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "mint_swap",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_from_mint = from_mint.wire2api();
+            let api_to_mint = to_mint.wire2api();
+            let api_amount = amount.wire2api();
+            move |task_callback| mint_swap(api_from_mint, api_to_mint, api_amount)
+        },
+    )
+}
 fn wire_melt_impl(
     port_: MessagePort,
     amount: impl Wire2Api<u64> + UnwindSafe,

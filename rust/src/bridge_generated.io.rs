@@ -135,6 +135,16 @@ pub extern "C" fn wire_mint_token(
 }
 
 #[no_mangle]
+pub extern "C" fn wire_mint_swap(
+    port_: i64,
+    from_mint: *mut wire_uint_8_list,
+    to_mint: *mut wire_uint_8_list,
+    amount: u64,
+) {
+    wire_mint_swap_impl(port_, from_mint, to_mint, amount)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_melt(
     port_: i64,
     amount: u64,

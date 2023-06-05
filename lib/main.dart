@@ -160,6 +160,7 @@ class MyHomePageState extends State<MyHomePage> {
       activeMint: activeMint,
       setActiveMint: _setActiveMint,
       nostrLogOut: nostrLogout,
+      mintSwap: swapMint,
     );
 
     _widgetOptions = <Widget>[
@@ -249,6 +250,11 @@ class MyHomePageState extends State<MyHomePage> {
       mints = bal.cast<String, int>();
     });
     _getBalance();
+  }
+
+  Future<void> swapMint(String fromMint, String toMint, int amount) async {
+    await api.mintSwap(fromMint: fromMint, toMint: toMint, amount: amount);
+    print("mints swapped?");
   }
 
   /// Get total balance of all mints
