@@ -1,9 +1,9 @@
 > **Warning**
-> This project is in early development, it does however work with real sats! Always use amounts you don't mind loosing.
+> This project is in early development, it does however work with real sats! Always use amounts you don't mind losing.
 
 # cashcrab
 
-A [Cashu](https://github.com/cashubtc/cashu) wallet with a flutter UI and with as much logic as possible in rust using [cashu-crab](https://github.com/thesimplekid/cashu-crab). 
+A [Cashu](https://github.com/cashubtc/cashu) wallet with a flutter UI and with as much logic as possible in rust using [cashu-crab](https://github.com/thesimplekid/cashu-crab) with [nostr](https://github.com/nostr-protocol/nostr) integration for contacts and messaging. 
 
 ## Flutter Rust Bridge
 

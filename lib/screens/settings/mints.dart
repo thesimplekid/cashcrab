@@ -143,11 +143,7 @@ class _MintsState extends State<Mints> {
                 minimumSize: const Size(double.infinity, 70),
               ),
               onPressed: () async {
-                print(fromMint);
-                print(toMint);
-                print(amount);
                 await widget.mintSwap(fromMint, toMint, amount);
-                print("swaped");
               },
               child: const Text(
                 'Swap',
