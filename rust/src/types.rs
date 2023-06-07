@@ -1,4 +1,5 @@
 use anyhow::Result;
+use bitcoin::secp256k1::XOnlyPublicKey;
 use bitcoin_hashes::sha256;
 use bitcoin_hashes::Hash;
 pub use cashu_crab::types::MintInfo;
@@ -300,7 +301,20 @@ pub struct KeyData {
     pub nsec: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub(crate) enum ChannelMessage {
     Shutdown,
+    GetKeys,
+    KeyData(Option<KeyData>),
+    AddRelay(String),
+    RemoveRelay(String),
+    GetRelays,
+    Relays(Vec<String>),
+    // BroadcastEvent(Event),
+    SetContacts(Vec<nostr_sdk::Contact>),
+    GetMetadata(Vec<XOnlyPublicKey>),
+    Contacts(Vec<Contact>),
+    SendDirectMessage(XOnlyPublicKey, String),
+    GetContacts(XOnlyPublicKey),
+    ContactPubkeys(Vec<XOnlyPublicKey>),
 }

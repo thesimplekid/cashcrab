@@ -22,11 +22,11 @@ use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
 use super::types::{InvoiceInfo, TokenData};
+use crate::nostr::Nostr;
 use crate::types::{InvoiceStatus, KeyData};
 use crate::utils::convert_str_to_xonly;
 use crate::{
     database,
-    nostr::{self, init_client},
     types::{
         self, CashuTransaction, Conversation, LNTransaction, Message, Mint, Transaction,
         TransactionStatus,
@@ -59,7 +59,8 @@ lazy_static! {
     static ref WALLETS: Arc<Mutex<HashMap<String, Option<CashuWallet>>>> =
         Arc::new(Mutex::new(HashMap::new()));
     static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(Runtime::new().unwrap()));
-    static ref PROFILE_PICTURES: Arc<StdMutex<Option<PathBuf>>> = Arc::new(StdMutex::new(None));
+    static ref PROFILE_PICTURES: Arc<Mutex<Option<PathBuf>>> = Arc::new(Mutex::new(None));
+    static ref NOSTR: Arc<Mutex<Option<Nostr>>> = Arc::new(Mutex::new(None));
 }
 
 macro_rules! lock_runtime {
@@ -89,17 +90,49 @@ pub fn init_db(storage_path: String) -> Result<()> {
 pub fn init_nostr(storage_path: String, private_key: Option<String>) -> Result<String> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
-        let key = init_client(&private_key).await?;
         let profile_pic_path = PathBuf::from_str(&storage_path)?.join("profile_pictures");
 
         if fs::metadata(&profile_pic_path).is_err() {
             fs::create_dir(&profile_pic_path)?;
         }
 
-        let mut p = PROFILE_PICTURES.lock().unwrap();
+        let mut p = PROFILE_PICTURES.lock().await;
         *p = Some(profile_pic_path);
+        let mut nostr = NOSTR.lock().await;
 
-        Ok(key)
+        *nostr = Some(Nostr::new(&private_key).await?);
+        drop(nostr);
+
+        let nostr_clone = {
+            let global_nostr = NOSTR.lock().await;
+            let nostr = global_nostr.clone();
+            drop(global_nostr); // Explicitly drop the lock guard here
+            nostr
+        };
+
+        tokio::spawn(async move {
+            let mut nostr_clone = nostr_clone;
+            if let Some(nostr) = nostr_clone.as_mut() {
+                nostr.run().await
+            } else {
+                bail!("No nostr");
+            }
+        });
+
+        let mut key = None;
+        let mut nostr = NOSTR.lock().await;
+        if let Some(nostr) = nostr.as_mut() {
+            if let Ok(Some(keys)) = nostr.get_keys().await {
+                key = keys.nsec;
+            }
+        } else {
+            bail!("Nostr not et");
+        }
+
+        match key {
+            Some(key) => Ok(key),
+            None => bail!("Nostr key not set"),
+        }
     });
 
     drop(rt);
@@ -108,7 +141,14 @@ pub fn init_nostr(storage_path: String, private_key: Option<String>) -> Result<S
 
 pub fn get_keys() -> Result<Option<KeyData>> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async { nostr::get_keys().await });
+    let result = rt.block_on(async {
+        let mut nostr = NOSTR.lock().await;
+        if let Some(nostr) = nostr.as_mut() {
+            nostr.get_keys().await
+        } else {
+            Ok(None)
+        }
+    });
     drop(rt);
 
     result
@@ -116,7 +156,14 @@ pub fn get_keys() -> Result<Option<KeyData>> {
 
 pub fn nostr_logout() -> Result<()> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async { nostr::log_out().await });
+    let result = rt.block_on(async {
+        let mut nostr = NOSTR.lock().await;
+        if let Some(nostr) = nostr.as_mut() {
+            nostr.log_out().await?;
+        }
+
+        Ok(())
+    });
     drop(rt);
 
     result
@@ -124,7 +171,14 @@ pub fn nostr_logout() -> Result<()> {
 
 pub fn get_relays() -> Result<Vec<String>> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async { nostr::get_relays().await });
+    let result = rt.block_on(async {
+        let mut relays = vec![];
+        let mut nostr = NOSTR.lock().await;
+        if let Some(nostr) = nostr.as_mut() {
+            relays = nostr.get_relays().await?
+        }
+        Ok(relays)
+    });
     drop(rt);
 
     result
@@ -132,7 +186,13 @@ pub fn get_relays() -> Result<Vec<String>> {
 
 pub fn add_relay(relay: String) -> Result<()> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async { nostr::add_relay(relay).await });
+    let result = rt.block_on(async {
+        let mut nostr = NOSTR.lock().await;
+        if let Some(nostr) = nostr.as_mut() {
+            nostr.add_relay(relay).await?;
+        }
+        Ok(())
+    });
     drop(rt);
 
     result
@@ -140,7 +200,13 @@ pub fn add_relay(relay: String) -> Result<()> {
 
 pub fn remove_relay(relay: String) -> Result<()> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async { nostr::remove_relay(relay).await });
+    let result = rt.block_on(async {
+        let mut nostr = NOSTR.lock().await;
+        if let Some(nostr) = nostr.as_mut() {
+            nostr.remove_relay(relay).await?;
+        }
+        Ok(())
+    });
     drop(rt);
 
     result
@@ -154,11 +220,14 @@ pub fn fetch_contacts(pubkey: String) -> Result<Vec<types::Contact>> {
             true => XOnlyPublicKey::from_bech32(&pubkey)?,
             false => XOnlyPublicKey::from_str(&pubkey)?,
         };
-        let contacts = nostr::get_contacts(&x_pubkey).await?;
-        let contacts = nostr::get_metadata(contacts).await?;
-
-        // Publish contact list
-        nostr::set_contact_list().await?;
+        let mut contacts: Vec<types::Contact> = vec![];
+        let mut nostr = NOSTR.lock().await;
+        if let Some(nostr) = nostr.as_mut() {
+            let pubkeys: Vec<XOnlyPublicKey> = nostr.get_contacts(&x_pubkey).await?;
+            contacts = nostr.get_metadata(pubkeys).await.unwrap();
+            // Publish contact list
+            nostr.set_contact_list().await?;
+        }
 
         Ok(contacts)
     });
@@ -174,10 +243,13 @@ pub fn add_contact(pubkey: String) -> Result<()> {
             true => XOnlyPublicKey::from_bech32(&pubkey)?,
             false => XOnlyPublicKey::from_str(&pubkey)?,
         };
-        let contacts = nostr::get_metadata(vec![x_pubkey]).await?;
+        let mut nostr = NOSTR.lock().await;
+        if let Some(nostr) = nostr.as_mut() {
+            let contacts = nostr.get_metadata(vec![x_pubkey]).await?;
 
-        database::contacts::add_contacts(contacts).await?;
-        nostr::set_contact_list().await?;
+            database::contacts::add_contacts(contacts).await?;
+            nostr.set_contact_list().await?;
+        }
         Ok(())
     });
 
@@ -193,7 +265,10 @@ pub fn remove_contact(pubkey: String) -> Result<()> {
             false => XOnlyPublicKey::from_str(&pubkey)?,
         };
         database::contacts::remove_contact(&x_pubkey).await?;
-        nostr::set_contact_list().await?;
+        let mut nostr = NOSTR.lock().await;
+        if let Some(nostr) = nostr.as_mut() {
+            nostr.set_contact_list().await?;
+        }
         Ok(())
     });
 
@@ -230,15 +305,15 @@ pub fn get_contact_picture_id(pubkey: String) -> Result<Option<String>> {
 pub fn fetch_picture(url: String) -> Result<String> {
     let rt = lock_runtime!();
 
-    let profile_path = PROFILE_PICTURES.lock().unwrap();
-    let profile_pictures_path = match profile_path.as_ref() {
-        Some(path) => path.clone(),
-        None => bail!("profile picture path not set"),
-    };
-
-    drop(profile_path);
-
     let result = rt.block_on(async {
+        let profile_path = PROFILE_PICTURES.lock().await;
+        let profile_pictures_path = match profile_path.as_ref() {
+            Some(path) => path.clone(),
+            None => bail!("profile picture path not set"),
+        };
+
+        drop(profile_path);
+
         let response = minreq::get(url).send()?;
         let response_bytes = response.as_bytes();
 
@@ -265,8 +340,14 @@ pub fn send_message(pubkey: String, message: Message) -> Result<Conversation> {
     let result = rt.block_on(async {
         let x_pubkey = convert_str_to_xonly(&pubkey)?;
         database::message::add_message(x_pubkey, &message).await?;
-        let conversation = nostr::send_message(x_pubkey, &message).await?;
-        Ok(conversation)
+
+        let mut nostr = NOSTR.lock().await;
+        if let Some(nostr) = nostr.as_mut() {
+            let conversation = nostr.send_message(x_pubkey, &message).await?;
+            Ok(conversation)
+        } else {
+            bail!("Nostr not set");
+        }
     });
 
     drop(rt);
@@ -625,7 +706,8 @@ pub fn request_mint(amount: u64, mint_url: String) -> Result<Transaction> {
 
 pub fn mint_token(amount: u64, hash: String, mint: String) -> Result<()> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async {
+
+    rt.block_on(async {
         let wallets = WALLETS.lock().await;
         if let Some(Some(wallet)) = wallets.get(&mint) {
             let proofs = wallet.mint_token(Amount::from_sat(amount), &hash).await?;
@@ -635,9 +717,7 @@ pub fn mint_token(amount: u64, hash: String, mint: String) -> Result<()> {
             return Ok(());
         }
         bail!("Could not get invoice".to_string())
-    });
-
-    result
+    })
 }
 
 pub fn mint_swap(from_mint: String, to_mint: String, amount: u64) -> Result<()> {
@@ -679,23 +759,23 @@ async fn pay_invoice(invoice: &Invoice, mint: &str) -> Result<Transaction> {
 
     let amount = invoice.amount_milli_satoshis().unwrap() / 1000;
 
-    let wallet = wallet_for_url(&mint).await?;
+    let wallet = wallet_for_url(mint).await?;
 
     let fees = wallet.check_fee(invoice.clone()).await?;
     let amount_with_fee = amount + fees.to_sat();
 
-    let proofs = database::cashu::get_proofs(&mint).await?;
+    let proofs = database::cashu::get_proofs(mint).await?;
 
-    let (send_proofs, _keep_proofs) = select_send_proofs(&mint, amount_with_fee, &proofs).await?;
+    let (send_proofs, _keep_proofs) = select_send_proofs(mint, amount_with_fee, &proofs).await?;
     let transaction = match wallet.melt(invoice.clone(), send_proofs.clone()).await {
         Ok(melted) => {
             // Remove proofs to be sent
-            database::cashu::remove_proofs(&mint, &send_proofs).await?;
+            database::cashu::remove_proofs(mint, &send_proofs).await?;
 
             let change_amount;
             if let Some(change) = melted.change {
                 // keep_proofs.extend(change);
-                database::cashu::add_proofs(&mint, &change).await?;
+                database::cashu::add_proofs(mint, &change).await?;
                 change_amount = change
                     .iter()
                     .fold(0, |acc, proof| acc + proof.amount.to_sat());

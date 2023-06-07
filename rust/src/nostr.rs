@@ -1,15 +1,10 @@
-use std::time::Duration;
 use std::{str::FromStr, sync::Arc};
 
 use anyhow::{bail, Result};
 use cashu_crab::types::Token;
-use lazy_static::lazy_static;
 use nostr_sdk::prelude::*;
-use tokio::select;
-use tokio::{
-    sync::{mpsc, Mutex},
-    task::JoinHandle,
-};
+use tokio::sync::{broadcast, mpsc, Mutex};
+use tokio::time::{timeout, Duration};
 
 use crate::types::ChannelMessage;
 use crate::{
@@ -20,450 +15,492 @@ use crate::{
     utils::unix_time,
 };
 
-lazy_static! {
-    static ref LISTEN_CLIENT: Arc<Mutex<Option<Client>>> = Arc::new(Mutex::new(None));
-    static ref SEND_CLIENT: Arc<Mutex<Option<Client>>> = Arc::new(Mutex::new(None));
-    static ref SENDER: Arc<Mutex<Option<mpsc::Sender<ChannelMessage>>>> =
-        Arc::new(Mutex::new(None));
-    static ref RECEIVER: Arc<Mutex<Option<mpsc::Receiver<ChannelMessage>>>> =
-        Arc::new(Mutex::new(None));
+#[derive(Clone, Debug)]
+pub struct Nostr {
+    client: Arc<Mutex<Option<Client>>>,
+    nostr_rx: Arc<Mutex<mpsc::Receiver<ChannelMessage>>>,
+    nostr_tx: mpsc::Sender<ChannelMessage>,
+    nostr_res_rx: Arc<Mutex<broadcast::Receiver<ChannelMessage>>>,
+    nostr_res_tx: broadcast::Sender<ChannelMessage>,
 }
 
-#[derive(Clone)]
-pub enum NostrMessage {}
+impl Nostr {
+    /// Convert string key to nostr keys
+    fn handle_keys(private_key: &Option<String>) -> Result<Keys> {
+        // Parse and validate private key
+        let keys = match private_key {
+            Some(pk) => {
+                // create a new identity using the provided private key
+                Keys::from_sk_str(pk.as_str())?
+            }
+            None => Keys::generate(),
+        };
 
-/// Convert string key to nostr keys
-fn handle_keys(private_key: &Option<String>) -> Result<Keys> {
-    // Parse and validate private key
-    let keys = match private_key {
-        Some(pk) => {
-            // create a new identity using the provided private key
-            Keys::from_sk_str(pk.as_str())?
+        Ok(keys)
+    }
+
+    /// Msats to sats
+    fn invoice_amount(amount_msat: Option<u64>) -> Option<u64> {
+        amount_msat.map(|amount_msat| amount_msat / 1000)
+    }
+
+    /// Init Nostr Client
+    pub(crate) async fn new(private_key: &Option<String>) -> Result<Self> {
+        let (nostr_tx, nostr_rx) = mpsc::channel::<ChannelMessage>(100);
+
+        let (nostr_res_tx, nostr_res_rx) = broadcast::channel::<ChannelMessage>(100);
+        let keys = Self::handle_keys(private_key)?;
+
+        let mut relays = database::nostr::get_relays().await?;
+
+        if relays.is_empty() {
+            // FIXME: Don't just default to this fine for dev
+            relays.push("wss://thesimplekid.space".to_string());
+            database::nostr::save_relays(&relays).await?;
         }
-        None => Keys::generate(),
-    };
 
-    Ok(keys)
-}
+        let client = Client::new(&keys);
+        let relays = relays.iter().map(|url| (url, None)).collect();
+        client.add_relays(relays).await?;
+        client.connect().await;
 
-/// Init Nostr Client
-pub(crate) async fn init_client(private_key: &Option<String>) -> Result<String> {
-    let (sender, receiver) = mpsc::channel::<ChannelMessage>(100);
+        let subscription = Filter::new()
+            .pubkey(keys.public_key())
+            .kind(Kind::EncryptedDirectMessage)
+            .since(Timestamp::now());
 
-    let mut sender_channel = SENDER.lock().await;
-    *sender_channel = Some(sender);
+        client.subscribe(vec![subscription]).await;
 
-    let mut receiver_channel = RECEIVER.lock().await;
-    *receiver_channel = Some(receiver);
+        // if let Err(err) = Self::get_events_since_last(&keys.public_key()).await {
+        //    bail!(err);
+        // }
 
-    let keys = handle_keys(private_key)?;
+        /*
+        if let Ok(contacts) = Self::get_contacts(&keys.public_key()).await {
+             get_metadata(contacts).await?;
+        }
+                */
 
-    let mut relays = database::nostr::get_relays().await?;
+        // REVIEW: This breaks it, likely cant get a lock on something
+        // Not sure I want to refresh all the contacts on start up anyway
+        // if let Err(err) = refresh_contacts().await {
+        //     bail!(err);
+        // }
 
-    if relays.is_empty() {
-        // FIXME: Don't just default to this fine for dev
-        relays.push("wss://thesimplekid.space".to_string());
-        database::nostr::save_relays(&relays).await?;
+        Ok(Self {
+            client: Arc::new(Mutex::new(Some(client))),
+            nostr_rx: Arc::new(Mutex::new(nostr_rx)),
+            nostr_tx,
+            nostr_res_rx: Arc::new(Mutex::new(nostr_res_rx)),
+            nostr_res_tx,
+        })
     }
 
-    let client = Client::new(&keys);
-    let relays = relays.iter().map(|url| (url, None)).collect();
-    client.add_relays(relays).await?;
-    client.connect().await;
-
-    let send_client = client.clone();
-
-    let subscription = Filter::new()
-        .pubkey(keys.public_key())
-        .kind(Kind::EncryptedDirectMessage)
-        .since(Timestamp::now());
-
-    client.subscribe(vec![subscription]).await;
-    let mut g_client = LISTEN_CLIENT.lock().await;
-    *g_client = Some(client);
-
-    let mut s_client = SEND_CLIENT.lock().await;
-    *s_client = Some(send_client);
-
-    drop(s_client);
-    drop(g_client);
-
-    if let Err(err) = get_events_since_last(&keys.public_key()).await {
-        bail!(err);
-    }
-
-    if let Ok(contacts) = get_contacts(&keys.public_key()).await {
-        get_metadata(contacts).await?;
-    }
-
-    if let Err(err) = handle_notifications().await {
-        log::error!("Error in handle_notifications: {:?}", err);
-    }
-
-    // REVIEW: This breaks it, likely cant get a lock on something
-    // Not sure I want to refresh all the contacts on start up anyway
-    // if let Err(err) = refresh_contacts().await {
-    //     bail!(err);
-    // }
-
-    Ok(keys.secret_key()?.display_secret().to_string())
-}
-
-pub(crate) async fn log_out() -> Result<()> {
-    let mut client = SEND_CLIENT.lock().await;
-    if let Some(client) = client.as_ref() {
-        client.disconnect().await?;
-    }
-    *client = None;
-
-    let sender = SENDER.lock().await;
-    let sender = sender.as_ref().unwrap();
-    sender.send(ChannelMessage::Shutdown).await?;
-
-    let mut client = LISTEN_CLIENT.lock().await;
-    if let Some(client) = client.as_ref() {
-        client.disconnect().await?;
-    }
-    *client = None;
-
-    Ok(())
-}
-
-/// Msats to sats
-fn invoice_amount(amount_msat: Option<u64>) -> Option<u64> {
-    amount_msat.map(|amount_msat| amount_msat / 1000)
-}
-
-pub(crate) async fn get_keys() -> Result<Option<KeyData>> {
-    let client = SEND_CLIENT.lock().await;
-
-    if let Some(client) = client.as_ref() {
-        let npub = client.keys().public_key().to_bech32()?;
-
-        let nsec = match client.keys().secret_key() {
-            Ok(sec) => Some(sec.to_bech32()?),
-            Err(_) => None,
-        };
-
-        return Ok(Some(KeyData { npub, nsec }));
-    }
-
-    Ok(None)
-}
-
-/// Handle Direct message
-/// Invoice, cahsu token, invoice
-async fn handle_message(msg: &str, author: XOnlyPublicKey, created_at: Timestamp) -> Result<()> {
-    if msg.to_lowercase().as_str().starts_with("lnbc") {
-        // Invoice message
-        let invoice = lightning_invoice::Invoice::from_str(msg)?;
-
-        let transaction = Transaction::LNTransaction(types::LNTransaction::new(
-            None,
-            invoice_amount(invoice.amount_milli_satoshis()).unwrap_or(0),
-            None,
-            None,
-            msg,
-            "",
-        ));
-
-        database::transactions::add_transaction(&transaction).await?;
-
-        let message = Message::Token {
-            direction: Direction::Received,
-            time: unix_time(),
-            transaction_id: transaction.id(),
-        };
-        database::message::add_message(author, &message).await?;
-    }
-    // cashu token
-    else if msg.to_lowercase().as_str().starts_with("cashu") {
-        let token = Token::from_str(msg)?;
-        let token_info = token.token_info();
-
-        let transaction = Transaction::CashuTransaction(CashuTransaction::new(
-            None,
-            token_info.0,
-            &token_info.1,
-            msg,
-        ));
-
-        database::transactions::add_transaction(&transaction).await?;
-
-        let message = Message::Token {
-            direction: Direction::Received,
-            time: unix_time(),
-            transaction_id: transaction.id(),
-        };
-
-        database::message::add_message(author, &message).await?;
-    } else {
-        // Text Message
-        database::message::add_message(
-            author,
-            &Message::Text {
-                direction: Direction::Received,
-                time: created_at.as_u64(),
-                content: msg.to_string(),
-            },
-        )
-        .await?
-    }
-
-    Ok(())
-}
-
-/// Handle metadata event
-async fn handle_metadata(event: Event) -> Result<Option<types::Contact>> {
-    if let Ok(info) = Metadata::from_json(&event.content) {
-        let picture = info.picture.map(|picture_url| Picture::new(&picture_url));
-
-        let contact = types::Contact {
-            pubkey: event.pubkey.to_string(),
-            npub: event.pubkey.to_bech32().unwrap_or(event.pubkey.to_string()),
-            name: info.name,
-            picture,
-            lud16: info.lud16,
-            created_at: Some(event.created_at.as_u64()),
-        };
-
-        Ok(Some(contact))
-    } else {
-        bail!("Could not decode contact: {:?}", event);
-    }
-}
-
-/// Handle nostr event
-async fn handle_event(event: Event, keys: &Keys) -> Result<()> {
-    database::message::most_recent_event_time().await?;
-    match event.kind {
-        Kind::EncryptedDirectMessage => {
-            match decrypt(&keys.secret_key()?, &event.pubkey, &event.content) {
-                Ok(msg) => {
-                    if let Err(err) = handle_message(&msg, event.pubkey, event.created_at).await {
-                        bail!(err);
-                    }
-                }
-                Err(e) => {
-                    log::error!("Impossible to decrypt direct message: {e}")
-                }
+    /// Perform Nostr tasks
+    pub async fn run(&mut self) -> Result<()> {
+        loop {
+            let res = self.run_internal().await;
+            if let Err(e) = res {
+                bail!("Run error: {:?}", e);
             }
         }
-        Kind::Metadata => if let Err(_err) = handle_metadata(event).await {},
-        _ => (),
-    }
-    Ok(())
-}
-
-/// Add Relay
-pub(crate) async fn add_relay(relay: String) -> Result<()> {
-    let client = SEND_CLIENT.clone();
-
-    let _result: JoinHandle<Result<()>> = tokio::spawn(async move {
-        let mut client_guard = client.lock().await;
-        if let Some(client) = client_guard.as_mut() {
-            client.add_relay(relay, None).await?;
-
-            let relays: Vec<String> = client
-                .relays()
-                .await
-                .keys()
-                .map(|u| u.to_string())
-                .collect();
-
-            database::nostr::save_relays(&relays).await?;
-        }
-
-        Ok(())
-    });
-
-    Ok(())
-}
-
-/// Remove relay
-pub(crate) async fn remove_relay(relay: String) -> Result<()> {
-    let client = SEND_CLIENT.clone();
-
-    let _result: JoinHandle<Result<()>> = tokio::spawn(async move {
-        let mut client_guard = client.lock().await;
-        if let Some(client) = client_guard.as_mut() {
-            client.remove_relay(relay).await?;
-
-            let relays: Vec<String> = client
-                .relays()
-                .await
-                .keys()
-                .map(|u| u.to_string())
-                .collect();
-
-            database::nostr::save_relays(&relays).await?;
-        }
-
-        Ok(())
-    });
-
-    Ok(())
-}
-
-/// Get relays
-pub(crate) async fn get_relays() -> Result<Vec<String>> {
-    let client = SEND_CLIENT.clone();
-
-    let mut client_guard = client.lock().await;
-
-    let mut relays = vec![];
-    if let Some(client) = client_guard.as_mut() {
-        let client_relays = client.relays().await;
-        let client_relays_string: Vec<String> =
-            client_relays.keys().map(|k| k.to_string()).collect();
-        relays = client_relays_string;
     }
 
-    Ok(relays)
-}
-
-pub(crate) async fn handle_notifications() -> Result<()> {
-    let client = LISTEN_CLIENT.clone();
-
-    let _result: JoinHandle<Result<()>> = tokio::spawn(async move {
-        let mut client_guard = client.lock().await;
-        let mut receiver = RECEIVER.lock().await;
-        let receiver = receiver.as_mut().unwrap();
-
+    /// Internal select loop for preforming nostr operations
+    async fn run_internal(&mut self) -> Result<()> {
+        let mut client_guard = self.client.lock().await;
+        let mut nostr_rx = self.nostr_rx.lock().await;
         if let Some(client) = client_guard.as_mut() {
             let mut stop_listen = false;
             loop {
-                select! {
-                    msg = receiver.recv() => {
-                        if let Some(msg) = msg {
-                            match msg {
-                                ChannelMessage::Shutdown => stop_listen = true
-                            }
+                tokio::select! {
+                    m = nostr_rx.recv() => {
+                        match m {
+                            // TODO: Change this to log out
+                            Some(ChannelMessage::Shutdown) => {
+                                client.disconnect().await?;
+                                stop_listen = true;
+                                // client = None;
+                                break;
+                            },
+                            Some(ChannelMessage::GetKeys) => {
+                                let npub = client.keys().public_key().to_bech32()?;
+
+                                let nsec = match client.keys().secret_key() {
+                                    Ok(sec) => Some(sec.to_bech32()?),
+                                    Err(_) => None,
+                                };
+                                let keydata = KeyData {
+                                    npub,
+                                    nsec
+                                };
+                                self.nostr_res_tx.send(ChannelMessage::KeyData(Some(keydata))).unwrap();
+                            },
+                            Some(ChannelMessage::AddRelay(relay)) => {
+                                client.add_relay(relay, None).await?;
+
+                                let relays: Vec<String> = client.relays()
+                                .await
+                                .keys()
+                                .map(|u| u.to_string())
+                                .collect();
+
+                                database::nostr::save_relays(&relays).await?;
+                            },
+                            Some(ChannelMessage::RemoveRelay(relay)) => {
+                                client.remove_relay(relay).await?;
+
+                                let relays: Vec<String> = client
+                                .relays()
+                                .await
+                                .keys()
+                                .map(|u| u.to_string())
+                                .collect();
+
+                                database::nostr::save_relays(&relays).await?;
+                            },
+                            Some(ChannelMessage::GetRelays) => {
+                                let client_relays = client.relays().await;
+                                let client_relays_string: Vec<String> =
+                                        client_relays.keys().map(|k| k.to_string()).collect();
+                                self.nostr_res_tx.send(ChannelMessage::Relays(client_relays_string))?;
+                            },
+                            Some(ChannelMessage::SetContacts(contacts)) => {
+                                client.set_contact_list(contacts).await?;
+                            },
+                            Some(ChannelMessage::GetMetadata(pubkeys)) => {
+                                let mut contacts = vec![];
+                                let pubkeys: Vec<String> = pubkeys.iter().map(|x| x.to_string()).collect();
+                                let subscription = Filter::new().authors(pubkeys.clone()).kind(Kind::Metadata);
+                                let timeout = Duration::from_secs(30);
+                                let events = client
+                                    .get_events_of(vec![subscription.clone()], Some(timeout))
+                                    .await?;
+
+                                for event in events {
+                                    if let Some(contact) = Self::handle_metadata(event).await? {
+                                        contacts.push(contact);
+                                    }
+                                }
+                                self.nostr_res_tx.send(ChannelMessage::Contacts(contacts))?;
+                            },
+                            Some(ChannelMessage::SendDirectMessage(receiver, msg)) => {
+                                client.send_direct_msg(receiver, msg).await?;
+                            },
+                            Some(ChannelMessage::GetContacts(pubkey)) => {
+                                let mut pubkeys = vec![];
+                                let subscription = Filter::new().author(pubkey.to_string()).kind(Kind::ContactList);
+
+                                let timeout = Duration::from_secs(30);
+                                let events = client
+                                    .get_events_of(vec![subscription.clone()], Some(timeout))
+                                    .await?;
+
+                                for event in events.into_iter() {
+                                    for tag in event.tags.into_iter() {
+                                        match tag {
+                                            Tag::PubKey(pk, _) => pubkeys.push(pk),
+                                            Tag::ContactList { pk, .. } => pubkeys.push(pk),
+                                            _ => (),
+                                        }
+                                    }
+                                }
+                                self.nostr_res_tx.send(ChannelMessage::ContactPubkeys(pubkeys))?;
+
+                            },
+                            Some(_) => {},
+                            None => {},
                         }
                     }
                     _ = async {
                         client.handle_notifications(|notification| async {
-                            if let RelayPoolNotification::Event(_url, event) = notification {
-                                if let Err(_err) = handle_event(event, &client.keys()).await {
-                                    // Handle the error if needed
-                                }
+                        if let RelayPoolNotification::Event(_url, event) = notification {
+                            if let Err(_err) = Self::handle_event(event, &client.keys()).await {
+                                                        // Handle the error if needed
                             }
-                            Ok(stop_listen)
+                        }
+                        Ok(stop_listen)
                         }).await
                     } => {}
                 }
-
-                if stop_listen {
-                    break;
-                }
+            }
+            if stop_listen {
+                *client_guard = None;
             }
         }
 
         Ok(())
-    });
-
-    Ok(())
-}
-
-pub(crate) async fn get_events_since_last(pubkey: &XOnlyPublicKey) -> Result<()> {
-    let mut client = SEND_CLIENT.lock().await;
-
-    if let Some(client) = client.as_mut() {
-        let time = database::message::get_most_recent_event_time().await?;
-
-        client.connect().await;
-        let subscription = match time {
-            Some(time) => Filter::new()
-                .pubkey(pubkey.to_owned())
-                .kind(Kind::EncryptedDirectMessage)
-                .since(Timestamp::from_str(&time)?),
-            None => Filter::new()
-                .pubkey(pubkey.to_owned())
-                .kind(Kind::EncryptedDirectMessage),
-        };
-        let timeout = Duration::from_secs(30);
-        let events = client
-            .get_events_of(vec![subscription.clone()], Some(timeout))
-            .await?;
-
-        for event in events {
-            handle_event(event, &client.keys()).await?;
-        }
     }
 
-    Ok(())
-}
+    pub(crate) async fn get_keys(&self) -> Result<Option<KeyData>> {
+        self.nostr_tx.send(ChannelMessage::GetKeys).await?;
+        let timeout_duration = Duration::from_secs(5);
 
-/// Get metadata for pubkeys
-pub(crate) async fn get_metadata(pubkeys: Vec<XOnlyPublicKey>) -> Result<Vec<types::Contact>> {
-    let mut client = SEND_CLIENT.lock().await;
+        let mut nostr_rx = self.nostr_res_rx.lock().await;
 
-    let mut contacts = vec![];
-    if let Some(client) = client.as_mut() {
-        client.connect().await;
-        let pubkeys: Vec<String> = pubkeys.iter().map(|x| x.to_string()).collect();
-        let subscription = Filter::new().authors(pubkeys.clone()).kind(Kind::Metadata);
-        let timeout = Duration::from_secs(30);
-        let events = client
-            .get_events_of(vec![subscription.clone()], Some(timeout))
-            .await?;
-
-        for event in events {
-            if let Some(contact) = handle_metadata(event).await? {
-                contacts.push(contact);
-            }
-        }
-    }
-
-    Ok(contacts)
-}
-
-pub(crate) async fn _refresh_contacts() -> Result<()> {
-    let mut client = SEND_CLIENT.try_lock()?;
-
-    if let Some(client) = client.as_mut() {
-        let x_pubkey = client.keys().public_key();
-        let contacts = get_contacts(&x_pubkey).await?;
-        get_metadata(contacts).await?;
-    }
-    Ok(())
-}
-
-/// Get contacts for a given pubkey
-pub(crate) async fn get_contacts(pubkey: &XOnlyPublicKey) -> Result<Vec<XOnlyPublicKey>> {
-    let mut client = SEND_CLIENT.lock().await;
-
-    let mut pubkeys: Vec<XOnlyPublicKey> = Vec::new();
-    if let Some(client) = client.as_mut() {
-        client.connect().await;
-        let subscription = Filter::new()
-            .author(pubkey.to_string())
-            .kind(Kind::ContactList);
-
-        let timeout = Duration::from_secs(30);
-        let events = client
-            .get_events_of(vec![subscription.clone()], Some(timeout))
-            .await?;
-
-        for event in events.into_iter() {
-            for tag in event.tags.into_iter() {
-                match tag {
-                    Tag::PubKey(pk, _) => pubkeys.push(pk),
-                    Tag::ContactList { pk, .. } => pubkeys.push(pk),
-                    _ => (),
+        match timeout(timeout_duration, nostr_rx.recv()).await {
+            Ok(Ok(msg)) => {
+                if let ChannelMessage::KeyData(keydata) = msg {
+                    return Ok(keydata);
                 }
             }
+            Ok(Err(_)) => (),
+            Err(_) => (),
+        }
+
+        Ok(None)
+    }
+
+    /// Handle Direct message
+    /// Invoice, cahsu token, invoice
+    async fn handle_message(
+        msg: &str,
+        author: XOnlyPublicKey,
+        created_at: Timestamp,
+    ) -> Result<()> {
+        if msg.to_lowercase().as_str().starts_with("lnbc") {
+            // Invoice message
+            let invoice = lightning_invoice::Invoice::from_str(msg)?;
+
+            let transaction = Transaction::LNTransaction(types::LNTransaction::new(
+                None,
+                Self::invoice_amount(invoice.amount_milli_satoshis()).unwrap_or(0),
+                None,
+                None,
+                msg,
+                "",
+            ));
+
+            database::transactions::add_transaction(&transaction).await?;
+
+            let message = Message::Token {
+                direction: Direction::Received,
+                time: unix_time(),
+                transaction_id: transaction.id(),
+            };
+            database::message::add_message(author, &message).await?;
+        }
+        // cashu token
+        else if msg.to_lowercase().as_str().starts_with("cashu") {
+            let token = Token::from_str(msg)?;
+            let token_info = token.token_info();
+
+            let transaction = Transaction::CashuTransaction(CashuTransaction::new(
+                None,
+                token_info.0,
+                &token_info.1,
+                msg,
+            ));
+
+            database::transactions::add_transaction(&transaction).await?;
+
+            let message = Message::Token {
+                direction: Direction::Received,
+                time: unix_time(),
+                transaction_id: transaction.id(),
+            };
+
+            database::message::add_message(author, &message).await?;
+        } else {
+            // Text Message
+            database::message::add_message(
+                author,
+                &Message::Text {
+                    direction: Direction::Received,
+                    time: created_at.as_u64(),
+                    content: msg.to_string(),
+                },
+            )
+            .await?
+        }
+
+        Ok(())
+    }
+
+    /// Handle metadata event
+    async fn handle_metadata(event: Event) -> Result<Option<types::Contact>> {
+        if let Ok(info) = Metadata::from_json(&event.content) {
+            let picture = info.picture.map(|picture_url| Picture::new(&picture_url));
+
+            let contact = types::Contact {
+                pubkey: event.pubkey.to_string(),
+                npub: event.pubkey.to_bech32().unwrap_or(event.pubkey.to_string()),
+                name: info.name,
+                picture,
+                lud16: info.lud16,
+                created_at: Some(event.created_at.as_u64()),
+            };
+
+            Ok(Some(contact))
+        } else {
+            bail!("Could not decode contact: {:?}", event);
         }
     }
 
-    Ok(pubkeys)
-}
+    /// Handle nostr event
+    async fn handle_event(event: Event, keys: &Keys) -> Result<()> {
+        database::message::most_recent_event_time().await?;
+        match event.kind {
+            Kind::EncryptedDirectMessage => {
+                match decrypt(&keys.secret_key()?, &event.pubkey, &event.content) {
+                    Ok(msg) => {
+                        if let Err(err) =
+                            Self::handle_message(&msg, event.pubkey, event.created_at).await
+                        {
+                            bail!(err);
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Impossible to decrypt direct message: {e}")
+                    }
+                }
+            }
+            Kind::Metadata => if let Err(_err) = Self::handle_metadata(event).await {},
+            _ => (),
+        }
+        Ok(())
+    }
 
-/// Set contact list
-pub(crate) async fn set_contact_list() -> Result<()> {
-    let mut client = SEND_CLIENT.lock().await;
+    /// Log Out
+    pub(crate) async fn log_out(&self) -> Result<()> {
+        self.nostr_tx.send(ChannelMessage::Shutdown).await?;
+        Ok(())
+    }
 
-    if let Some(client) = client.as_mut() {
+    /// Add Relay
+    pub(crate) async fn add_relay(&self, relay: String) -> Result<()> {
+        self.nostr_tx.send(ChannelMessage::AddRelay(relay)).await?;
+
+        Ok(())
+    }
+
+    /// Remove relay
+    pub(crate) async fn remove_relay(&self, relay: String) -> Result<()> {
+        self.nostr_tx
+            .send(ChannelMessage::RemoveRelay(relay))
+            .await?;
+        Ok(())
+    }
+
+    /// Get relays
+    pub(crate) async fn get_relays(&mut self) -> Result<Vec<String>> {
+        let timeout_duration = Duration::from_secs(5);
+        self.nostr_tx.send(ChannelMessage::GetRelays).await?;
+
+        let mut nostr_res_rx = self.nostr_res_rx.lock().await;
+        loop {
+            match timeout(timeout_duration, nostr_res_rx.recv()).await {
+                Ok(Ok(msg)) => {
+                    if let ChannelMessage::Relays(relays) = msg {
+                        return Ok(relays);
+                    }
+                }
+                Ok(Err(_)) => (),
+                Err(_) => break,
+            }
+        }
+
+        Ok(vec![])
+    }
+
+    /*
+    pub(crate) async fn _get_events_since_last(_pubkey: &XOnlyPublicKey) -> Result<()> {
+        let mut client = SEND_CLIENT.lock().await;
+
+        if let Some(client) = client.as_mut() {
+            let time = database::message::get_most_recent_event_time().await?;
+
+            client.connect().await;
+            let subscription = match time {
+                Some(time) => Filter::new()
+                    .pubkey(pubkey.to_owned())
+                    .kind(Kind::EncryptedDirectMessage)
+                    .since(Timestamp::from_str(&time)?),
+                None => Filter::new()
+                    .pubkey(pubkey.to_owned())
+                    .kind(Kind::EncryptedDirectMessage),
+            };
+            let timeout = Duration::from_secs(30);
+            let events = client
+                .get_events_of(vec![subscription.clone()], Some(timeout))
+                .await?;
+
+            for event in events {
+                Self::handle_event(event, &client.keys()).await?;
+            }
+        }
+
+        Ok(())
+    }
+        */
+
+    /// Get metadata for pubkeys
+    pub(crate) async fn get_metadata(
+        &mut self,
+        pubkeys: Vec<XOnlyPublicKey>,
+    ) -> Result<Vec<types::Contact>> {
+        self.nostr_tx
+            .send(ChannelMessage::GetMetadata(pubkeys))
+            .await?;
+        let timeout_duration = Duration::from_secs(5);
+
+        let mut nostr_res_rx = self.nostr_res_rx.lock().await;
+        loop {
+            match timeout(timeout_duration, nostr_res_rx.recv()).await {
+                Ok(Ok(msg)) => {
+                    if let ChannelMessage::Contacts(contacts) = msg {
+                        return Ok(contacts);
+                    }
+                }
+                Ok(Err(_)) => (),
+                Err(_) => break,
+            };
+        }
+
+        Ok(vec![])
+    }
+
+    pub(crate) async fn _refresh_contacts() -> Result<()> {
+        /*
+        let mut client = SEND_CLIENT.try_lock()?;
+
+        if let Some(client) = client.as_mut() {
+            let x_pubkey = client.keys().public_key();
+            let contacts = Self::get_contacts(&x_pubkey).await?;
+            Self::get_metadata(contacts).await?;
+        }
+        */
+        Ok(())
+    }
+
+    /// Get contacts for a given pubkey
+    pub(crate) async fn get_contacts(
+        &mut self,
+        pubkey: &XOnlyPublicKey,
+    ) -> Result<Vec<XOnlyPublicKey>> {
+        self.nostr_tx
+            .send(ChannelMessage::GetContacts(pubkey.to_owned()))
+            .await?;
+        let timeout_duration = Duration::from_secs(5);
+
+        let mut nostr_res_rx = self.nostr_res_rx.lock().await;
+        loop {
+            match timeout(timeout_duration, nostr_res_rx.recv()).await {
+                Ok(Ok(msg)) => {
+                    if let ChannelMessage::ContactPubkeys(contacts) = msg {
+                        return Ok(contacts);
+                    }
+                }
+                Ok(Err(_)) => (),
+                Err(_) => break,
+            };
+        }
+
+        Ok(vec![])
+    }
+
+    /// Set contact list
+    pub(crate) async fn set_contact_list(&mut self) -> Result<()> {
         let contacts = database::contacts::get_contacts().await?;
 
         let contacts: Vec<nostr_sdk::Contact> = contacts
@@ -477,19 +514,23 @@ pub(crate) async fn set_contact_list() -> Result<()> {
             })
             .collect();
 
-        client.set_contact_list(contacts).await?;
-    };
+        self.nostr_tx
+            .send(ChannelMessage::SetContacts(contacts))
+            .await?;
 
-    Ok(())
-}
+        Ok(())
+    }
 
-/// Send message
-pub async fn send_message(receiver: XOnlyPublicKey, message: &Message) -> Result<Conversation> {
-    let mut client = SEND_CLIENT.lock().await;
-
-    if let Some(client) = client.as_mut() {
+    /// Send message
+    pub async fn send_message(
+        &mut self,
+        receiver: XOnlyPublicKey,
+        message: &Message,
+    ) -> Result<Conversation> {
         if let Ok(Some(msg)) = message.content().await {
-            client.send_direct_msg(receiver, msg).await?;
+            self.nostr_tx
+                .send(ChannelMessage::SendDirectMessage(receiver, msg))
+                .await?;
             if let Some(transaction_id) = message.id() {
                 if let Ok(Some(transaction)) =
                     database::transactions::get_transaction(&transaction_id).await
@@ -498,7 +539,6 @@ pub async fn send_message(receiver: XOnlyPublicKey, message: &Message) -> Result
                 }
             }
         }
+        Ok(Conversation::new(vec![message.clone()], vec![]))
     }
-
-    Ok(Conversation::new(vec![message.clone()], vec![]))
 }
