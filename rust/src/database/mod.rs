@@ -14,7 +14,7 @@ const CONFIG: TableDefinition<&str, &str> = TableDefinition::new("config");
 
 // Mint Info
 // Key: Mint Url
-// Value: Serialized Mint info
+// Value: Serialized Mint
 const MINT_INFO: TableDefinition<&str, &str> = TableDefinition::new("mint_info");
 
 // Mint Keysets

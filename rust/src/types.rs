@@ -2,7 +2,8 @@ use anyhow::Result;
 use bitcoin::secp256k1::XOnlyPublicKey;
 use bitcoin_hashes::sha256;
 use bitcoin_hashes::Hash;
-pub use cashu_crab::types::MintInfo;
+pub use cashu_crab::types::{MintInfo, MintVersion};
+use flutter_rust_bridge::frb;
 use serde::{Deserialize, Serialize};
 
 use crate::database;
@@ -138,9 +139,14 @@ impl LNTransaction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Mint {
+    /// Mint Url
     pub url: String,
+    /// Active Keyset Id
     pub active_keyset: Option<String>,
+    /// Key Set Ids
     pub keysets: Vec<String>,
+    /// Mint Information
+    pub info: Option<MintInformation>,
 }
 
 impl Mint {
@@ -317,4 +323,45 @@ pub(crate) enum ChannelMessage {
     SendDirectMessage(XOnlyPublicKey, String),
     GetContacts(XOnlyPublicKey),
     ContactPubkeys(Vec<XOnlyPublicKey>),
+}
+
+#[frb(mirror(MintVersion))]
+pub struct _MintVersion {
+    pub name: String,
+    pub version: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MintInformation {
+    /// name of the mint and should be recognizable
+    pub name: Option<String>,
+    /// hex pubkey of the mint
+    pub pubkey: Option<String>,
+    /// implementation name and the version running
+    pub version: Option<MintVersion>,
+    /// short description of the mint
+    pub description: Option<String>,
+    /// long description
+    pub description_long: Option<String>,
+    /// contact methods to reach the mint operator
+    pub contact: Vec<Vec<String>>,
+    /// shows which NUTs the mint supports
+    pub nuts: Vec<String>,
+    /// message of the day that the wallet must display to the user
+    pub motd: Option<String>,
+}
+
+impl From<MintInfo> for MintInformation {
+    fn from(mint_info: MintInfo) -> Self {
+        Self {
+            name: mint_info.name,
+            pubkey: None,
+            version: mint_info.version,
+            description: mint_info.description,
+            description_long: mint_info.description_long,
+            contact: mint_info.contact,
+            nuts: mint_info.nuts,
+            motd: mint_info.motd,
+        }
+    }
 }

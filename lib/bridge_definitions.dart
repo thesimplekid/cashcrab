@@ -158,6 +158,11 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kGetMintsConstMeta;
 
+  Future<MintInformation?> getMintInformation(
+      {required String mint, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetMintInformationConstMeta;
+
   Future<Mint?> getActiveMint({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetActiveMintConstMeta;
@@ -318,6 +323,53 @@ class Mint {
     required this.url,
     this.activeKeyset,
     required this.keysets,
+  });
+}
+
+class MintInformation {
+  /// name of the mint and should be recognizable
+  final String? name;
+
+  /// hex pubkey of the mint
+  final String? pubkey;
+
+  /// implementation name and the version running
+  final MintVersion? version;
+
+  /// short description of the mint
+  final String? description;
+
+  /// long description
+  final String? descriptionLong;
+
+  /// contact methods to reach the mint operator
+  final List<List<String>> contact;
+
+  /// shows which NUTs the mint supports
+  final List<String> nuts;
+
+  /// message of the day that the wallet must display to the user
+  final String? motd;
+
+  const MintInformation({
+    this.name,
+    this.pubkey,
+    this.version,
+    this.description,
+    this.descriptionLong,
+    required this.contact,
+    required this.nuts,
+    this.motd,
+  });
+}
+
+class MintVersion {
+  final String name;
+  final String version;
+
+  const MintVersion({
+    required this.name,
+    required this.version,
   });
 }
 

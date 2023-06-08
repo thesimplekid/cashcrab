@@ -175,6 +175,11 @@ pub extern "C" fn wire_get_mints(port_: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_get_mint_information(port_: i64, mint: *mut wire_uint_8_list) {
+    wire_get_mint_information_impl(port_, mint)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_get_active_mint(port_: i64) {
     wire_get_active_mint_impl(port_)
 }

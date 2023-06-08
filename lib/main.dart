@@ -91,19 +91,19 @@ class MyHomePageState extends State<MyHomePage> {
 
     saveNostrKey(privKey);
 
-    _loadMints();
+    await _loadMints();
 
     // Load transaction
-    _loadTransactions();
+    await _loadTransactions();
 
-    _getActiveMint();
+    await _getActiveMint();
 
-    _loadContacts();
+    await _loadContacts();
 
     // TODO: Fetech new messages
 
     // Set balances
-    _getBalances();
+    await _getBalances();
     // Set Balance
     _getBalance();
   }
@@ -161,6 +161,7 @@ class MyHomePageState extends State<MyHomePage> {
       setActiveMint: _setActiveMint,
       nostrLogOut: nostrLogout,
       mintSwap: swapMint,
+      loadMints: _loadMints,
     );
 
     _widgetOptions = <Widget>[
@@ -450,7 +451,6 @@ class MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  /// Load mints from disk into rust
   Future<void> _loadMints() async {
     List<Mint> gotMints = await api.getMints();
 
@@ -488,6 +488,7 @@ class MyHomePageState extends State<MyHomePage> {
   Future<void> _addNewMint(String mintUrl) async {
     // TODO: Should handle error connecting to mint
     await api.addMint(url: mintUrl);
+    _loadMints();
     mints[mintUrl] = 0;
   }
 }

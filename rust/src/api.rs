@@ -22,8 +22,9 @@ use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
 use super::types::{InvoiceInfo, TokenData};
+use crate::cashu;
 use crate::nostr::Nostr;
-use crate::types::{InvoiceStatus, KeyData};
+use crate::types::{InvoiceStatus, KeyData, MintInformation};
 use crate::utils::convert_str_to_xonly;
 use crate::{
     database,
@@ -438,12 +439,17 @@ pub fn add_mint(url: String) -> Result<()> {
         WALLETS.lock().await.insert(url.to_string(), wallet.clone());
 
         let mint = Mint {
-            url,
+            url: url.clone(),
             active_keyset,
             keysets,
+            info: None,
         };
 
         database::cashu::add_mint(mint).await?;
+
+        tokio::spawn(async move {
+            cashu::fetch_mint_info(&url).await.ok();
+        });
 
         Ok(())
     });
@@ -481,7 +487,7 @@ pub fn remove_wallet(url: String) -> Result<String> {
 }
 
 /// Get wallet for uri
-async fn wallet_for_url(mint_url: &str) -> Result<CashuWallet> {
+pub(crate) async fn wallet_for_url(mint_url: &str) -> Result<CashuWallet> {
     let mut wallets = WALLETS.lock().await;
     let cashu_wallet = match wallets.get(mint_url) {
         Some(Some(wallet)) => wallet.clone(),
@@ -943,6 +949,7 @@ pub fn get_transaction(tid: String) -> Result<Option<Transaction>> {
     result
 }
 
+/// Get connected mints
 pub fn get_mints() -> Result<Vec<Mint>> {
     let rt = lock_runtime!();
     let result = rt.block_on(async { Ok(database::cashu::get_all_mints().await?) });
@@ -952,16 +959,36 @@ pub fn get_mints() -> Result<Vec<Mint>> {
     result
 }
 
-pub fn get_active_mint() -> Result<Option<Mint>> {
+/// Get Mint Information
+pub fn get_mint_information(mint: String) -> Result<Option<MintInformation>> {
     let rt = lock_runtime!();
-
-    let result = rt.block_on(async { database::cashu::get_active_mint().await })?;
+    let result: std::result::Result<Option<Mint>, Error> =
+        rt.block_on(async { Ok(database::cashu::get_mint(&mint).await?) });
 
     drop(rt);
 
-    Ok(result)
+    match result {
+        Ok(Some(mint)) => {
+            // bail!("{:?}", mint);
+            Ok(mint.info)
+        }
+        Err(err) => bail!("Get mint info error {}", err),
+        _ => Ok(None),
+    }
 }
 
+/// Get Active Mint
+pub fn get_active_mint() -> Result<Option<Mint>> {
+    let rt = lock_runtime!();
+
+    let result = rt.block_on(async { database::cashu::get_active_mint().await });
+
+    drop(rt);
+
+    Ok(result?)
+}
+
+/// Set Active Mint
 pub fn set_active_mint(mint_url: Option<String>) -> Result<()> {
     let rt = lock_runtime!();
 

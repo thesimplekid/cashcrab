@@ -559,6 +559,25 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Future<MintInformation?> getMintInformation(
+      {required String mint, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(mint);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_get_mint_information(port_, arg0),
+      parseSuccessData: _wire2api_opt_box_autoadd_mint_information,
+      constMeta: kGetMintInformationConstMeta,
+      argValues: [mint],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetMintInformationConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_mint_information",
+        argNames: ["mint"],
+      );
+
   Future<Mint?> getActiveMint({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_active_mint(port_),
@@ -636,6 +655,14 @@ class RustImpl implements Rust {
 
   Mint _wire2api_box_autoadd_mint(dynamic raw) {
     return _wire2api_mint(raw);
+  }
+
+  MintInformation _wire2api_box_autoadd_mint_information(dynamic raw) {
+    return _wire2api_mint_information(raw);
+  }
+
+  MintVersion _wire2api_box_autoadd_mint_version(dynamic raw) {
+    return _wire2api_mint_version(raw);
   }
 
   Picture _wire2api_box_autoadd_picture(dynamic raw) {
@@ -724,6 +751,10 @@ class RustImpl implements Rust {
     );
   }
 
+  List<List<String>> _wire2api_list_StringList(dynamic raw) {
+    return (raw as List<dynamic>).map(_wire2api_StringList).toList();
+  }
+
   List<Contact> _wire2api_list_contact(dynamic raw) {
     return (raw as List<dynamic>).map(_wire2api_contact).toList();
   }
@@ -792,6 +823,32 @@ class RustImpl implements Rust {
     );
   }
 
+  MintInformation _wire2api_mint_information(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
+    return MintInformation(
+      name: _wire2api_opt_String(arr[0]),
+      pubkey: _wire2api_opt_String(arr[1]),
+      version: _wire2api_opt_box_autoadd_mint_version(arr[2]),
+      description: _wire2api_opt_String(arr[3]),
+      descriptionLong: _wire2api_opt_String(arr[4]),
+      contact: _wire2api_list_StringList(arr[5]),
+      nuts: _wire2api_StringList(arr[6]),
+      motd: _wire2api_opt_String(arr[7]),
+    );
+  }
+
+  MintVersion _wire2api_mint_version(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return MintVersion(
+      name: _wire2api_String(arr[0]),
+      version: _wire2api_String(arr[1]),
+    );
+  }
+
   String? _wire2api_opt_String(dynamic raw) {
     return raw == null ? null : _wire2api_String(raw);
   }
@@ -802,6 +859,14 @@ class RustImpl implements Rust {
 
   Mint? _wire2api_opt_box_autoadd_mint(dynamic raw) {
     return raw == null ? null : _wire2api_box_autoadd_mint(raw);
+  }
+
+  MintInformation? _wire2api_opt_box_autoadd_mint_information(dynamic raw) {
+    return raw == null ? null : _wire2api_box_autoadd_mint_information(raw);
+  }
+
+  MintVersion? _wire2api_opt_box_autoadd_mint_version(dynamic raw) {
+    return raw == null ? null : _wire2api_box_autoadd_mint_version(raw);
   }
 
   Picture? _wire2api_opt_box_autoadd_picture(dynamic raw) {
@@ -1678,6 +1743,23 @@ class RustWire implements FlutterRustBridgeWireBase {
           'wire_get_mints');
   late final _wire_get_mints =
       _wire_get_mintsPtr.asFunction<void Function(int)>();
+
+  void wire_get_mint_information(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> mint,
+  ) {
+    return _wire_get_mint_information(
+      port_,
+      mint,
+    );
+  }
+
+  late final _wire_get_mint_informationPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_get_mint_information');
+  late final _wire_get_mint_information = _wire_get_mint_informationPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_active_mint(
     int port_,

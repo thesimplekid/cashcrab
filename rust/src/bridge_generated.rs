@@ -29,6 +29,8 @@ use crate::types::KeyData;
 use crate::types::LNTransaction;
 use crate::types::Message;
 use crate::types::Mint;
+use crate::types::MintInformation;
+use crate::types::MintVersion;
 use crate::types::Picture;
 use crate::types::TokenData;
 use crate::types::Transaction;
@@ -452,6 +454,19 @@ fn wire_get_mints_impl(port_: MessagePort) {
         move || move |task_callback| get_mints(),
     )
 }
+fn wire_get_mint_information_impl(port_: MessagePort, mint: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_mint_information",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_mint = mint.wire2api();
+            move |task_callback| get_mint_information(api_mint)
+        },
+    )
+}
 fn wire_get_active_mint_impl(port_: MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -493,8 +508,16 @@ fn wire_decode_token_impl(port_: MessagePort, encoded_token: impl Wire2Api<Strin
 }
 // Section: wrapper structs
 
+#[derive(Clone)]
+struct mirror_MintVersion(MintVersion);
+
 // Section: static checks
 
+const _: fn() = || {
+    let MintVersion = None::<MintVersion>.unwrap();
+    let _: String = MintVersion.name;
+    let _: String = MintVersion.version;
+};
 // Section: allocate functions
 
 // Section: related functions
@@ -701,6 +724,30 @@ impl support::IntoDart for Mint {
     }
 }
 impl support::IntoDartExceptPrimitive for Mint {}
+
+impl support::IntoDart for MintInformation {
+    fn into_dart(self) -> support::DartAbi {
+        vec![
+            self.name.into_dart(),
+            self.pubkey.into_dart(),
+            self.version.map(|v| mirror_MintVersion(v)).into_dart(),
+            self.description.into_dart(),
+            self.description_long.into_dart(),
+            self.contact.into_dart(),
+            self.nuts.into_dart(),
+            self.motd.into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for MintInformation {}
+
+impl support::IntoDart for mirror_MintVersion {
+    fn into_dart(self) -> support::DartAbi {
+        vec![self.0.name.into_dart(), self.0.version.into_dart()].into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for mirror_MintVersion {}
 
 impl support::IntoDart for Picture {
     fn into_dart(self) -> support::DartAbi {

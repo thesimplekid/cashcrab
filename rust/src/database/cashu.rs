@@ -7,7 +7,7 @@ use redb::{ReadableMultimapTable, ReadableTable};
 use super::{CONFIG, DB, KEYSETS, MINT_INFO, MINT_KEYSETS, PROOFS};
 use crate::{
     api::CashuError,
-    types::{Mint, MintInfo},
+    types::{Mint, MintInformation},
     utils::unix_time,
 };
 
@@ -98,22 +98,6 @@ pub(crate) async fn remove_proofs(mint: &str, proofs: &Proofs) -> Result<()> {
 
     Ok(())
 }
-/// Add Mint
-pub(crate) async fn add_mint(mint: Mint) -> Result<()> {
-    let db = DB.lock().await;
-    let db = db
-        .as_ref()
-        .ok_or_else(|| CashuError("DB not set".to_string()))?;
-
-    let write_txn = db.begin_write()?;
-    {
-        let mut mint_table = write_txn.open_table(MINT_INFO)?;
-        mint_table.insert(mint.url.as_str(), mint.as_json().as_str())?;
-    }
-    write_txn.commit()?;
-
-    Ok(())
-}
 
 /// Add Keyset
 pub(crate) async fn add_keyset(mint: &str, keys: &Keys) -> Result<()> {
@@ -161,6 +145,57 @@ pub(crate) async fn get_keyset(mint: &str) -> Result<HashMap<String, u64>> {
     Ok(keyset_map)
 }
 
+/// Add Mint
+pub(crate) async fn add_mint(mint: Mint) -> Result<()> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+
+    let write_txn = db.begin_write()?;
+    {
+        let mut mint_table = write_txn.open_table(MINT_INFO)?;
+        mint_table.insert(mint.url.as_str(), mint.as_json().as_str())?;
+    }
+    write_txn.commit()?;
+
+    Ok(())
+}
+
+/// Update Mint Info
+pub(crate) async fn update_mint_info(url: &str, mint_info: MintInformation) -> Result<()> {
+    let currrent_mint = get_mint(url).await?;
+
+    let new_mint = match currrent_mint {
+        Some(info) => Mint {
+            url: info.url,
+            active_keyset: info.active_keyset,
+            keysets: info.keysets,
+            info: Some(mint_info),
+        },
+        None => Mint {
+            url: url.to_string(),
+            active_keyset: None,
+            keysets: vec![],
+            info: Some(mint_info),
+        },
+    };
+
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+
+    let write_txn = db.begin_write()?;
+    {
+        let mut mint_table = write_txn.open_table(MINT_INFO)?;
+        mint_table.insert(url, new_mint.as_json().as_str())?;
+    }
+    write_txn.commit()?;
+
+    Ok(())
+}
+
 /// Get all mints
 pub(crate) async fn get_all_mints() -> Result<Vec<Mint>, CashuError> {
     let db = DB.lock().await;
@@ -182,7 +217,7 @@ pub(crate) async fn get_all_mints() -> Result<Vec<Mint>, CashuError> {
     Ok(mints)
 }
 
-pub(crate) async fn _get_mint(mint_url: &str) -> Result<Option<MintInfo>, CashuError> {
+pub(crate) async fn get_mint(mint_url: &str) -> Result<Option<Mint>, CashuError> {
     let db = DB.lock().await;
     let db = db
         .as_ref()
@@ -232,15 +267,18 @@ pub(crate) async fn get_active_mint() -> Result<Option<Mint>, CashuError> {
         let active_mint = active_mint.value();
         let mint_info_table = read_txn.open_table(MINT_INFO)?;
         // TODO: Refactor this without the returns
-        if let Some(mint_info) = mint_info_table.get(active_mint)? {
-            return Ok(Some(serde_json::from_str(mint_info.value())?));
-        };
-
-        return Ok(Some(Mint {
-            url: active_mint.to_string(),
-            active_keyset: None,
-            keysets: vec![],
-        }));
+        let mint = mint_info_table.get(active_mint)?;
+        match mint {
+            Some(mint) => return Ok(Some(serde_json::from_str(mint.value())?)),
+            None => {
+                return Ok(Some(Mint {
+                    url: active_mint.to_string(),
+                    active_keyset: None,
+                    keysets: vec![],
+                    info: None,
+                }))
+            }
+        }
     };
 
     Ok(None)

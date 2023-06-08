@@ -1,3 +1,4 @@
+import 'package:cashcrab/screens/settings/mint_info.dart';
 import 'package:cashcrab/shared/widgets/mint_drop_down.dart';
 import 'package:cashcrab/shared/widgets/numeric_input.dart';
 import 'package:flutter/material.dart';
@@ -40,6 +41,7 @@ class _MintsState extends State<Mints> {
   _MintsState();
   @override
   void initState() {
+    print(widget.mints);
     super.initState();
   }
 
@@ -95,30 +97,44 @@ class _MintsState extends State<Mints> {
                 itemCount: widget.mints.length,
                 itemBuilder: (BuildContext context, int index) {
                   int balance = widget.mints[mints[index]] ?? 0;
-                  return CheckboxListTile(
-                    value: widget.activeMint == mints[index],
-                    onChanged: (bool? value) {
-                      if (value != null && value) {
-                        widget.setActiveMint(mints[index]);
-                      }
+                  return GestureDetector(
+                    onTap: () {
+                      print("Pressed");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MintInfoScreen(
+                            api: widget.api,
+                            mint: mints[index],
+                          ),
+                        ),
+                      );
                     },
-                    title: Text(
-                      mints[index],
-                      textAlign: TextAlign.left,
-                      style: const TextStyle(fontSize: 14.0),
-                      maxLines: 1,
-                    ),
-                    secondary: GestureDetector(
-                      onTap: () {},
-                      child: Container(
-                        margin: const EdgeInsets.all(0.0),
-                        child: balance == 0
-                            ? IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {},
-                              )
-                            : Text("${balance.toString()} sats"),
-                      ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Text(
+                                mints[index],
+                                textAlign: TextAlign.left,
+                                style: const TextStyle(fontSize: 14.0),
+                                maxLines: 1,
+                              ),
+                              const Spacer(),
+                              Container(
+                                margin: const EdgeInsets.all(0.0),
+                                child: balance == 0
+                                    ? IconButton(
+                                        icon: const Icon(Icons.delete),
+                                        onPressed: () {},
+                                      )
+                                    : Text("${balance.toString()} sats"),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },
