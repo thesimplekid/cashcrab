@@ -514,7 +514,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
                 let wallet = wallet_for_url(&cashu_trans.mint).await?;
 
                 let check_spent = wallet
-                    .check_proofs_spent(token.token[0].clone().proofs)
+                    .check_proofs_spent(&token.token[0].clone().proofs)
                     .await?;
 
                 // REVIEW: This is a fairly naive check on if a token is spendable
@@ -545,7 +545,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
                     let invoice = Invoice::from_str(&ln_trans.bolt11)?;
 
                     let proofs = wallet
-                        .mint_token(Amount::from_sat(ln_trans.amount), &ln_trans.hash)
+                        .mint(Amount::from_sat(ln_trans.amount), &ln_trans.hash)
                         .await
                         .unwrap_or_default();
 
@@ -719,7 +719,7 @@ pub fn mint_token(amount: u64, hash: String, mint: String) -> Result<()> {
     rt.block_on(async {
         let wallets = WALLETS.lock().await;
         if let Some(Some(wallet)) = wallets.get(&mint) {
-            let proofs = wallet.mint_token(Amount::from_sat(amount), &hash).await?;
+            let proofs = wallet.mint(Amount::from_sat(amount), &hash).await?;
 
             database::cashu::add_proofs(&mint, &proofs).await?;
 
@@ -740,7 +740,7 @@ pub fn mint_swap(from_mint: String, to_mint: String, amount: u64) -> Result<()> 
 
         let _pay_transaction = pay_invoice(&invoice.pr, &from_mint).await?;
 
-        let proofs = from_wallet.mint_token(amount, &invoice.hash).await?;
+        let proofs = from_wallet.mint(amount, &invoice.hash).await?;
         database::cashu::add_proofs(&to_mint, &proofs).await?;
         database::transactions::update_transaction_status(&Transaction::LNTransaction(
             LNTransaction::new(
