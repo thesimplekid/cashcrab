@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:cashcrab/bridge_definitions.dart';
+import 'package:cashcrab/screens/cashu/inbox.dart';
 import 'package:cashcrab/bridge_generated.dart';
 import 'package:cashcrab/screens/contacts/contacts.dart';
 
@@ -51,7 +52,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  int _selectedIndex = 1;
+  int _selectedIndex = 2;
 
   Map<String, int> mints = {};
   int balance = 0;
@@ -70,6 +71,7 @@ class MyHomePageState extends State<MyHomePage> {
   late Home _homeTab;
   late Settings _settingsTab;
   late Contacts _contactsTab;
+  late Inbox _inboxTab;
 
   @override
   void initState() {
@@ -164,11 +166,10 @@ class MyHomePageState extends State<MyHomePage> {
       loadMints: _loadMints,
     );
 
-    _widgetOptions = <Widget>[
-      _contactsTab,
-      _homeTab,
-      _settingsTab,
-    ];
+    _inboxTab = Inbox(api: api, redeamInbox: redeamInbox);
+
+    _widgetOptions = <Widget>[_inboxTab, _contactsTab, _homeTab, _settingsTab];
+
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.only(top: 40.0),
@@ -177,7 +178,9 @@ class MyHomePageState extends State<MyHomePage> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.inbox), label: 'Inbox'),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Messages'),
           BottomNavigationBarItem(
             icon: Icon(Icons.payments),
@@ -192,6 +195,12 @@ class MyHomePageState extends State<MyHomePage> {
         onTap: _onItemTapped,
       ),
     );
+  }
+
+  void redeamInbox() async {
+    await api.redeamInbox();
+    _loadTransactions();
+    _getBalances();
   }
 
   void saveNostrKey(String key) async {
@@ -288,7 +297,8 @@ class MyHomePageState extends State<MyHomePage> {
     final TransactionStatus status =
         await api.checkSpendable(transaction: transaction);
 
-    if (status != TransactionStatus.Pending) {
+    if (status != const TransactionStatus.pending(Pending.Send) ||
+        (status != const TransactionStatus.pending(Pending.Receive))) {
       String id = transaction.field0 is LNTransaction
           ? (transaction.field0 as LNTransaction).id!
           : (transaction.field0 as CashuTransaction).id!;
@@ -408,7 +418,8 @@ class MyHomePageState extends State<MyHomePage> {
         newTransaction = Transaction.lnTransaction(trans);
       }
 
-      if (status == TransactionStatus.Pending) {
+      if (status == const TransactionStatus.pending(Pending.Send) ||
+          (status == const TransactionStatus.pending(Pending.Receive))) {
         loadedPendingTransactions[id] = newTransaction;
       } else {
         loadedTransactions[id] = newTransaction;

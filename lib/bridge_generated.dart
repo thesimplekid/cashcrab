@@ -526,6 +526,38 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Future<List<Transaction>> getInbox({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_inbox(port_),
+      parseSuccessData: _wire2api_list_transaction,
+      constMeta: kGetInboxConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetInboxConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_inbox",
+        argNames: [],
+      );
+
+  Future<void> redeamInbox({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_redeam_inbox(port_),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kRedeamInboxConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kRedeamInboxConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "redeam_inbox",
+        argNames: [],
+      );
+
   Future<Transaction?> getTransaction({required String tid, dynamic hint}) {
     var arg0 = _platform.api2wire_String(tid);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -679,8 +711,8 @@ class RustImpl implements Rust {
 
   CashuTransaction _wire2api_cashu_transaction(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return CashuTransaction(
       id: _wire2api_opt_String(arr[0]),
       status: _wire2api_transaction_status(arr[1]),
@@ -688,6 +720,7 @@ class RustImpl implements Rust {
       amount: _wire2api_u64(arr[3]),
       mint: _wire2api_String(arr[4]),
       token: _wire2api_String(arr[5]),
+      from: _wire2api_opt_String(arr[6]),
     );
   }
 
@@ -814,12 +847,13 @@ class RustImpl implements Rust {
 
   Mint _wire2api_mint(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return Mint(
       url: _wire2api_String(arr[0]),
       activeKeyset: _wire2api_opt_String(arr[1]),
       keysets: _wire2api_StringList(arr[2]),
+      info: _wire2api_opt_box_autoadd_mint_information(arr[3]),
     );
   }
 
@@ -881,6 +915,10 @@ class RustImpl implements Rust {
     return raw == null ? null : _wire2api_box_autoadd_u64(raw);
   }
 
+  Pending _wire2api_pending(dynamic raw) {
+    return Pending.values[raw as int];
+  }
+
   Picture _wire2api_picture(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 3)
@@ -920,7 +958,22 @@ class RustImpl implements Rust {
   }
 
   TransactionStatus _wire2api_transaction_status(dynamic raw) {
-    return TransactionStatus.values[raw as int];
+    switch (raw[0]) {
+      case 0:
+        return TransactionStatus_Sent();
+      case 1:
+        return TransactionStatus_Received();
+      case 2:
+        return TransactionStatus_Pending(
+          _wire2api_pending(raw[1]),
+        );
+      case 3:
+        return TransactionStatus_Failed();
+      case 4:
+        return TransactionStatus_Expired();
+      default:
+        throw Exception("unreachable");
+    }
   }
 
   int _wire2api_u64(dynamic raw) {
@@ -953,7 +1006,7 @@ int api2wire_i32(int raw) {
 }
 
 @protected
-int api2wire_transaction_status(TransactionStatus raw) {
+int api2wire_pending(Pending raw) {
   return api2wire_i32(raw.index);
 }
 
@@ -1058,17 +1111,18 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
   void _api_fill_to_wire_cashu_transaction(
       CashuTransaction apiObj, wire_CashuTransaction wireObj) {
     wireObj.id = api2wire_opt_String(apiObj.id);
-    wireObj.status = api2wire_transaction_status(apiObj.status);
+    _api_fill_to_wire_transaction_status(apiObj.status, wireObj.status);
     wireObj.time = api2wire_u64(apiObj.time);
     wireObj.amount = api2wire_u64(apiObj.amount);
     wireObj.mint = api2wire_String(apiObj.mint);
     wireObj.token = api2wire_String(apiObj.token);
+    wireObj.from = api2wire_opt_String(apiObj.from);
   }
 
   void _api_fill_to_wire_ln_transaction(
       LNTransaction apiObj, wire_LNTransaction wireObj) {
     wireObj.id = api2wire_opt_String(apiObj.id);
-    wireObj.status = api2wire_transaction_status(apiObj.status);
+    _api_fill_to_wire_transaction_status(apiObj.status, wireObj.status);
     wireObj.time = api2wire_u64(apiObj.time);
     wireObj.amount = api2wire_u64(apiObj.amount);
     wireObj.fee = api2wire_opt_box_autoadd_u64(apiObj.fee);
@@ -1127,6 +1181,33 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
       wireObj.tag = 1;
       wireObj.kind = inner.inflate_Transaction_LNTransaction();
       wireObj.kind.ref.LNTransaction.ref.field0 = pre_field0;
+      return;
+    }
+  }
+
+  void _api_fill_to_wire_transaction_status(
+      TransactionStatus apiObj, wire_TransactionStatus wireObj) {
+    if (apiObj is TransactionStatus_Sent) {
+      wireObj.tag = 0;
+      return;
+    }
+    if (apiObj is TransactionStatus_Received) {
+      wireObj.tag = 1;
+      return;
+    }
+    if (apiObj is TransactionStatus_Pending) {
+      var pre_field0 = api2wire_pending(apiObj.field0);
+      wireObj.tag = 2;
+      wireObj.kind = inner.inflate_TransactionStatus_Pending();
+      wireObj.kind.ref.Pending.ref.field0 = pre_field0;
+      return;
+    }
+    if (apiObj is TransactionStatus_Failed) {
+      wireObj.tag = 3;
+      return;
+    }
+    if (apiObj is TransactionStatus_Expired) {
+      wireObj.tag = 4;
       return;
     }
   }
@@ -1713,6 +1794,34 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _wire_get_transactions =
       _wire_get_transactionsPtr.asFunction<void Function(int)>();
 
+  void wire_get_inbox(
+    int port_,
+  ) {
+    return _wire_get_inbox(
+      port_,
+    );
+  }
+
+  late final _wire_get_inboxPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_inbox');
+  late final _wire_get_inbox =
+      _wire_get_inboxPtr.asFunction<void Function(int)>();
+
+  void wire_redeam_inbox(
+    int port_,
+  ) {
+    return _wire_redeam_inbox(
+      port_,
+    );
+  }
+
+  late final _wire_redeam_inboxPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_redeam_inbox');
+  late final _wire_redeam_inbox =
+      _wire_redeam_inboxPtr.asFunction<void Function(int)>();
+
   void wire_get_transaction(
     int port_,
     ffi.Pointer<wire_uint_8_list> tid,
@@ -1932,6 +2041,17 @@ class RustWire implements FlutterRustBridgeWireBase {
       _inflate_Transaction_LNTransactionPtr
           .asFunction<ffi.Pointer<TransactionKind> Function()>();
 
+  ffi.Pointer<TransactionStatusKind> inflate_TransactionStatus_Pending() {
+    return _inflate_TransactionStatus_Pending();
+  }
+
+  late final _inflate_TransactionStatus_PendingPtr = _lookup<
+          ffi.NativeFunction<ffi.Pointer<TransactionStatusKind> Function()>>(
+      'inflate_TransactionStatus_Pending');
+  late final _inflate_TransactionStatus_Pending =
+      _inflate_TransactionStatus_PendingPtr
+          .asFunction<ffi.Pointer<TransactionStatusKind> Function()>();
+
   void free_WireSyncReturn(
     WireSyncReturn ptr,
   ) {
@@ -2001,11 +2121,42 @@ final class wire_Message extends ffi.Struct {
   external ffi.Pointer<MessageKind> kind;
 }
 
+final class wire_TransactionStatus_Sent extends ffi.Opaque {}
+
+final class wire_TransactionStatus_Received extends ffi.Opaque {}
+
+final class wire_TransactionStatus_Pending extends ffi.Struct {
+  @ffi.Int32()
+  external int field0;
+}
+
+final class wire_TransactionStatus_Failed extends ffi.Opaque {}
+
+final class wire_TransactionStatus_Expired extends ffi.Opaque {}
+
+final class TransactionStatusKind extends ffi.Union {
+  external ffi.Pointer<wire_TransactionStatus_Sent> Sent;
+
+  external ffi.Pointer<wire_TransactionStatus_Received> Received;
+
+  external ffi.Pointer<wire_TransactionStatus_Pending> Pending;
+
+  external ffi.Pointer<wire_TransactionStatus_Failed> Failed;
+
+  external ffi.Pointer<wire_TransactionStatus_Expired> Expired;
+}
+
+final class wire_TransactionStatus extends ffi.Struct {
+  @ffi.Int32()
+  external int tag;
+
+  external ffi.Pointer<TransactionStatusKind> kind;
+}
+
 final class wire_CashuTransaction extends ffi.Struct {
   external ffi.Pointer<wire_uint_8_list> id;
 
-  @ffi.Int32()
-  external int status;
+  external wire_TransactionStatus status;
 
   @ffi.Uint64()
   external int time;
@@ -2016,6 +2167,8 @@ final class wire_CashuTransaction extends ffi.Struct {
   external ffi.Pointer<wire_uint_8_list> mint;
 
   external ffi.Pointer<wire_uint_8_list> token;
+
+  external ffi.Pointer<wire_uint_8_list> from;
 }
 
 final class wire_Transaction_CashuTransaction extends ffi.Struct {
@@ -2025,8 +2178,7 @@ final class wire_Transaction_CashuTransaction extends ffi.Struct {
 final class wire_LNTransaction extends ffi.Struct {
   external ffi.Pointer<wire_uint_8_list> id;
 
-  @ffi.Int32()
-  external int status;
+  external wire_TransactionStatus status;
 
   @ffi.Uint64()
   external int time;

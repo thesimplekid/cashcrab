@@ -150,23 +150,35 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kGetTransactionsConstMeta;
 
+  Future<List<Transaction>> getInbox({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetInboxConstMeta;
+
+  Future<void> redeamInbox({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kRedeamInboxConstMeta;
+
   Future<Transaction?> getTransaction({required String tid, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetTransactionConstMeta;
 
+  /// Get connected mints
   Future<List<Mint>> getMints({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetMintsConstMeta;
 
+  /// Get Mint Information
   Future<MintInformation?> getMintInformation(
       {required String mint, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetMintInformationConstMeta;
 
+  /// Get Active Mint
   Future<Mint?> getActiveMint({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetActiveMintConstMeta;
 
+  /// Set Active Mint
   Future<void> setActiveMint({String? mintUrl, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kSetActiveMintConstMeta;
@@ -183,6 +195,7 @@ class CashuTransaction {
   final int amount;
   final String mint;
   final String token;
+  final String? from;
 
   const CashuTransaction({
     this.id,
@@ -191,6 +204,7 @@ class CashuTransaction {
     required this.amount,
     required this.mint,
     required this.token,
+    this.from,
   });
 }
 
@@ -315,14 +329,23 @@ class Message with _$Message {
 }
 
 class Mint {
+  /// Mint Url
   final String url;
+
+  /// Active Keyset Id
   final String? activeKeyset;
+
+  /// Key Set Ids
   final List<String> keysets;
+
+  /// Mint Information
+  final MintInformation? info;
 
   const Mint({
     required this.url,
     this.activeKeyset,
     required this.keysets,
+    this.info,
   });
 }
 
@@ -373,6 +396,11 @@ class MintVersion {
   });
 }
 
+enum Pending {
+  Send,
+  Receive,
+}
+
 /// Profile Picture Info
 class Picture {
   final String url;
@@ -410,10 +438,13 @@ class Transaction with _$Transaction {
   ) = Transaction_LNTransaction;
 }
 
-enum TransactionStatus {
-  Sent,
-  Received,
-  Pending,
-  Failed,
-  Expired,
+@freezed
+class TransactionStatus with _$TransactionStatus {
+  const factory TransactionStatus.sent() = TransactionStatus_Sent;
+  const factory TransactionStatus.received() = TransactionStatus_Received;
+  const factory TransactionStatus.pending(
+    Pending field0,
+  ) = TransactionStatus_Pending;
+  const factory TransactionStatus.failed() = TransactionStatus_Failed;
+  const factory TransactionStatus.expired() = TransactionStatus_Expired;
 }

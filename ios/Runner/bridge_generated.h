@@ -43,13 +43,47 @@ typedef struct wire_Message {
   union MessageKind *kind;
 } wire_Message;
 
+typedef struct wire_TransactionStatus_Sent {
+
+} wire_TransactionStatus_Sent;
+
+typedef struct wire_TransactionStatus_Received {
+
+} wire_TransactionStatus_Received;
+
+typedef struct wire_TransactionStatus_Pending {
+  int32_t field0;
+} wire_TransactionStatus_Pending;
+
+typedef struct wire_TransactionStatus_Failed {
+
+} wire_TransactionStatus_Failed;
+
+typedef struct wire_TransactionStatus_Expired {
+
+} wire_TransactionStatus_Expired;
+
+typedef union TransactionStatusKind {
+  struct wire_TransactionStatus_Sent *Sent;
+  struct wire_TransactionStatus_Received *Received;
+  struct wire_TransactionStatus_Pending *Pending;
+  struct wire_TransactionStatus_Failed *Failed;
+  struct wire_TransactionStatus_Expired *Expired;
+} TransactionStatusKind;
+
+typedef struct wire_TransactionStatus {
+  int32_t tag;
+  union TransactionStatusKind *kind;
+} wire_TransactionStatus;
+
 typedef struct wire_CashuTransaction {
   struct wire_uint_8_list *id;
-  int32_t status;
+  struct wire_TransactionStatus status;
   uint64_t time;
   uint64_t amount;
   struct wire_uint_8_list *mint;
   struct wire_uint_8_list *token;
+  struct wire_uint_8_list *from;
 } wire_CashuTransaction;
 
 typedef struct wire_Transaction_CashuTransaction {
@@ -58,7 +92,7 @@ typedef struct wire_Transaction_CashuTransaction {
 
 typedef struct wire_LNTransaction {
   struct wire_uint_8_list *id;
-  int32_t status;
+  struct wire_TransactionStatus status;
   uint64_t time;
   uint64_t amount;
   uint64_t *fee;
@@ -162,6 +196,10 @@ void wire_decode_invoice(int64_t port_, struct wire_uint_8_list *encoded_invoice
 
 void wire_get_transactions(int64_t port_);
 
+void wire_get_inbox(int64_t port_);
+
+void wire_redeam_inbox(int64_t port_);
+
 void wire_get_transaction(int64_t port_, struct wire_uint_8_list *tid);
 
 void wire_get_mints(int64_t port_);
@@ -196,6 +234,8 @@ union TransactionKind *inflate_Transaction_CashuTransaction(void);
 
 union TransactionKind *inflate_Transaction_LNTransaction(void);
 
+union TransactionStatusKind *inflate_TransactionStatus_Pending(void);
+
 void free_WireSyncReturn(WireSyncReturn ptr);
 
 static int64_t dummy_method_to_enforce_bundling(void) {
@@ -228,6 +268,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_melt);
     dummy_var ^= ((int64_t) (void*) wire_decode_invoice);
     dummy_var ^= ((int64_t) (void*) wire_get_transactions);
+    dummy_var ^= ((int64_t) (void*) wire_get_inbox);
+    dummy_var ^= ((int64_t) (void*) wire_redeam_inbox);
     dummy_var ^= ((int64_t) (void*) wire_get_transaction);
     dummy_var ^= ((int64_t) (void*) wire_get_mints);
     dummy_var ^= ((int64_t) (void*) wire_get_mint_information);
@@ -245,6 +287,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) inflate_Message_Token);
     dummy_var ^= ((int64_t) (void*) inflate_Transaction_CashuTransaction);
     dummy_var ^= ((int64_t) (void*) inflate_Transaction_LNTransaction);
+    dummy_var ^= ((int64_t) (void*) inflate_TransactionStatus_Pending);
     dummy_var ^= ((int64_t) (void*) free_WireSyncReturn);
     dummy_var ^= ((int64_t) (void*) store_dart_post_cobject);
     dummy_var ^= ((int64_t) (void*) get_dart_object);

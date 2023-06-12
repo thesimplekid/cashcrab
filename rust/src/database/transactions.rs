@@ -3,7 +3,7 @@ use redb::ReadableTable;
 
 use crate::{
     api::CashuError,
-    types::{Transaction, TransactionStatus},
+    types::{Pending, Transaction, TransactionStatus},
 };
 
 use super::{DB, PENDING_TRANSACTIONS, TRANSACTIONS};
@@ -17,20 +17,20 @@ pub(crate) async fn add_transaction(transaction: &Transaction) -> Result<(), Cas
 
     let write_txn = db.begin_write()?;
     {
-        if transaction.status().eq(&TransactionStatus::Pending) {
-            let mut pending_transaction_table = write_txn.open_table(PENDING_TRANSACTIONS)?;
+        let mut pending_transaction_table = write_txn.open_table(PENDING_TRANSACTIONS)?;
 
+        if transaction.is_pending() {
             pending_transaction_table
                 .insert(transaction.id().as_str(), transaction.as_json().as_str())?;
         } else {
-            let mut transaction_table = write_txn.open_table(TRANSACTIONS)?;
+            pending_transaction_table.remove(transaction.id().as_str())?;
 
+            let mut transaction_table = write_txn.open_table(TRANSACTIONS)?;
             transaction_table.insert(transaction.id().as_str(), transaction.as_json().as_str())?;
         }
     }
     write_txn.commit()?;
 
-    //Err(CashuError(format!("added Proofs: {:?}", proofs)))
     Ok(())
 }
 
@@ -123,7 +123,7 @@ pub(crate) async fn update_transaction_status(transaction: &Transaction) -> Resu
     let write_txn = db.begin_write()?;
 
     {
-        if transaction.status().ne(&TransactionStatus::Pending) {
+        if transaction.is_pending() {
             let mut pending_transaction_table = write_txn.open_table(PENDING_TRANSACTIONS)?;
             pending_transaction_table.remove(transaction.id().as_str())?;
         }
@@ -133,4 +133,55 @@ pub(crate) async fn update_transaction_status(transaction: &Transaction) -> Resu
 
     write_txn.commit()?;
     Ok(())
+}
+
+/*
+/// Get Pending transactions
+pub(crate) async fn get_pending_received_tokens() -> Result<Vec<Transaction>, CashuError> {
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+    let read_txn = db.begin_read()?;
+    let table = read_txn.open_table(TRANSACTIONS)?;
+    let pending_table = read_txn.open_table(PENDING_TRANSACTIONS)?;
+
+    // let transactions = pen
+
+    Ok(transactions)
+}
+*/
+/// Get all transactions
+pub(crate) async fn get_pending_receive_cashu_transactions() -> Result<Vec<Transaction>, CashuError>
+{
+    let db = DB.lock().await;
+    let db = db
+        .as_ref()
+        .ok_or_else(|| CashuError("DB not set".to_string()))?;
+    let read_txn = db.begin_read()?;
+
+    // Get Pending Transactions
+    let table = read_txn.open_table(PENDING_TRANSACTIONS)?;
+    let pending_transactions: Vec<Transaction> = table.iter()?.fold(Vec::new(), |mut vec, item| {
+        if let Ok((_key, value)) = item {
+            if let Ok(transaction) = serde_json::from_str(value.value()) {
+                match &transaction {
+                    Transaction::CashuTransaction(_) => {
+                        if transaction
+                            .status()
+                            .eq(&TransactionStatus::Pending(Pending::Receive))
+                        {
+                            vec.push(transaction)
+                        }
+                    }
+                    Transaction::LNTransaction(_) => (),
+                }
+            }
+        }
+        vec
+    });
+
+    // return Err(CashuError(format!("Transactions: {:?}", transactions)));
+
+    Ok(pending_transactions)
 }

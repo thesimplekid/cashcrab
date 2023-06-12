@@ -42,11 +42,21 @@ class TokenMessageWidget extends StatelessWidget {
                     },
                     style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.all<Color>(
-                          transaction?.status != TransactionStatus.Pending
+                          (transaction?.status ==
+                                      const TransactionStatus_Pending(
+                                          Pending.Receive) ||
+                                  (transaction?.status ==
+                                      const TransactionStatus_Pending(
+                                          Pending.Send)))
                               ? paidColor
                               : messageAction),
                     ),
-                    child: Text(transaction?.status == TransactionStatus.Pending
+                    // TODO: Or
+                    child: Text((transaction?.status ==
+                                const TransactionStatus_Pending(
+                                    Pending.Receive) ||
+                            (transaction?.status ==
+                                const TransactionStatus_Pending(Pending.Send)))
                         ? 'Redeem'
                         : 'Claimed'),
                   ),

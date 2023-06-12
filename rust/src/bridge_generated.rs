@@ -31,6 +31,7 @@ use crate::types::Message;
 use crate::types::Mint;
 use crate::types::MintInformation;
 use crate::types::MintVersion;
+use crate::types::Pending;
 use crate::types::Picture;
 use crate::types::TokenData;
 use crate::types::Transaction;
@@ -431,6 +432,26 @@ fn wire_get_transactions_impl(port_: MessagePort) {
         move || move |task_callback| get_transactions(),
     )
 }
+fn wire_get_inbox_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_inbox",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| get_inbox(),
+    )
+}
+fn wire_redeam_inbox_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "redeam_inbox",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| redeam_inbox(),
+    )
+}
 fn wire_get_transaction_impl(port_: MessagePort, tid: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -552,18 +573,16 @@ impl Wire2Api<i32> for i32 {
     }
 }
 
-impl Wire2Api<TransactionStatus> for i32 {
-    fn wire2api(self) -> TransactionStatus {
+impl Wire2Api<Pending> for i32 {
+    fn wire2api(self) -> Pending {
         match self {
-            0 => TransactionStatus::Sent,
-            1 => TransactionStatus::Received,
-            2 => TransactionStatus::Pending,
-            3 => TransactionStatus::Failed,
-            4 => TransactionStatus::Expired,
-            _ => unreachable!("Invalid variant for TransactionStatus: {}", self),
+            0 => Pending::Send,
+            1 => Pending::Receive,
+            _ => unreachable!("Invalid variant for Pending: {}", self),
         }
     }
 }
+
 impl Wire2Api<u64> for u64 {
     fn wire2api(self) -> u64 {
         self
@@ -586,6 +605,7 @@ impl support::IntoDart for CashuTransaction {
             self.amount.into_dart(),
             self.mint.into_dart(),
             self.token.into_dart(),
+            self.from.into_dart(),
         ]
         .into_dart()
     }
@@ -719,6 +739,7 @@ impl support::IntoDart for Mint {
             self.url.into_dart(),
             self.active_keyset.into_dart(),
             self.keysets.into_dart(),
+            self.info.into_dart(),
         ]
         .into_dart()
     }
@@ -749,6 +770,16 @@ impl support::IntoDart for mirror_MintVersion {
 }
 impl support::IntoDartExceptPrimitive for mirror_MintVersion {}
 
+impl support::IntoDart for Pending {
+    fn into_dart(self) -> support::DartAbi {
+        match self {
+            Self::Send => 0,
+            Self::Receive => 1,
+        }
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for Pending {}
 impl support::IntoDart for Picture {
     fn into_dart(self) -> support::DartAbi {
         vec![
@@ -787,11 +818,11 @@ impl support::IntoDartExceptPrimitive for Transaction {}
 impl support::IntoDart for TransactionStatus {
     fn into_dart(self) -> support::DartAbi {
         match self {
-            Self::Sent => 0,
-            Self::Received => 1,
-            Self::Pending => 2,
-            Self::Failed => 3,
-            Self::Expired => 4,
+            Self::Sent => vec![0.into_dart()],
+            Self::Received => vec![1.into_dart()],
+            Self::Pending(field0) => vec![2.into_dart(), field0.into_dart()],
+            Self::Failed => vec![3.into_dart()],
+            Self::Expired => vec![4.into_dart()],
         }
         .into_dart()
     }

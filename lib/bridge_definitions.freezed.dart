@@ -984,3 +984,721 @@ abstract class Transaction_LNTransaction implements Transaction {
   _$$Transaction_LNTransactionCopyWith<_$Transaction_LNTransaction>
       get copyWith => throw _privateConstructorUsedError;
 }
+
+/// @nodoc
+mixin _$TransactionStatus {
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() sent,
+    required TResult Function() received,
+    required TResult Function(Pending field0) pending,
+    required TResult Function() failed,
+    required TResult Function() expired,
+  }) =>
+      throw _privateConstructorUsedError;
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? sent,
+    TResult? Function()? received,
+    TResult? Function(Pending field0)? pending,
+    TResult? Function()? failed,
+    TResult? Function()? expired,
+  }) =>
+      throw _privateConstructorUsedError;
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? sent,
+    TResult Function()? received,
+    TResult Function(Pending field0)? pending,
+    TResult Function()? failed,
+    TResult Function()? expired,
+    required TResult orElse(),
+  }) =>
+      throw _privateConstructorUsedError;
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(TransactionStatus_Sent value) sent,
+    required TResult Function(TransactionStatus_Received value) received,
+    required TResult Function(TransactionStatus_Pending value) pending,
+    required TResult Function(TransactionStatus_Failed value) failed,
+    required TResult Function(TransactionStatus_Expired value) expired,
+  }) =>
+      throw _privateConstructorUsedError;
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(TransactionStatus_Sent value)? sent,
+    TResult? Function(TransactionStatus_Received value)? received,
+    TResult? Function(TransactionStatus_Pending value)? pending,
+    TResult? Function(TransactionStatus_Failed value)? failed,
+    TResult? Function(TransactionStatus_Expired value)? expired,
+  }) =>
+      throw _privateConstructorUsedError;
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(TransactionStatus_Sent value)? sent,
+    TResult Function(TransactionStatus_Received value)? received,
+    TResult Function(TransactionStatus_Pending value)? pending,
+    TResult Function(TransactionStatus_Failed value)? failed,
+    TResult Function(TransactionStatus_Expired value)? expired,
+    required TResult orElse(),
+  }) =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $TransactionStatusCopyWith<$Res> {
+  factory $TransactionStatusCopyWith(
+          TransactionStatus value, $Res Function(TransactionStatus) then) =
+      _$TransactionStatusCopyWithImpl<$Res, TransactionStatus>;
+}
+
+/// @nodoc
+class _$TransactionStatusCopyWithImpl<$Res, $Val extends TransactionStatus>
+    implements $TransactionStatusCopyWith<$Res> {
+  _$TransactionStatusCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+}
+
+/// @nodoc
+abstract class _$$TransactionStatus_SentCopyWith<$Res> {
+  factory _$$TransactionStatus_SentCopyWith(_$TransactionStatus_Sent value,
+          $Res Function(_$TransactionStatus_Sent) then) =
+      __$$TransactionStatus_SentCopyWithImpl<$Res>;
+}
+
+/// @nodoc
+class __$$TransactionStatus_SentCopyWithImpl<$Res>
+    extends _$TransactionStatusCopyWithImpl<$Res, _$TransactionStatus_Sent>
+    implements _$$TransactionStatus_SentCopyWith<$Res> {
+  __$$TransactionStatus_SentCopyWithImpl(_$TransactionStatus_Sent _value,
+      $Res Function(_$TransactionStatus_Sent) _then)
+      : super(_value, _then);
+}
+
+/// @nodoc
+
+class _$TransactionStatus_Sent implements TransactionStatus_Sent {
+  const _$TransactionStatus_Sent();
+
+  @override
+  String toString() {
+    return 'TransactionStatus.sent()';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _$TransactionStatus_Sent);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() sent,
+    required TResult Function() received,
+    required TResult Function(Pending field0) pending,
+    required TResult Function() failed,
+    required TResult Function() expired,
+  }) {
+    return sent();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? sent,
+    TResult? Function()? received,
+    TResult? Function(Pending field0)? pending,
+    TResult? Function()? failed,
+    TResult? Function()? expired,
+  }) {
+    return sent?.call();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? sent,
+    TResult Function()? received,
+    TResult Function(Pending field0)? pending,
+    TResult Function()? failed,
+    TResult Function()? expired,
+    required TResult orElse(),
+  }) {
+    if (sent != null) {
+      return sent();
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(TransactionStatus_Sent value) sent,
+    required TResult Function(TransactionStatus_Received value) received,
+    required TResult Function(TransactionStatus_Pending value) pending,
+    required TResult Function(TransactionStatus_Failed value) failed,
+    required TResult Function(TransactionStatus_Expired value) expired,
+  }) {
+    return sent(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(TransactionStatus_Sent value)? sent,
+    TResult? Function(TransactionStatus_Received value)? received,
+    TResult? Function(TransactionStatus_Pending value)? pending,
+    TResult? Function(TransactionStatus_Failed value)? failed,
+    TResult? Function(TransactionStatus_Expired value)? expired,
+  }) {
+    return sent?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(TransactionStatus_Sent value)? sent,
+    TResult Function(TransactionStatus_Received value)? received,
+    TResult Function(TransactionStatus_Pending value)? pending,
+    TResult Function(TransactionStatus_Failed value)? failed,
+    TResult Function(TransactionStatus_Expired value)? expired,
+    required TResult orElse(),
+  }) {
+    if (sent != null) {
+      return sent(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class TransactionStatus_Sent implements TransactionStatus {
+  const factory TransactionStatus_Sent() = _$TransactionStatus_Sent;
+}
+
+/// @nodoc
+abstract class _$$TransactionStatus_ReceivedCopyWith<$Res> {
+  factory _$$TransactionStatus_ReceivedCopyWith(
+          _$TransactionStatus_Received value,
+          $Res Function(_$TransactionStatus_Received) then) =
+      __$$TransactionStatus_ReceivedCopyWithImpl<$Res>;
+}
+
+/// @nodoc
+class __$$TransactionStatus_ReceivedCopyWithImpl<$Res>
+    extends _$TransactionStatusCopyWithImpl<$Res, _$TransactionStatus_Received>
+    implements _$$TransactionStatus_ReceivedCopyWith<$Res> {
+  __$$TransactionStatus_ReceivedCopyWithImpl(
+      _$TransactionStatus_Received _value,
+      $Res Function(_$TransactionStatus_Received) _then)
+      : super(_value, _then);
+}
+
+/// @nodoc
+
+class _$TransactionStatus_Received implements TransactionStatus_Received {
+  const _$TransactionStatus_Received();
+
+  @override
+  String toString() {
+    return 'TransactionStatus.received()';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TransactionStatus_Received);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() sent,
+    required TResult Function() received,
+    required TResult Function(Pending field0) pending,
+    required TResult Function() failed,
+    required TResult Function() expired,
+  }) {
+    return received();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? sent,
+    TResult? Function()? received,
+    TResult? Function(Pending field0)? pending,
+    TResult? Function()? failed,
+    TResult? Function()? expired,
+  }) {
+    return received?.call();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? sent,
+    TResult Function()? received,
+    TResult Function(Pending field0)? pending,
+    TResult Function()? failed,
+    TResult Function()? expired,
+    required TResult orElse(),
+  }) {
+    if (received != null) {
+      return received();
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(TransactionStatus_Sent value) sent,
+    required TResult Function(TransactionStatus_Received value) received,
+    required TResult Function(TransactionStatus_Pending value) pending,
+    required TResult Function(TransactionStatus_Failed value) failed,
+    required TResult Function(TransactionStatus_Expired value) expired,
+  }) {
+    return received(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(TransactionStatus_Sent value)? sent,
+    TResult? Function(TransactionStatus_Received value)? received,
+    TResult? Function(TransactionStatus_Pending value)? pending,
+    TResult? Function(TransactionStatus_Failed value)? failed,
+    TResult? Function(TransactionStatus_Expired value)? expired,
+  }) {
+    return received?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(TransactionStatus_Sent value)? sent,
+    TResult Function(TransactionStatus_Received value)? received,
+    TResult Function(TransactionStatus_Pending value)? pending,
+    TResult Function(TransactionStatus_Failed value)? failed,
+    TResult Function(TransactionStatus_Expired value)? expired,
+    required TResult orElse(),
+  }) {
+    if (received != null) {
+      return received(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class TransactionStatus_Received implements TransactionStatus {
+  const factory TransactionStatus_Received() = _$TransactionStatus_Received;
+}
+
+/// @nodoc
+abstract class _$$TransactionStatus_PendingCopyWith<$Res> {
+  factory _$$TransactionStatus_PendingCopyWith(
+          _$TransactionStatus_Pending value,
+          $Res Function(_$TransactionStatus_Pending) then) =
+      __$$TransactionStatus_PendingCopyWithImpl<$Res>;
+  @useResult
+  $Res call({Pending field0});
+}
+
+/// @nodoc
+class __$$TransactionStatus_PendingCopyWithImpl<$Res>
+    extends _$TransactionStatusCopyWithImpl<$Res, _$TransactionStatus_Pending>
+    implements _$$TransactionStatus_PendingCopyWith<$Res> {
+  __$$TransactionStatus_PendingCopyWithImpl(_$TransactionStatus_Pending _value,
+      $Res Function(_$TransactionStatus_Pending) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? field0 = null,
+  }) {
+    return _then(_$TransactionStatus_Pending(
+      null == field0
+          ? _value.field0
+          : field0 // ignore: cast_nullable_to_non_nullable
+              as Pending,
+    ));
+  }
+}
+
+/// @nodoc
+
+class _$TransactionStatus_Pending implements TransactionStatus_Pending {
+  const _$TransactionStatus_Pending(this.field0);
+
+  @override
+  final Pending field0;
+
+  @override
+  String toString() {
+    return 'TransactionStatus.pending(field0: $field0)';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TransactionStatus_Pending &&
+            (identical(other.field0, field0) || other.field0 == field0));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, field0);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$TransactionStatus_PendingCopyWith<_$TransactionStatus_Pending>
+      get copyWith => __$$TransactionStatus_PendingCopyWithImpl<
+          _$TransactionStatus_Pending>(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() sent,
+    required TResult Function() received,
+    required TResult Function(Pending field0) pending,
+    required TResult Function() failed,
+    required TResult Function() expired,
+  }) {
+    return pending(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? sent,
+    TResult? Function()? received,
+    TResult? Function(Pending field0)? pending,
+    TResult? Function()? failed,
+    TResult? Function()? expired,
+  }) {
+    return pending?.call(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? sent,
+    TResult Function()? received,
+    TResult Function(Pending field0)? pending,
+    TResult Function()? failed,
+    TResult Function()? expired,
+    required TResult orElse(),
+  }) {
+    if (pending != null) {
+      return pending(field0);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(TransactionStatus_Sent value) sent,
+    required TResult Function(TransactionStatus_Received value) received,
+    required TResult Function(TransactionStatus_Pending value) pending,
+    required TResult Function(TransactionStatus_Failed value) failed,
+    required TResult Function(TransactionStatus_Expired value) expired,
+  }) {
+    return pending(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(TransactionStatus_Sent value)? sent,
+    TResult? Function(TransactionStatus_Received value)? received,
+    TResult? Function(TransactionStatus_Pending value)? pending,
+    TResult? Function(TransactionStatus_Failed value)? failed,
+    TResult? Function(TransactionStatus_Expired value)? expired,
+  }) {
+    return pending?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(TransactionStatus_Sent value)? sent,
+    TResult Function(TransactionStatus_Received value)? received,
+    TResult Function(TransactionStatus_Pending value)? pending,
+    TResult Function(TransactionStatus_Failed value)? failed,
+    TResult Function(TransactionStatus_Expired value)? expired,
+    required TResult orElse(),
+  }) {
+    if (pending != null) {
+      return pending(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class TransactionStatus_Pending implements TransactionStatus {
+  const factory TransactionStatus_Pending(final Pending field0) =
+      _$TransactionStatus_Pending;
+
+  Pending get field0;
+  @JsonKey(ignore: true)
+  _$$TransactionStatus_PendingCopyWith<_$TransactionStatus_Pending>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$TransactionStatus_FailedCopyWith<$Res> {
+  factory _$$TransactionStatus_FailedCopyWith(_$TransactionStatus_Failed value,
+          $Res Function(_$TransactionStatus_Failed) then) =
+      __$$TransactionStatus_FailedCopyWithImpl<$Res>;
+}
+
+/// @nodoc
+class __$$TransactionStatus_FailedCopyWithImpl<$Res>
+    extends _$TransactionStatusCopyWithImpl<$Res, _$TransactionStatus_Failed>
+    implements _$$TransactionStatus_FailedCopyWith<$Res> {
+  __$$TransactionStatus_FailedCopyWithImpl(_$TransactionStatus_Failed _value,
+      $Res Function(_$TransactionStatus_Failed) _then)
+      : super(_value, _then);
+}
+
+/// @nodoc
+
+class _$TransactionStatus_Failed implements TransactionStatus_Failed {
+  const _$TransactionStatus_Failed();
+
+  @override
+  String toString() {
+    return 'TransactionStatus.failed()';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TransactionStatus_Failed);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() sent,
+    required TResult Function() received,
+    required TResult Function(Pending field0) pending,
+    required TResult Function() failed,
+    required TResult Function() expired,
+  }) {
+    return failed();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? sent,
+    TResult? Function()? received,
+    TResult? Function(Pending field0)? pending,
+    TResult? Function()? failed,
+    TResult? Function()? expired,
+  }) {
+    return failed?.call();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? sent,
+    TResult Function()? received,
+    TResult Function(Pending field0)? pending,
+    TResult Function()? failed,
+    TResult Function()? expired,
+    required TResult orElse(),
+  }) {
+    if (failed != null) {
+      return failed();
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(TransactionStatus_Sent value) sent,
+    required TResult Function(TransactionStatus_Received value) received,
+    required TResult Function(TransactionStatus_Pending value) pending,
+    required TResult Function(TransactionStatus_Failed value) failed,
+    required TResult Function(TransactionStatus_Expired value) expired,
+  }) {
+    return failed(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(TransactionStatus_Sent value)? sent,
+    TResult? Function(TransactionStatus_Received value)? received,
+    TResult? Function(TransactionStatus_Pending value)? pending,
+    TResult? Function(TransactionStatus_Failed value)? failed,
+    TResult? Function(TransactionStatus_Expired value)? expired,
+  }) {
+    return failed?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(TransactionStatus_Sent value)? sent,
+    TResult Function(TransactionStatus_Received value)? received,
+    TResult Function(TransactionStatus_Pending value)? pending,
+    TResult Function(TransactionStatus_Failed value)? failed,
+    TResult Function(TransactionStatus_Expired value)? expired,
+    required TResult orElse(),
+  }) {
+    if (failed != null) {
+      return failed(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class TransactionStatus_Failed implements TransactionStatus {
+  const factory TransactionStatus_Failed() = _$TransactionStatus_Failed;
+}
+
+/// @nodoc
+abstract class _$$TransactionStatus_ExpiredCopyWith<$Res> {
+  factory _$$TransactionStatus_ExpiredCopyWith(
+          _$TransactionStatus_Expired value,
+          $Res Function(_$TransactionStatus_Expired) then) =
+      __$$TransactionStatus_ExpiredCopyWithImpl<$Res>;
+}
+
+/// @nodoc
+class __$$TransactionStatus_ExpiredCopyWithImpl<$Res>
+    extends _$TransactionStatusCopyWithImpl<$Res, _$TransactionStatus_Expired>
+    implements _$$TransactionStatus_ExpiredCopyWith<$Res> {
+  __$$TransactionStatus_ExpiredCopyWithImpl(_$TransactionStatus_Expired _value,
+      $Res Function(_$TransactionStatus_Expired) _then)
+      : super(_value, _then);
+}
+
+/// @nodoc
+
+class _$TransactionStatus_Expired implements TransactionStatus_Expired {
+  const _$TransactionStatus_Expired();
+
+  @override
+  String toString() {
+    return 'TransactionStatus.expired()';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TransactionStatus_Expired);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() sent,
+    required TResult Function() received,
+    required TResult Function(Pending field0) pending,
+    required TResult Function() failed,
+    required TResult Function() expired,
+  }) {
+    return expired();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? sent,
+    TResult? Function()? received,
+    TResult? Function(Pending field0)? pending,
+    TResult? Function()? failed,
+    TResult? Function()? expired,
+  }) {
+    return expired?.call();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? sent,
+    TResult Function()? received,
+    TResult Function(Pending field0)? pending,
+    TResult Function()? failed,
+    TResult Function()? expired,
+    required TResult orElse(),
+  }) {
+    if (expired != null) {
+      return expired();
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(TransactionStatus_Sent value) sent,
+    required TResult Function(TransactionStatus_Received value) received,
+    required TResult Function(TransactionStatus_Pending value) pending,
+    required TResult Function(TransactionStatus_Failed value) failed,
+    required TResult Function(TransactionStatus_Expired value) expired,
+  }) {
+    return expired(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(TransactionStatus_Sent value)? sent,
+    TResult? Function(TransactionStatus_Received value)? received,
+    TResult? Function(TransactionStatus_Pending value)? pending,
+    TResult? Function(TransactionStatus_Failed value)? failed,
+    TResult? Function(TransactionStatus_Expired value)? expired,
+  }) {
+    return expired?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(TransactionStatus_Sent value)? sent,
+    TResult Function(TransactionStatus_Received value)? received,
+    TResult Function(TransactionStatus_Pending value)? pending,
+    TResult Function(TransactionStatus_Failed value)? failed,
+    TResult Function(TransactionStatus_Expired value)? expired,
+    required TResult orElse(),
+  }) {
+    if (expired != null) {
+      return expired(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class TransactionStatus_Expired implements TransactionStatus {
+  const factory TransactionStatus_Expired() = _$TransactionStatus_Expired;
+}

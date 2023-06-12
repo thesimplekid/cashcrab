@@ -164,9 +164,9 @@ pub(crate) async fn add_mint(mint: Mint) -> Result<()> {
 
 /// Update Mint Info
 pub(crate) async fn update_mint_info(url: &str, mint_info: MintInformation) -> Result<()> {
-    let currrent_mint = get_mint(url).await?;
+    let current_mint = get_mint(url).await?;
 
-    let new_mint = match currrent_mint {
+    let new_mint = match current_mint {
         Some(info) => Mint {
             url: info.url,
             active_keyset: info.active_keyset,

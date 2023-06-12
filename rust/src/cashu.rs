@@ -1,6 +1,6 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 
-use crate::{api::wallet_for_url, database, types::Mint};
+use crate::{api::wallet_for_url, database};
 /// Fetch Mint into
 pub(crate) async fn fetch_mint_info(url: &str) -> Result<()> {
     let wallet = wallet_for_url(url).await?;

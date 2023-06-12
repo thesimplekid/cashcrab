@@ -165,6 +165,16 @@ pub extern "C" fn wire_get_transactions(port_: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_get_inbox(port_: i64) {
+    wire_get_inbox_impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_redeam_inbox(port_: i64) {
+    wire_redeam_inbox_impl(port_)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_get_transaction(port_: i64, tid: *mut wire_uint_8_list) {
     wire_get_transaction_impl(port_, tid)
 }
@@ -278,6 +288,7 @@ impl Wire2Api<CashuTransaction> for wire_CashuTransaction {
             amount: self.amount.wire2api(),
             mint: self.mint.wire2api(),
             token: self.token.wire2api(),
+            from: self.from.wire2api(),
         }
     }
 }
@@ -348,6 +359,22 @@ impl Wire2Api<Transaction> for wire_Transaction {
         }
     }
 }
+impl Wire2Api<TransactionStatus> for wire_TransactionStatus {
+    fn wire2api(self) -> TransactionStatus {
+        match self.tag {
+            0 => TransactionStatus::Sent,
+            1 => TransactionStatus::Received,
+            2 => unsafe {
+                let ans = support::box_from_leak_ptr(self.kind);
+                let ans = support::box_from_leak_ptr(ans.Pending);
+                TransactionStatus::Pending(ans.field0.wire2api())
+            },
+            3 => TransactionStatus::Failed,
+            4 => TransactionStatus::Expired,
+            _ => unreachable!(),
+        }
+    }
+}
 
 impl Wire2Api<Vec<u8>> for *mut wire_uint_8_list {
     fn wire2api(self) -> Vec<u8> {
@@ -363,18 +390,19 @@ impl Wire2Api<Vec<u8>> for *mut wire_uint_8_list {
 #[derive(Clone)]
 pub struct wire_CashuTransaction {
     id: *mut wire_uint_8_list,
-    status: i32,
+    status: wire_TransactionStatus,
     time: u64,
     amount: u64,
     mint: *mut wire_uint_8_list,
     token: *mut wire_uint_8_list,
+    from: *mut wire_uint_8_list,
 }
 
 #[repr(C)]
 #[derive(Clone)]
 pub struct wire_LNTransaction {
     id: *mut wire_uint_8_list,
-    status: i32,
+    status: wire_TransactionStatus,
     time: u64,
     amount: u64,
     fee: *mut u64,
@@ -452,6 +480,43 @@ pub struct wire_Transaction_CashuTransaction {
 pub struct wire_Transaction_LNTransaction {
     field0: *mut wire_LNTransaction,
 }
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_TransactionStatus {
+    tag: i32,
+    kind: *mut TransactionStatusKind,
+}
+
+#[repr(C)]
+pub union TransactionStatusKind {
+    Sent: *mut wire_TransactionStatus_Sent,
+    Received: *mut wire_TransactionStatus_Received,
+    Pending: *mut wire_TransactionStatus_Pending,
+    Failed: *mut wire_TransactionStatus_Failed,
+    Expired: *mut wire_TransactionStatus_Expired,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_TransactionStatus_Sent {}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_TransactionStatus_Received {}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_TransactionStatus_Pending {
+    field0: i32,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_TransactionStatus_Failed {}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_TransactionStatus_Expired {}
 
 // Section: impl NewWithNullPtr
 
@@ -474,6 +539,7 @@ impl NewWithNullPtr for wire_CashuTransaction {
             amount: Default::default(),
             mint: core::ptr::null_mut(),
             token: core::ptr::null_mut(),
+            from: core::ptr::null_mut(),
         }
     }
 }
@@ -582,6 +648,30 @@ pub extern "C" fn inflate_Transaction_LNTransaction() -> *mut TransactionKind {
     support::new_leak_box_ptr(TransactionKind {
         LNTransaction: support::new_leak_box_ptr(wire_Transaction_LNTransaction {
             field0: core::ptr::null_mut(),
+        }),
+    })
+}
+
+impl Default for wire_TransactionStatus {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+
+impl NewWithNullPtr for wire_TransactionStatus {
+    fn new_with_null_ptr() -> Self {
+        Self {
+            tag: -1,
+            kind: core::ptr::null_mut(),
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn inflate_TransactionStatus_Pending() -> *mut TransactionStatusKind {
+    support::new_leak_box_ptr(TransactionStatusKind {
+        Pending: support::new_leak_box_ptr(wire_TransactionStatus_Pending {
+            field0: Default::default(),
         }),
     })
 }

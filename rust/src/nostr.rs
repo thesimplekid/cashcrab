@@ -55,7 +55,7 @@ impl Nostr {
 
         if relays.is_empty() {
             // FIXME: Don't just default to this fine for dev
-            relays.push("wss://thesimplekid.space".to_string());
+            relays.push("wss://relay.damus.io".to_string());
             database::nostr::save_relays(&relays).await?;
         }
 
@@ -263,7 +263,7 @@ impl Nostr {
             let invoice = lightning_invoice::Invoice::from_str(msg)?;
 
             let transaction = Transaction::LNTransaction(types::LNTransaction::new(
-                None,
+                types::TransactionStatus::Sent,
                 Self::invoice_amount(invoice.amount_milli_satoshis()).unwrap_or(0),
                 None,
                 None,
@@ -286,10 +286,11 @@ impl Nostr {
             let token_info = token.token_info();
 
             let transaction = Transaction::CashuTransaction(CashuTransaction::new(
-                None,
+                types::TransactionStatus::Pending(types::Pending::Receive),
                 token_info.0,
                 &token_info.1,
                 msg,
+                Some(author.to_string()),
             ));
 
             database::transactions::add_transaction(&transaction).await?;

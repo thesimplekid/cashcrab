@@ -10,10 +10,16 @@ use crate::database;
 use crate::utils::unix_time;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Pending {
+    Send,
+    Receive,
+}
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TransactionStatus {
     Sent,
     Received,
-    Pending,
+    Pending(Pending),
     Failed,
     Expired,
 }
@@ -48,6 +54,9 @@ impl Transaction {
             Transaction::LNTransaction(transaction) => transaction.status,
         }
     }
+    pub fn is_pending(&self) -> bool {
+        matches!(self.status(), TransactionStatus::Pending(_))
+    }
 
     pub fn content(&self) -> String {
         match self {
@@ -78,15 +87,18 @@ pub struct CashuTransaction {
     pub amount: u64,
     pub mint: String,
     pub token: String,
+    pub from: Option<String>,
 }
 
 impl CashuTransaction {
-    pub fn new(status: Option<TransactionStatus>, amount: u64, mint: &str, token: &str) -> Self {
+    pub fn new(
+        status: TransactionStatus,
+        amount: u64,
+        mint: &str,
+        token: &str,
+        from: Option<String>,
+    ) -> Self {
         let id = sha256::Hash::hash(token.as_bytes()).to_string();
-        let status = match status {
-            Some(status) => status,
-            None => TransactionStatus::Pending,
-        };
         Self {
             id: Some(id),
             status,
@@ -94,6 +106,7 @@ impl CashuTransaction {
             amount,
             mint: mint.to_string(),
             token: token.to_string(),
+            from,
         }
     }
 }
@@ -112,7 +125,7 @@ pub struct LNTransaction {
 
 impl LNTransaction {
     pub fn new(
-        status: Option<TransactionStatus>,
+        status: TransactionStatus,
         amount: u64,
         fee: Option<u64>,
         mint: Option<String>,
@@ -120,10 +133,6 @@ impl LNTransaction {
         hash: &str,
     ) -> Self {
         let id = sha256::Hash::hash(bolt11.as_bytes()).to_string();
-        let status = match status {
-            Some(status) => status,
-            None => TransactionStatus::Pending,
-        };
         Self {
             id: Some(id),
             status,

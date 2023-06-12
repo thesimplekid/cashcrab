@@ -24,7 +24,7 @@ use tokio::sync::Mutex;
 use super::types::{InvoiceInfo, TokenData};
 use crate::cashu;
 use crate::nostr::Nostr;
-use crate::types::{InvoiceStatus, KeyData, MintInformation};
+use crate::types::{InvoiceStatus, KeyData, MintInformation, Pending};
 use crate::utils::convert_str_to_xonly;
 use crate::{
     database,
@@ -528,6 +528,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
                         amount: cashu_trans.amount,
                         mint: cashu_trans.mint.clone(),
                         token: cashu_trans.token.clone(),
+                        from: cashu_trans.from.clone(),
                     });
 
                     database::transactions::update_transaction_status(&transaction).await?;
@@ -535,7 +536,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
                     // Update Status
                     Ok(TransactionStatus::Sent)
                 } else {
-                    Ok(TransactionStatus::Pending)
+                    Ok(cashu_trans.status)
                 }
             }
             Transaction::LNTransaction(ln_trans) => {
@@ -552,7 +553,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
                         database::cashu::add_proofs(mint, &proofs).await?;
                         database::transactions::update_transaction_status(
                             &Transaction::LNTransaction(LNTransaction::new(
-                                Some(TransactionStatus::Received),
+                                TransactionStatus::Received,
                                 ln_trans.amount,
                                 ln_trans.fee,
                                 ln_trans.mint.clone(),
@@ -565,7 +566,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
                     } else if invoice.is_expired() {
                         database::transactions::update_transaction_status(
                             &Transaction::LNTransaction(LNTransaction::new(
-                                Some(TransactionStatus::Expired),
+                                TransactionStatus::Expired,
                                 ln_trans.amount,
                                 ln_trans.fee,
                                 ln_trans.mint.clone(),
@@ -578,7 +579,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
                     }
                 }
 
-                Ok(TransactionStatus::Pending)
+                Ok(ln_trans.status)
             }
         }
     });
@@ -599,10 +600,11 @@ pub fn receive_token(encoded_token: String) -> Result<Transaction> {
         database::cashu::add_proofs(&mint_url, &received_proofs).await?;
 
         let transaction = Transaction::CashuTransaction(CashuTransaction::new(
-            Some(TransactionStatus::Received),
+            TransactionStatus::Received,
             token.token_info().0,
             &mint_url,
             &encoded_token,
+            None,
         ));
 
         database::transactions::add_transaction(&transaction).await?;
@@ -668,10 +670,11 @@ pub fn send(amount: u64, active_mint: String) -> Result<Transaction> {
 
         let token = wallet.proofs_to_token(r.send_proofs, None)?;
         let transaction = CashuTransaction::new(
-            Some(TransactionStatus::Pending),
+            TransactionStatus::Pending(Pending::Send),
             amount,
             &active_mint,
             &token,
+            None,
         );
         let transaction = Transaction::CashuTransaction(transaction);
 
@@ -692,7 +695,7 @@ pub fn request_mint(amount: u64, mint_url: String) -> Result<Transaction> {
         let invoice = wallet.request_mint(Amount::from_sat(amount)).await?;
 
         let transaction = LNTransaction::new(
-            None,
+            TransactionStatus::Pending(Pending::Receive),
             amount,
             None,
             Some(mint_url),
@@ -741,7 +744,7 @@ pub fn mint_swap(from_mint: String, to_mint: String, amount: u64) -> Result<()> 
         database::cashu::add_proofs(&to_mint, &proofs).await?;
         database::transactions::update_transaction_status(&Transaction::LNTransaction(
             LNTransaction::new(
-                Some(TransactionStatus::Received),
+                TransactionStatus::Received,
                 amount.to_sat(),
                 None,
                 Some(to_mint.to_string()),
@@ -800,7 +803,7 @@ async fn pay_invoice(invoice: &Invoice, mint: &str) -> Result<Transaction> {
             let fee = total_spent - amount;
 
             Transaction::LNTransaction(LNTransaction::new(
-                Some(TransactionStatus::Sent),
+                TransactionStatus::Sent,
                 amount,
                 Some(fee),
                 Some(mint.to_string()),
@@ -809,7 +812,7 @@ async fn pay_invoice(invoice: &Invoice, mint: &str) -> Result<Transaction> {
             ))
         }
         Err(_err) => Transaction::LNTransaction(LNTransaction::new(
-            Some(TransactionStatus::Failed),
+            TransactionStatus::Failed,
             amount,
             None,
             Some(mint.to_string()),
@@ -830,7 +833,7 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
 
         if invoice.is_expired() {
             let transaction = Transaction::LNTransaction(LNTransaction::new(
-                Some(TransactionStatus::Expired),
+                TransactionStatus::Expired,
                 amount,
                 None,
                 Some(mint),
@@ -879,7 +882,7 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
                 let fee = total_spent - amount;
 
                 Transaction::LNTransaction(LNTransaction::new(
-                    Some(TransactionStatus::Sent),
+                    TransactionStatus::Sent,
                     amount,
                     Some(fee),
                     Some(mint),
@@ -888,7 +891,7 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
                 ))
             }
             Err(_err) => Transaction::LNTransaction(LNTransaction::new(
-                Some(TransactionStatus::Failed),
+                TransactionStatus::Failed,
                 amount,
                 None,
                 Some(mint),
@@ -934,6 +937,51 @@ pub fn decode_invoice(encoded_invoice: String) -> Result<InvoiceInfo> {
 pub fn get_transactions() -> Result<Vec<Transaction>> {
     let rt = lock_runtime!();
     let result = rt.block_on(async { Ok(database::transactions::get_all_transactions().await?) });
+
+    drop(rt);
+
+    result
+}
+
+pub fn get_inbox() -> Result<Vec<Transaction>> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        Ok(database::transactions::get_pending_receive_cashu_transactions().await?)
+    });
+
+    drop(rt);
+
+    result
+}
+
+pub fn redeam_inbox() -> Result<()> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        let transactions = database::transactions::get_pending_receive_cashu_transactions().await?;
+
+        for transaction in transactions {
+            if let Transaction::CashuTransaction(c_transaction) = transaction {
+                let token = Token::from_str(&c_transaction.token)?;
+                let wallet = wallet_for_url(&token.token_info().1).await?;
+                let mint_url = wallet.client.mint_url.to_string();
+                let received_proofs = wallet.receive(&c_transaction.token).await?;
+
+                database::cashu::add_proofs(&mint_url, &received_proofs).await?;
+
+                let transaction = Transaction::CashuTransaction(CashuTransaction::new(
+                    TransactionStatus::Received,
+                    token.token_info().0,
+                    &mint_url,
+                    &c_transaction.token,
+                    None,
+                ));
+
+                database::transactions::add_transaction(&transaction).await?;
+            }
+        }
+
+        Ok(())
+    });
 
     drop(rt);
 

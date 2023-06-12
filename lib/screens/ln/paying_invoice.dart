@@ -87,7 +87,7 @@ class PayingInvoiceState extends State<PayingInvoice> {
       Column column;
 
       if (lnt != null) {
-        if (lnt!.status == TransactionStatus.Sent) {
+        if (lnt!.status == const TransactionStatus.sent()) {
           column = const Column(children: [
             Icon(
               Icons.check_circle,
@@ -103,7 +103,7 @@ class PayingInvoiceState extends State<PayingInvoice> {
               ),
             ),
           ]);
-        } else if (lnt!.status == TransactionStatus.Expired) {
+        } else if (lnt!.status == const TransactionStatus.expired()) {
           column = const Column(children: [
             Icon(
               Icons.check_circle,

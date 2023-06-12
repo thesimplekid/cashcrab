@@ -277,8 +277,9 @@ class TransactionList extends StatelessWidget {
               ? (t.field0 as LNTransaction)
               : (t.field0 as CashuTransaction);
           Text amountText;
+
           switch (transaction.status) {
-            case TransactionStatus.Sent:
+            case TransactionStatus_Sent():
               statusIcon = Icons.call_made;
 
               amountText = Text(
@@ -290,7 +291,7 @@ class TransactionList extends StatelessWidget {
                 ),
               );
               break;
-            case TransactionStatus.Received:
+            case TransactionStatus_Received():
               statusIcon = Icons.call_received;
               amountText = Text(
                 "${transaction.amount} sats",
@@ -301,7 +302,7 @@ class TransactionList extends StatelessWidget {
                 ),
               );
               break;
-            case TransactionStatus.Pending:
+            case TransactionStatus_Pending():
               statusIcon = Icons.call_received;
               amountText = Text(
                 "${transaction.amount} sats",
@@ -312,7 +313,7 @@ class TransactionList extends StatelessWidget {
                 ),
               );
               break;
-            case TransactionStatus.Expired:
+            case TransactionStatus_Expired():
               statusIcon = Icons.close;
               amountText = Text(
                 "${transaction.amount} sats",
@@ -323,7 +324,7 @@ class TransactionList extends StatelessWidget {
                 ),
               );
               break;
-            case TransactionStatus.Failed:
+            case TransactionStatus_Failed():
               statusIcon = Icons.error;
               amountText = Text(
                 "${transaction.amount} sats",

@@ -24,7 +24,7 @@ pub(crate) async fn most_recent_event_time() -> Result<()> {
     Ok(())
 }
 
-pub(crate) async fn get_most_recent_event_time() -> Result<Option<String>> {
+pub(crate) async fn _get_most_recent_event_time() -> Result<Option<String>> {
     let db = DB.lock().await;
     let db = db
         .as_ref()

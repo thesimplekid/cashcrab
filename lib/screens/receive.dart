@@ -135,22 +135,20 @@ class ReceiveState extends State<Receive> {
                     minimumSize: const Size(double.infinity, 70),
                   ),
                   onPressed: () {
-                    if (widget.activeWallet != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ReceiveToken(
-                            cashu: widget.cashu,
-                            mints: widget.mints,
-                            createInvoice: widget.createInvoice,
-                            decodeToken: widget.decodeToken,
-                            activeWallet: widget.activeWallet,
-                            addMint: widget.addMint,
-                            receiveToken: widget.receiveToken,
-                          ),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReceiveToken(
+                          cashu: widget.cashu,
+                          mints: widget.mints,
+                          createInvoice: widget.createInvoice,
+                          decodeToken: widget.decodeToken,
+                          activeWallet: widget.activeWallet,
+                          addMint: widget.addMint,
+                          receiveToken: widget.receiveToken,
                         ),
-                      );
-                    }
+                      ),
+                    );
                   },
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,

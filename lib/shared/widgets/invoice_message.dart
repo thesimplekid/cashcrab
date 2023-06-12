@@ -23,11 +23,11 @@ class InvoiceMessageWidget extends StatelessWidget {
     String buttonText;
 
     switch (transaction?.status) {
-      case TransactionStatus.Pending:
+      case TransactionStatus.pending:
         buttonColor = messageAction;
         buttonText = "Pay Invoice";
         break;
-      case TransactionStatus.Expired:
+      case TransactionStatus.expired:
         buttonColor = expiredColor;
         buttonText = "Expired";
 
