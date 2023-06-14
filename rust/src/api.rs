@@ -776,7 +776,10 @@ async fn pay_invoice(invoice: &Invoice, mint: &str) -> Result<Transaction> {
     let proofs = database::cashu::get_proofs(mint).await?;
 
     let (send_proofs, _keep_proofs) = select_send_proofs(mint, amount_with_fee, &proofs).await?;
-    let transaction = match wallet.melt(invoice.clone(), send_proofs.clone()).await {
+    let transaction = match wallet
+        .melt(invoice.clone(), send_proofs.clone(), fees)
+        .await
+    {
         Ok(melted) => {
             // Remove proofs to be sent
             database::cashu::remove_proofs(mint, &send_proofs).await?;
@@ -855,7 +858,10 @@ pub fn melt(amount: u64, invoice: String, mint: String) -> Result<Transaction> {
         let (send_proofs, _keep_proofs) =
             select_send_proofs(&mint, amount_with_fee, &proofs).await?;
 
-        let transaction = match wallet.melt(invoice.clone(), send_proofs.clone()).await {
+        let transaction = match wallet
+            .melt(invoice.clone(), send_proofs.clone(), fees)
+            .await
+        {
             Ok(melted) => {
                 // Remove proofs to be sent
                 database::cashu::remove_proofs(&mint, &send_proofs).await?;
