@@ -208,7 +208,7 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 [[package]]
 name = "cashu-crab"
 version = "0.1.0"
-source = "git+https://github.com/thesimplekid/cashu-crab#b23f1e050e9523811ff3c7e52121e320c77c7ea9"
+source = "git+https://github.com/thesimplekid/cashu-crab#9d45f4b0360178dd5f0903953adbd96dba44d111"
 dependencies = [
  "base64",
  "bitcoin 0.30.0",
@@ -221,7 +221,6 @@ dependencies = [
  "rand",
  "serde",
  "serde_json",
- "thiserror",
  "url",
 ]
 
@@ -1003,7 +1002,7 @@ dependencies = [
 [[package]]
 name = "nostr"
 version = "0.22.0"
-source = "git+https://github.com/rust-nostr/nostr#1e38712d90f9dbe0bca7654536bde6cc78d3a385"
+source = "git+https://github.com/rust-nostr/nostr#543061126377c969cf94aaca806cf45c73846a43"
 dependencies = [
  "aes",
  "base64",
@@ -1022,7 +1021,7 @@ dependencies = [
 [[package]]
 name = "nostr-sdk"
 version = "0.22.0"
-source = "git+https://github.com/rust-nostr/nostr#1e38712d90f9dbe0bca7654536bde6cc78d3a385"
+source = "git+https://github.com/rust-nostr/nostr#543061126377c969cf94aaca806cf45c73846a43"
 dependencies = [
  "gloo-timers",
  "log",
@@ -1036,7 +1035,7 @@ dependencies = [
 [[package]]
 name = "nostr-sdk-net"
 version = "0.22.0"
-source = "git+https://github.com/rust-nostr/nostr#1e38712d90f9dbe0bca7654536bde6cc78d3a385"
+source = "git+https://github.com/rust-nostr/nostr#543061126377c969cf94aaca806cf45c73846a43"
 dependencies = [
  "futures-util",
  "thiserror",
@@ -1386,9 +1385,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.21.1"
+version = "0.21.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c911ba11bc8433e811ce56fde130ccf32f5127cab0e0194e9c68c5a5b671791e"
+checksum = "e32ca28af694bc1bbf399c33a516dbdf1c90090b8ab23c2bc24f834aa2247f5f"
 dependencies = [
  "log",
  "ring",
@@ -1785,7 +1784,7 @@ version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c28327cf380ac148141087fbfb9de9d7bd4e84ab5d2c28fbc911d753de8a7081"
 dependencies = [
- "rustls 0.21.1",
+ "rustls 0.21.2",
  "tokio",
 ]
 
@@ -1809,7 +1808,7 @@ checksum = "ec509ac96e9a0c43427c74f003127d953a265737636129424288d27cb5c4b12c"
 dependencies = [
  "futures-util",
  "log",
- "rustls 0.21.1",
+ "rustls 0.21.2",
  "tokio",
  "tokio-rustls",
  "tungstenite",
@@ -1829,7 +1828,7 @@ dependencies = [
  "httparse",
  "log",
  "rand",
- "rustls 0.21.1",
+ "rustls 0.21.2",
  "sha1",
  "thiserror",
  "url",

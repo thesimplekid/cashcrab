@@ -18,6 +18,7 @@ lightning-invoice = "0.23.0"
 lazy_static = "1.4.0"
 tokio = { version = "1.28.1", features = ["sync", "rt-multi-thread"] }
 cashu-crab = { git = "https://github.com/thesimplekid/cashu-crab" }
+# cashu-crab = { path = "../../cashu-crab" }
 allo-isolate = "0.1.14"
 thiserror = "1.0.40"
 redb = "0.22.0"
