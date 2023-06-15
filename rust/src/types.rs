@@ -325,13 +325,16 @@ pub(crate) enum ChannelMessage {
     RemoveRelay(String),
     GetRelays,
     Relays(Vec<String>),
-    // BroadcastEvent(Event),
+    BackupTokens(Vec<String>),
+    RestoreTokens,
+    TokensRestored,
     SetContacts(Vec<nostr_sdk::Contact>),
     GetMetadata(Vec<XOnlyPublicKey>),
     Contacts(Vec<Contact>),
     SendDirectMessage(XOnlyPublicKey, String),
     GetContacts(XOnlyPublicKey),
     ContactPubkeys(Vec<XOnlyPublicKey>),
+    Custom(String),
 }
 
 #[frb(mirror(MintVersion))]

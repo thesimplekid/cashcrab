@@ -57,7 +57,7 @@ impl<T: std::error::Error + ToString> From<T> for CashuError {
 }
 
 lazy_static! {
-    static ref WALLETS: Arc<Mutex<HashMap<String, Option<CashuWallet>>>> =
+    pub static ref WALLETS: Arc<Mutex<HashMap<String, Option<CashuWallet>>>> =
         Arc::new(Mutex::new(HashMap::new()));
     static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(Runtime::new().unwrap()));
     static ref PROFILE_PICTURES: Arc<Mutex<Option<PathBuf>>> = Arc::new(Mutex::new(None));
@@ -80,6 +80,18 @@ pub fn init_db(storage_path: String) -> Result<()> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
         database::init_db(&storage_path).await?;
+
+        Ok(())
+    });
+
+    drop(rt);
+    result
+}
+
+pub fn init_cashu() -> Result<()> {
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        cashu::init_cashu().await?;
 
         Ok(())
     });
@@ -386,26 +398,9 @@ pub fn get_conversation(pubkey: String) -> Result<Conversation> {
 pub fn get_balances() -> Result<String> {
     let rt = lock_runtime!();
     let result = rt.block_on(async {
-        let proofs = database::cashu::get_all_proofs().await?;
-
-        let mut balances = proofs
-            .iter()
-            .map(|(mint, proofs)| {
-                let balance = proofs
-                    .iter()
-                    .fold(0, |acc, proof| acc + proof.amount.to_sat() as i64);
-                (mint.to_owned(), balance)
-            })
-            .collect::<HashMap<_, _>>();
-
         let mints = WALLETS.lock().await;
-
         let mints: Vec<String> = mints.keys().cloned().collect();
-
-        for mint in mints {
-            balances.entry(mint).or_insert(0);
-        }
-
+        let balances = cashu::get_mint_balances(mints).await?;
         Ok(serde_json::to_string(&balances)?)
     });
 
@@ -507,82 +502,7 @@ pub(crate) async fn wallet_for_url(mint_url: &str) -> Result<CashuWallet> {
 /// Check spendable for messages
 pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
     let rt = lock_runtime!();
-    let result = rt.block_on(async {
-        match &transaction {
-            Transaction::CashuTransaction(cashu_trans) => {
-                let token = Token::from_str(&cashu_trans.token)?;
-                let wallet = wallet_for_url(&cashu_trans.mint).await?;
-
-                let check_spent = wallet
-                    .check_proofs_spent(&token.token[0].clone().proofs)
-                    .await?;
-
-                // REVIEW: This is a fairly naive check on if a token is spendable
-                // this works in the way `check_spendable` is called now but is not techically correct
-                // As a spendable proof can be from a completed transaction
-                if check_spent.spendable.is_empty() {
-                    let transaction = Transaction::CashuTransaction(CashuTransaction {
-                        id: Some(transaction.id()),
-                        status: TransactionStatus::Sent,
-                        time: cashu_trans.time,
-                        amount: cashu_trans.amount,
-                        mint: cashu_trans.mint.clone(),
-                        token: cashu_trans.token.clone(),
-                        from: cashu_trans.from.clone(),
-                    });
-
-                    database::transactions::update_transaction_status(&transaction).await?;
-
-                    // Update Status
-                    Ok(TransactionStatus::Sent)
-                } else {
-                    Ok(cashu_trans.status)
-                }
-            }
-            Transaction::LNTransaction(ln_trans) => {
-                if let Some(mint) = &ln_trans.mint {
-                    let wallet = wallet_for_url(mint).await?;
-                    let invoice = Invoice::from_str(&ln_trans.bolt11)?;
-
-                    let proofs = wallet
-                        .mint(Amount::from_sat(ln_trans.amount), &ln_trans.hash)
-                        .await
-                        .unwrap_or_default();
-
-                    if !proofs.is_empty() {
-                        database::cashu::add_proofs(mint, &proofs).await?;
-                        database::transactions::update_transaction_status(
-                            &Transaction::LNTransaction(LNTransaction::new(
-                                TransactionStatus::Received,
-                                ln_trans.amount,
-                                ln_trans.fee,
-                                ln_trans.mint.clone(),
-                                &ln_trans.bolt11,
-                                &ln_trans.hash,
-                            )),
-                        )
-                        .await?;
-                        return Ok(TransactionStatus::Received);
-                    } else if invoice.is_expired() {
-                        database::transactions::update_transaction_status(
-                            &Transaction::LNTransaction(LNTransaction::new(
-                                TransactionStatus::Expired,
-                                ln_trans.amount,
-                                ln_trans.fee,
-                                ln_trans.mint.clone(),
-                                &ln_trans.bolt11,
-                                &ln_trans.hash,
-                            )),
-                        )
-                        .await?;
-                        return Ok(TransactionStatus::Expired);
-                    }
-                }
-
-                Ok(ln_trans.status)
-            }
-        }
-    });
+    let result = rt.block_on(async { cashu::check_transaction_status(&transaction).await });
 
     drop(rt);
     result
@@ -591,26 +511,7 @@ pub fn check_spendable(transaction: Transaction) -> Result<TransactionStatus> {
 /// Receive
 pub fn receive_token(encoded_token: String) -> Result<Transaction> {
     let rt = lock_runtime!();
-    let token = Token::from_str(&encoded_token)?;
-    let result = rt.block_on(async {
-        let wallet = wallet_for_url(&token.token_info().1).await?;
-        let mint_url = wallet.client.mint_url.to_string();
-        let received_proofs = wallet.receive(&encoded_token).await?;
-
-        database::cashu::add_proofs(&mint_url, &received_proofs).await?;
-
-        let transaction = Transaction::CashuTransaction(CashuTransaction::new(
-            TransactionStatus::Received,
-            token.token_info().0,
-            &mint_url,
-            &encoded_token,
-            None,
-        ));
-
-        database::transactions::add_transaction(&transaction).await?;
-
-        Ok(transaction)
-    });
+    let result = rt.block_on(async { cashu::receive_token(&encoded_token).await });
 
     drop(rt);
     result
@@ -1053,6 +954,57 @@ pub fn set_active_mint(mint_url: Option<String>) -> Result<()> {
     result?;
 
     Ok(())
+}
+
+pub fn restore_tokens() -> Result<()> {
+    let rt = lock_runtime!();
+
+    let result: Result<(), anyhow::Error> = rt.block_on(async {
+        let mut nostr = NOSTR.lock().await;
+
+        if let Some(nostr) = nostr.as_mut() {
+            nostr.restore_tokens().await?;
+            Ok(())
+        } else {
+            bail!("Nostr client not set");
+        }
+    });
+
+    result
+}
+
+pub fn backup_mints() -> Result<String> {
+    let rt = lock_runtime!();
+
+    let result: Result<String, anyhow::Error> = rt.block_on(async {
+        let wallets = WALLETS.lock().await;
+        let mints: Vec<String> = wallets.keys().cloned().collect();
+
+        drop(wallets);
+
+        let mut tokens = vec![];
+
+        // bail!("Mints: {:?}", mints);
+        for mint in mints {
+            let wallet = wallet_for_url(&mint).await?;
+            let proofs = database::cashu::get_proofs(&mint).await?;
+            let token = wallet.proofs_to_token(proofs, None)?;
+            tokens.push(token);
+        }
+        // bail!("Token {:?}", tokens);
+
+        let mut nostr = NOSTR.lock().await;
+
+        if let Some(nostr) = nostr.as_mut() {
+            nostr.backup_tokens(tokens).await
+        } else {
+            bail!("Nostr not set");
+        }
+    });
+
+    drop(rt);
+
+    result
 }
 
 pub fn decode_token(encoded_token: String) -> Result<TokenData> {

@@ -63,9 +63,9 @@ pub(crate) async fn get_all_transactions() -> Result<Vec<Transaction>, CashuErro
         vec
     });
 
-    transactions.extend(pending_transactions);
+    // return Err(CashuError(format!("{:?}", pending_transactions)));
 
-    // return Err(CashuError(format!("Transactions: {:?}", transactions)));
+    transactions.extend(pending_transactions);
 
     Ok(transactions)
 }
@@ -123,7 +123,7 @@ pub(crate) async fn update_transaction_status(transaction: &Transaction) -> Resu
     let write_txn = db.begin_write()?;
 
     {
-        if transaction.is_pending() {
+        if !transaction.is_pending() {
             let mut pending_transaction_table = write_txn.open_table(PENDING_TRANSACTIONS)?;
             pending_transaction_table.remove(transaction.id().as_str())?;
         }
@@ -135,22 +135,29 @@ pub(crate) async fn update_transaction_status(transaction: &Transaction) -> Resu
     Ok(())
 }
 
-/*
 /// Get Pending transactions
-pub(crate) async fn get_pending_received_tokens() -> Result<Vec<Transaction>, CashuError> {
+pub(crate) async fn get_pending_transactions() -> Result<Vec<Transaction>, CashuError> {
     let db = DB.lock().await;
     let db = db
         .as_ref()
         .ok_or_else(|| CashuError("DB not set".to_string()))?;
     let read_txn = db.begin_read()?;
-    let table = read_txn.open_table(TRANSACTIONS)?;
-    let pending_table = read_txn.open_table(PENDING_TRANSACTIONS)?;
 
     // let transactions = pen
+    // Get Pending Transactions
+    let table = read_txn.open_table(PENDING_TRANSACTIONS)?;
+    let pending_transactions: Vec<Transaction> = table.iter()?.fold(Vec::new(), |mut vec, item| {
+        if let Ok((_key, value)) = item {
+            if let Ok(transaction) = serde_json::from_str(value.value()) {
+                vec.push(transaction)
+            }
+        }
+        vec
+    });
 
-    Ok(transactions)
+    Ok(pending_transactions)
 }
-*/
+
 /// Get all transactions
 pub(crate) async fn get_pending_receive_cashu_transactions() -> Result<Vec<Transaction>, CashuError>
 {
@@ -180,8 +187,6 @@ pub(crate) async fn get_pending_receive_cashu_transactions() -> Result<Vec<Trans
         }
         vec
     });
-
-    // return Err(CashuError(format!("Transactions: {:?}", transactions)));
 
     Ok(pending_transactions)
 }

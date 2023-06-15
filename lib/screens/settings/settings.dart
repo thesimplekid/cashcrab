@@ -1,3 +1,4 @@
+import 'package:cashcrab/screens/settings/backup.dart';
 import 'package:cashcrab/screens/settings/keys.dart';
 import 'package:flutter/material.dart';
 
@@ -19,6 +20,7 @@ class Settings extends StatefulWidget {
   final Function nostrLogOut;
   final Function mintSwap;
   final Function loadMints;
+  final Function restoreTokens;
   final String? activeMint;
 
   final Map<String, int> mints;
@@ -36,6 +38,7 @@ class Settings extends StatefulWidget {
       required this.addContact,
       required this.mintSwap,
       required this.loadMints,
+      required this.restoreTokens,
       required this.mints});
 
   @override
@@ -196,6 +199,44 @@ class _SettingsState extends State<Settings> {
                         SizedBox(width: 8),
                         Text(
                           "Keys",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                    Icon(Icons.arrow_forward),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: purpleColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TextButton(
+                onPressed: () async {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Backup(
+                        api: widget.api,
+                        restoreTokens: widget.restoreTokens,
+                      ),
+                    ),
+                  );
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.backup),
+                        SizedBox(width: 8),
+                        Text(
+                          "Backup",
                           textAlign: TextAlign.left,
                           style: TextStyle(fontSize: 18),
                         ),

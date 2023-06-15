@@ -2,18 +2,21 @@ use std::{str::FromStr, sync::Arc};
 
 use anyhow::{bail, Result};
 use cashu_crab::types::Token;
+use nostr_sdk::nips::nip04::encrypt;
 use nostr_sdk::prelude::*;
 use tokio::sync::{broadcast, mpsc, Mutex};
 use tokio::time::{timeout, Duration};
 
-use crate::types::ChannelMessage;
 use crate::{
-    database,
+    cashu, database,
     types::{
-        self, CashuTransaction, Conversation, Direction, KeyData, Message, Picture, Transaction,
+        self, CashuTransaction, ChannelMessage, Conversation, Direction, KeyData, Message, Picture,
+        Transaction,
     },
     utils::unix_time,
 };
+
+const D_TAG: &str = "cashcrab";
 
 #[derive(Clone, Debug)]
 pub struct Nostr {
@@ -55,7 +58,7 @@ impl Nostr {
 
         if relays.is_empty() {
             // FIXME: Don't just default to this fine for dev
-            relays.push("wss://relay.damus.io".to_string());
+            relays.push("wss://relay.thesimplekid.space".to_string());
             database::nostr::save_relays(&relays).await?;
         }
 
@@ -208,6 +211,61 @@ impl Nostr {
                                 self.nostr_res_tx.send(ChannelMessage::ContactPubkeys(pubkeys))?;
 
                             },
+                            Some(ChannelMessage::BackupTokens(tokens)) => {
+
+                                let serialized_token = serde_json::to_string(&tokens)?;
+                                let encrypted_content = encrypt(&client.keys().secret_key()?, &client.keys().public_key(),&serialized_token)?;
+
+                                let tag = Tag::Generic(TagKind::D, vec![D_TAG.to_string()]);
+
+                                let event = EventBuilder::new(Kind::ApplicationSpecificData, &encrypted_content, &[tag]).to_event(&client.keys())?;
+                                client.connect().await;
+                                let event_id = client.send_event(event.clone()).await?;
+                                self.nostr_res_tx.send(ChannelMessage::Custom(event_id.to_string()))?;
+                            }
+                            Some(ChannelMessage::RestoreTokens) => {
+                                let subscription = Filter::new().author(client.keys().public_key().to_string()).kind(Kind::ApplicationSpecificData).identifiers(vec![D_TAG]);
+
+                                let timeout = Duration::from_secs(30);
+                                let events = client
+                                    .get_events_of(vec![subscription.clone()], Some(timeout))
+                                    .await?;
+
+                                let mut unique_events: Vec<Event> = Vec::new();
+                                let mut seen_ids = std::collections::HashSet::new();
+
+                                for event in events {
+                                    if seen_ids.insert(event.id) {
+                                        unique_events.push(event);
+                                    }
+                                }
+
+                                unique_events.sort_by_key(|event| event.created_at);
+                                unique_events.reverse();
+
+
+                                for event in unique_events {
+                                    match decrypt(&client.keys().secret_key()?, &event.pubkey, &event.content) {
+                                        Ok(msg) => {
+                                            let tokens: Vec<String> = serde_json::from_str(&msg)?;
+
+                                            for token in tokens {
+                                                if let Err(err) = cashu::receive_token(&token).await {
+                                                    log::error!("{:?}", err);
+                                                }
+                                                let token = Token::from_str(&token)?;
+
+                                                cashu::remove_spent_proofs(&token.token_info().1).await?;
+                                            }
+                                            self.nostr_res_tx.send(ChannelMessage::TokensRestored)?;
+                                        }
+                                        Err(e) => {
+                                            self.nostr_res_tx.send(ChannelMessage::Custom("Could not decrypt".to_string()))?;
+                                            log::error!("Impossible to decrypt direct message: {e}")
+                                        }
+                                    }
+                                }
+                            }
                             Some(_) => {},
                             None => {},
                         }
@@ -523,7 +581,7 @@ impl Nostr {
     }
 
     /// Send message
-    pub async fn send_message(
+    pub(crate) async fn send_message(
         &mut self,
         receiver: XOnlyPublicKey,
         message: &Message,
@@ -541,5 +599,48 @@ impl Nostr {
             }
         }
         Ok(Conversation::new(vec![message.clone()], vec![]))
+    }
+
+    /// Backup Tokens
+    pub(crate) async fn backup_tokens(&mut self, tokens: Vec<String>) -> Result<String> {
+        self.nostr_tx
+            .send(ChannelMessage::BackupTokens(tokens))
+            .await?;
+
+        let timeout_duration = Duration::from_secs(5);
+        let mut nostr_res_rx = self.nostr_res_rx.lock().await;
+        loop {
+            match timeout(timeout_duration, nostr_res_rx.recv()).await {
+                Ok(Ok(msg)) => {
+                    if let ChannelMessage::Custom(message) = msg {
+                        return Ok(message);
+                    }
+                }
+                Ok(Err(_)) => (),
+                Err(_) => break,
+            }
+        }
+        bail!("Event not sent");
+    }
+
+    /// Restore Token
+    pub(crate) async fn restore_tokens(&mut self) -> Result<()> {
+        self.nostr_tx.send(ChannelMessage::RestoreTokens).await?;
+        let timeout_duration = Duration::from_secs(5);
+        let mut nostr_res_rx = self.nostr_res_rx.lock().await;
+        loop {
+            match timeout(timeout_duration, nostr_res_rx.recv()).await {
+                Ok(Ok(msg)) => {
+                    if matches!(msg, ChannelMessage::RestoreTokens) {
+                        return Ok(());
+                    }
+                }
+                Ok(Err(_)) => (),
+                Err(_) => break,
+            }
+        }
+        // bail!("Did not restore tokens");
+
+        Ok(())
     }
 }

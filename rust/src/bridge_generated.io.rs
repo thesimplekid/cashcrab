@@ -7,6 +7,11 @@ pub extern "C" fn wire_init_db(port_: i64, storage_path: *mut wire_uint_8_list) 
 }
 
 #[no_mangle]
+pub extern "C" fn wire_init_cashu(port_: i64) {
+    wire_init_cashu_impl(port_)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_init_nostr(
     port_: i64,
     storage_path: *mut wire_uint_8_list,
@@ -197,6 +202,16 @@ pub extern "C" fn wire_get_active_mint(port_: i64) {
 #[no_mangle]
 pub extern "C" fn wire_set_active_mint(port_: i64, mint_url: *mut wire_uint_8_list) {
     wire_set_active_mint_impl(port_, mint_url)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_restore_tokens(port_: i64) {
+    wire_restore_tokens_impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_backup_mints(port_: i64) {
+    wire_backup_mints_impl(port_)
 }
 
 #[no_mangle]

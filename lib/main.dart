@@ -87,6 +87,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   Future<void> _initDB() async {
     await api.initDb(storagePath: await _localPath);
+    await api.initCashu();
     String? key = await getNostrKey();
     String privKey =
         await api.initNostr(storagePath: await _localPath, privateKey: key);
@@ -164,6 +165,7 @@ class MyHomePageState extends State<MyHomePage> {
       nostrLogOut: nostrLogout,
       mintSwap: swapMint,
       loadMints: _loadMints,
+      restoreTokens: restoreTokens,
     );
 
     _inboxTab = Inbox(api: api, redeamInbox: redeamInbox);
@@ -199,8 +201,15 @@ class MyHomePageState extends State<MyHomePage> {
 
   void redeamInbox() async {
     await api.redeamInbox();
-    _loadTransactions();
-    _getBalances();
+    await _loadTransactions();
+    await _getBalances();
+  }
+
+  Future<void> restoreTokens() async {
+    await api.restoreTokens();
+
+    await _loadTransactions();
+    await _getBalances();
   }
 
   void saveNostrKey(String key) async {
@@ -297,7 +306,7 @@ class MyHomePageState extends State<MyHomePage> {
     final TransactionStatus status =
         await api.checkSpendable(transaction: transaction);
 
-    if (status != const TransactionStatus.pending(Pending.Send) ||
+    if (status != const TransactionStatus.pending(Pending.Send) &&
         (status != const TransactionStatus.pending(Pending.Receive))) {
       String id = transaction.field0 is LNTransaction
           ? (transaction.field0 as LNTransaction).id!

@@ -16,6 +16,10 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kInitDbConstMeta;
 
+  Future<void> initCashu({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kInitCashuConstMeta;
+
   Future<String> initNostr(
       {required String storagePath, String? privateKey, dynamic hint});
 
@@ -182,6 +186,14 @@ abstract class Rust {
   Future<void> setActiveMint({String? mintUrl, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kSetActiveMintConstMeta;
+
+  Future<void> restoreTokens({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kRestoreTokensConstMeta;
+
+  Future<String> backupMints({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kBackupMintsConstMeta;
 
   Future<TokenData> decodeToken({required String encodedToken, dynamic hint});
 

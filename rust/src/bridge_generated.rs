@@ -52,6 +52,16 @@ fn wire_init_db_impl(port_: MessagePort, storage_path: impl Wire2Api<String> + U
         },
     )
 }
+fn wire_init_cashu_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "init_cashu",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| init_cashu(),
+    )
+}
 fn wire_init_nostr_impl(
     port_: MessagePort,
     storage_path: impl Wire2Api<String> + UnwindSafe,
@@ -512,6 +522,26 @@ fn wire_set_active_mint_impl(
             let api_mint_url = mint_url.wire2api();
             move |task_callback| set_active_mint(api_mint_url)
         },
+    )
+}
+fn wire_restore_tokens_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "restore_tokens",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| restore_tokens(),
+    )
+}
+fn wire_backup_mints_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "backup_mints",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| backup_mints(),
     )
 }
 fn wire_decode_token_impl(port_: MessagePort, encoded_token: impl Wire2Api<String> + UnwindSafe) {

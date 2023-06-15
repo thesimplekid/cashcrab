@@ -42,6 +42,22 @@ class RustImpl implements Rust {
         argNames: ["storagePath"],
       );
 
+  Future<void> initCashu({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_init_cashu(port_),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kInitCashuConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kInitCashuConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "init_cashu",
+        argNames: [],
+      );
+
   Future<String> initNostr(
       {required String storagePath, String? privateKey, dynamic hint}) {
     var arg0 = _platform.api2wire_String(storagePath);
@@ -641,6 +657,38 @@ class RustImpl implements Rust {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "set_active_mint",
         argNames: ["mintUrl"],
+      );
+
+  Future<void> restoreTokens({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_restore_tokens(port_),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kRestoreTokensConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kRestoreTokensConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "restore_tokens",
+        argNames: [],
+      );
+
+  Future<String> backupMints({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_backup_mints(port_),
+      parseSuccessData: _wire2api_String,
+      constMeta: kBackupMintsConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kBackupMintsConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "backup_mints",
+        argNames: [],
       );
 
   Future<TokenData> decodeToken({required String encodedToken, dynamic hint}) {
@@ -1325,6 +1373,20 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _wire_init_db = _wire_init_dbPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
+  void wire_init_cashu(
+    int port_,
+  ) {
+    return _wire_init_cashu(
+      port_,
+    );
+  }
+
+  late final _wire_init_cashuPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_init_cashu');
+  late final _wire_init_cashu =
+      _wire_init_cashuPtr.asFunction<void Function(int)>();
+
   void wire_init_nostr(
     int port_,
     ffi.Pointer<wire_uint_8_list> storage_path,
@@ -1900,6 +1962,34 @@ class RustWire implements FlutterRustBridgeWireBase {
               ffi.Pointer<wire_uint_8_list>)>>('wire_set_active_mint');
   late final _wire_set_active_mint = _wire_set_active_mintPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_restore_tokens(
+    int port_,
+  ) {
+    return _wire_restore_tokens(
+      port_,
+    );
+  }
+
+  late final _wire_restore_tokensPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_restore_tokens');
+  late final _wire_restore_tokens =
+      _wire_restore_tokensPtr.asFunction<void Function(int)>();
+
+  void wire_backup_mints(
+    int port_,
+  ) {
+    return _wire_backup_mints(
+      port_,
+    );
+  }
+
+  late final _wire_backup_mintsPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_backup_mints');
+  late final _wire_backup_mints =
+      _wire_backup_mintsPtr.asFunction<void Function(int)>();
 
   void wire_decode_token(
     int port_,

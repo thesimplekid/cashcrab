@@ -129,6 +129,8 @@ intptr_t init_frb_dart_api_dl(void *obj);
 
 void wire_init_db(int64_t port_, struct wire_uint_8_list *storage_path);
 
+void wire_init_cashu(int64_t port_);
+
 void wire_init_nostr(int64_t port_,
                      struct wire_uint_8_list *storage_path,
                      struct wire_uint_8_list *private_key);
@@ -210,6 +212,10 @@ void wire_get_active_mint(int64_t port_);
 
 void wire_set_active_mint(int64_t port_, struct wire_uint_8_list *mint_url);
 
+void wire_restore_tokens(int64_t port_);
+
+void wire_backup_mints(int64_t port_);
+
 void wire_decode_token(int64_t port_, struct wire_uint_8_list *encoded_token);
 
 struct wire_CashuTransaction *new_box_autoadd_cashu_transaction_0(void);
@@ -241,6 +247,7 @@ void free_WireSyncReturn(WireSyncReturn ptr);
 static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;
     dummy_var ^= ((int64_t) (void*) wire_init_db);
+    dummy_var ^= ((int64_t) (void*) wire_init_cashu);
     dummy_var ^= ((int64_t) (void*) wire_init_nostr);
     dummy_var ^= ((int64_t) (void*) wire_get_keys);
     dummy_var ^= ((int64_t) (void*) wire_nostr_logout);
@@ -275,6 +282,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_get_mint_information);
     dummy_var ^= ((int64_t) (void*) wire_get_active_mint);
     dummy_var ^= ((int64_t) (void*) wire_set_active_mint);
+    dummy_var ^= ((int64_t) (void*) wire_restore_tokens);
+    dummy_var ^= ((int64_t) (void*) wire_backup_mints);
     dummy_var ^= ((int64_t) (void*) wire_decode_token);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_cashu_transaction_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_ln_transaction_0);
