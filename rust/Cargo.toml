@@ -21,7 +21,7 @@ cashu-crab = { git = "https://github.com/thesimplekid/cashu-crab" }
 # cashu-crab = { path = "../../cashu-crab" }
 allo-isolate = "0.1.14"
 thiserror = "1.0.40"
-redb = "0.22.0"
+redb = "1.0.0"
 log = "0.4.17"
 simplelog = "0.12.1"
 serde = { version = "1.0.163", features=["derive"] }
