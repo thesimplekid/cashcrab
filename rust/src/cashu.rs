@@ -58,8 +58,8 @@ pub(crate) async fn get_mint_balances(mints: Vec<String>) -> Result<HashMap<Stri
 }
 
 pub(crate) async fn receive_token(encoded_token: &str) -> Result<Transaction> {
-    let token = Token::from_str(&encoded_token)?;
-    let wallet = wallet_for_url(token.token_info().1).await?;
+    let token = Token::from_str(encoded_token)?;
+    let wallet = wallet_for_url(&token.token_info().1).await?;
     let mint_url = wallet.client.mint_url.to_string();
     let received_proofs = wallet.receive(encoded_token).await?;
 
