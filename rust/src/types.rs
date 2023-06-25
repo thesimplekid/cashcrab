@@ -2,7 +2,8 @@ use anyhow::Result;
 use bitcoin::secp256k1::XOnlyPublicKey;
 use bitcoin_hashes::sha256;
 use bitcoin_hashes::Hash;
-pub use cashu_crab::types::{MintInfo, MintVersion};
+use cashu_crab::nuts::nut09::MintInfo;
+use cashu_crab::nuts::nut09::MintVersion;
 use flutter_rust_bridge::frb;
 use serde::{Deserialize, Serialize};
 
@@ -350,7 +351,7 @@ pub struct MintInformation {
     /// hex pubkey of the mint
     pub pubkey: Option<String>,
     /// implementation name and the version running
-    pub version: Option<MintVersion>,
+    pub version: Option<String>,
     /// short description of the mint
     pub description: Option<String>,
     /// long description
@@ -368,7 +369,9 @@ impl From<MintInfo> for MintInformation {
         Self {
             name: mint_info.name,
             pubkey: None,
-            version: mint_info.version,
+            version: mint_info
+                .version
+                .map(|v| format!("{}/{}", v.name, v.version)),
             description: mint_info.description,
             description_long: mint_info.description_long,
             contact: mint_info.contact,

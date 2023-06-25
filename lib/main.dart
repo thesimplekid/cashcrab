@@ -508,6 +508,9 @@ class MyHomePageState extends State<MyHomePage> {
   Future<void> _addNewMint(String mintUrl) async {
     // TODO: Should handle error connecting to mint
     await api.addMint(url: mintUrl);
+
+    activeMint ??= mintUrl;
+
     _loadMints();
     mints[mintUrl] = 0;
   }

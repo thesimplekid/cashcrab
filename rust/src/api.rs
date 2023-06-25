@@ -5,14 +5,11 @@ use std::sync::Mutex as StdMutex;
 use std::{collections::HashMap, fmt, str::FromStr, sync::Arc};
 
 use anyhow::{anyhow, bail, Error, Result};
-use bitcoin::{secp256k1::XOnlyPublicKey, Amount};
+use bitcoin::secp256k1::XOnlyPublicKey;
 use bitcoin_hashes::sha256;
 use bitcoin_hashes::Hash;
-use cashu_crab::{
-    cashu_wallet::CashuWallet,
-    client::Client,
-    types::{Proofs, Token},
-};
+use cashu_crab::nuts::nut00::{Proofs, Token};
+use cashu_crab::{client::Client, wallet::Wallet, Amount};
 use image::io::Reader as ImageReader;
 use image::ImageFormat;
 use lazy_static::lazy_static;
@@ -57,7 +54,7 @@ impl<T: std::error::Error + ToString> From<T> for CashuError {
 }
 
 lazy_static! {
-    pub static ref WALLETS: Arc<Mutex<HashMap<String, Option<CashuWallet>>>> =
+    pub static ref WALLETS: Arc<Mutex<HashMap<String, Option<Wallet>>>> =
         Arc::new(Mutex::new(HashMap::new()));
     static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(Runtime::new().unwrap()));
     static ref PROFILE_PICTURES: Arc<Mutex<Option<PathBuf>>> = Arc::new(Mutex::new(None));
@@ -426,7 +423,7 @@ pub fn add_mint(url: String) -> Result<()> {
 
                 database::cashu::add_keyset(&url, &keys).await?;
 
-                Some(CashuWallet::new(client.clone(), keys))
+                Some(Wallet::new(client.clone(), keys))
             }
             Err(_err) => None,
         };
@@ -482,14 +479,14 @@ pub fn remove_wallet(url: String) -> Result<String> {
 }
 
 /// Get wallet for uri
-pub(crate) async fn wallet_for_url(mint_url: &str) -> Result<CashuWallet> {
+pub(crate) async fn wallet_for_url(mint_url: &str) -> Result<Wallet> {
     let mut wallets = WALLETS.lock().await;
     let cashu_wallet = match wallets.get(mint_url) {
         Some(Some(wallet)) => wallet.clone(),
         _ => {
             let client = Client::new(mint_url)?;
             let keys = client.get_keys().await?;
-            let wallet = CashuWallet::new(client, keys);
+            let wallet = Wallet::new(client, keys);
             wallets.insert(mint_url.to_string(), Some(wallet.clone()));
 
             wallet

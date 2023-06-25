@@ -1,8 +1,8 @@
 use std::{collections::HashMap, str::FromStr};
 
 use anyhow::Result;
-use bitcoin::Amount;
-use cashu_crab::types::Token;
+use cashu_crab::nuts::nut00::{mint_proofs_from_proofs, Token};
+use cashu_crab::Amount;
 use lightning_invoice::Invoice;
 
 use crate::{
@@ -84,11 +84,23 @@ pub(crate) async fn remove_spent_proofs(mint_url: &str) -> Result<()> {
 
     let proofs = database::cashu::get_proofs(mint_url).await?;
 
-    let check_proofs = wallet.check_proofs_spent(&proofs).await?;
+    let check_proofs = wallet
+        .check_proofs_spent(&mint_proofs_from_proofs(proofs.clone()))
+        .await?;
 
-    let spent = check_proofs.spent;
+    let spent: Vec<String> = check_proofs
+        .spent
+        .iter()
+        .map(|p| p.secret.clone())
+        .collect();
 
-    database::cashu::remove_proofs(mint_url, &spent).await?;
+    let spent_proofs = proofs
+        .iter()
+        .filter(|p| spent.contains(&p.secret))
+        .cloned()
+        .collect();
+
+    database::cashu::remove_proofs(mint_url, &spent_proofs).await?;
 
     Ok(())
 }
@@ -102,7 +114,9 @@ pub(crate) async fn check_transaction_status(
             let wallet = wallet_for_url(&cashu_trans.mint).await?;
 
             let proofs = token.token[0].clone().proofs;
-            let check_spent = wallet.check_proofs_spent(&proofs).await?;
+            let check_spent = wallet
+                .check_proofs_spent(&mint_proofs_from_proofs(proofs.clone()))
+                .await?;
 
             // REVIEW: This is a fairly naive check on if a token is spendable
             // this works in the way `check_spendable` is called now but is not techically correct
@@ -141,7 +155,19 @@ pub(crate) async fn check_transaction_status(
 
                 database::transactions::update_transaction_status(&transaction).await?;
 
-                let token = wallet.proofs_to_token(check_spent.spendable, None)?;
+                let spendable_secrets: Vec<String> = check_spent
+                    .spendable
+                    .iter()
+                    .map(|p| p.secret.clone())
+                    .collect();
+
+                let spendable_proofs = proofs
+                    .iter()
+                    .filter(|p| spendable_secrets.contains(&p.secret))
+                    .cloned()
+                    .collect();
+
+                let token = wallet.proofs_to_token(spendable_proofs, None)?;
                 let _transaction = receive_token(&token).await?;
 
                 Ok(TransactionStatus::Sent)

@@ -741,10 +741,6 @@ class RustImpl implements Rust {
     return _wire2api_mint_information(raw);
   }
 
-  MintVersion _wire2api_box_autoadd_mint_version(dynamic raw) {
-    return _wire2api_mint_version(raw);
-  }
-
   Picture _wire2api_box_autoadd_picture(dynamic raw) {
     return _wire2api_picture(raw);
   }
@@ -912,22 +908,12 @@ class RustImpl implements Rust {
     return MintInformation(
       name: _wire2api_opt_String(arr[0]),
       pubkey: _wire2api_opt_String(arr[1]),
-      version: _wire2api_opt_box_autoadd_mint_version(arr[2]),
+      version: _wire2api_opt_String(arr[2]),
       description: _wire2api_opt_String(arr[3]),
       descriptionLong: _wire2api_opt_String(arr[4]),
       contact: _wire2api_list_StringList(arr[5]),
       nuts: _wire2api_StringList(arr[6]),
       motd: _wire2api_opt_String(arr[7]),
-    );
-  }
-
-  MintVersion _wire2api_mint_version(dynamic raw) {
-    final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-    return MintVersion(
-      name: _wire2api_String(arr[0]),
-      version: _wire2api_String(arr[1]),
     );
   }
 
@@ -945,10 +931,6 @@ class RustImpl implements Rust {
 
   MintInformation? _wire2api_opt_box_autoadd_mint_information(dynamic raw) {
     return raw == null ? null : _wire2api_box_autoadd_mint_information(raw);
-  }
-
-  MintVersion? _wire2api_opt_box_autoadd_mint_version(dynamic raw) {
-    return raw == null ? null : _wire2api_box_autoadd_mint_version(raw);
   }
 
   Picture? _wire2api_opt_box_autoadd_picture(dynamic raw) {

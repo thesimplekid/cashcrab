@@ -369,7 +369,7 @@ class MintInformation {
   final String? pubkey;
 
   /// implementation name and the version running
-  final MintVersion? version;
+  final String? version;
 
   /// short description of the mint
   final String? description;
@@ -395,16 +395,6 @@ class MintInformation {
     required this.contact,
     required this.nuts,
     this.motd,
-  });
-}
-
-class MintVersion {
-  final String name;
-  final String version;
-
-  const MintVersion({
-    required this.name,
-    required this.version,
   });
 }
 

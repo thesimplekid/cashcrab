@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use anyhow::Result;
-use cashu_crab::{keyset::Keys, types::Proofs};
+use cashu_crab::nuts::{nut00::Proofs, nut01::Keys};
 use redb::{ReadableMultimapTable, ReadableTable};
 
 use super::{CONFIG, DB, KEYSETS, MINT_INFO, MINT_KEYSETS, PROOFS};

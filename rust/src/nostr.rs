@@ -1,7 +1,7 @@
 use std::{str::FromStr, sync::Arc};
 
 use anyhow::{bail, Result};
-use cashu_crab::types::Token;
+use cashu_crab::nuts::nut00::Token;
 use nostr_sdk::nips::nip04::encrypt;
 use nostr_sdk::prelude::*;
 use tokio::sync::{broadcast, mpsc, Mutex};

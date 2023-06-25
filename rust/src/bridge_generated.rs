@@ -30,7 +30,6 @@ use crate::types::LNTransaction;
 use crate::types::Message;
 use crate::types::Mint;
 use crate::types::MintInformation;
-use crate::types::MintVersion;
 use crate::types::Pending;
 use crate::types::Picture;
 use crate::types::TokenData;
@@ -559,16 +558,8 @@ fn wire_decode_token_impl(port_: MessagePort, encoded_token: impl Wire2Api<Strin
 }
 // Section: wrapper structs
 
-#[derive(Clone)]
-struct mirror_MintVersion(MintVersion);
-
 // Section: static checks
 
-const _: fn() = || {
-    let MintVersion = None::<MintVersion>.unwrap();
-    let _: String = MintVersion.name;
-    let _: String = MintVersion.version;
-};
 // Section: allocate functions
 
 // Section: related functions
@@ -781,7 +772,7 @@ impl support::IntoDart for MintInformation {
         vec![
             self.name.into_dart(),
             self.pubkey.into_dart(),
-            self.version.map(|v| mirror_MintVersion(v)).into_dart(),
+            self.version.into_dart(),
             self.description.into_dart(),
             self.description_long.into_dart(),
             self.contact.into_dart(),
@@ -792,13 +783,6 @@ impl support::IntoDart for MintInformation {
     }
 }
 impl support::IntoDartExceptPrimitive for MintInformation {}
-
-impl support::IntoDart for mirror_MintVersion {
-    fn into_dart(self) -> support::DartAbi {
-        vec![self.0.name.into_dart(), self.0.version.into_dart()].into_dart()
-    }
-}
-impl support::IntoDartExceptPrimitive for mirror_MintVersion {}
 
 impl support::IntoDart for Pending {
     fn into_dart(self) -> support::DartAbi {

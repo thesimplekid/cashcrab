@@ -45,7 +45,7 @@ class _MintInfoScreenState extends State<MintInfoScreen> {
   Widget build(BuildContext context) {
     String? versionText;
     if (mintInfo != null) {
-      versionText = "${mintInfo!.version?.name}-${mintInfo!.version?.version}";
+      versionText = "${mintInfo!.version}";
     }
     return Scaffold(
       appBar: AppBar(
