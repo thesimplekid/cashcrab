@@ -10,13 +10,14 @@ use bitcoin_hashes::sha256;
 use bitcoin_hashes::Hash;
 use cashu_crab::nuts::nut00::{Proofs, Token};
 use cashu_crab::{client::Client, wallet::Wallet, Amount};
+use flutter_rust_bridge::StreamSink;
 use image::io::Reader as ImageReader;
 use image::ImageFormat;
 use lazy_static::lazy_static;
 use lightning_invoice::{Invoice, InvoiceDescription};
 use nostr_sdk::prelude::{FromBech32, PREFIX_BECH32_PUBLIC_KEY};
 use tokio::runtime::Runtime;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, OnceCell};
 
 use super::types::{InvoiceInfo, TokenData};
 use crate::cashu;
@@ -59,6 +60,7 @@ lazy_static! {
     static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(Runtime::new().unwrap()));
     static ref PROFILE_PICTURES: Arc<Mutex<Option<PathBuf>>> = Arc::new(Mutex::new(None));
     static ref NOSTR: Arc<Mutex<Option<Nostr>>> = Arc::new(Mutex::new(None));
+    static ref TRANSACTION_STREAM: OnceCell<StreamSink<Transaction>> = OnceCell::new();
 }
 
 macro_rules! lock_runtime {
@@ -161,6 +163,22 @@ pub fn get_keys() -> Result<Option<KeyData>> {
     });
     drop(rt);
 
+    result
+}
+
+pub fn create_transaction_stream(transaction_stream: StreamSink<Transaction>) -> Result<()> {
+    let _ = TRANSACTION_STREAM.set(transaction_stream);
+    let rt = lock_runtime!();
+    let result = rt.block_on(async {
+        let completed = cashu::check_pending().await?;
+
+        for transaction in completed {
+            TRANSACTION_STREAM.get().unwrap().add(transaction);
+        }
+
+        Ok(())
+    });
+    drop(rt);
     result
 }
 

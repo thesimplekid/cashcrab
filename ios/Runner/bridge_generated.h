@@ -137,6 +137,8 @@ void wire_init_nostr(int64_t port_,
 
 void wire_get_keys(int64_t port_);
 
+void wire_create_transaction_stream(int64_t port_);
+
 void wire_nostr_logout(int64_t port_);
 
 void wire_get_relays(int64_t port_);
@@ -250,6 +252,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_init_cashu);
     dummy_var ^= ((int64_t) (void*) wire_init_nostr);
     dummy_var ^= ((int64_t) (void*) wire_get_keys);
+    dummy_var ^= ((int64_t) (void*) wire_create_transaction_stream);
     dummy_var ^= ((int64_t) (void*) wire_nostr_logout);
     dummy_var ^= ((int64_t) (void*) wire_get_relays);
     dummy_var ^= ((int64_t) (void*) wire_add_relay);

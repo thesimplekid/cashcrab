@@ -79,18 +79,18 @@ class MyHomePageState extends State<MyHomePage> {
     _initDB();
   }
 
-  Future<String> get _localPath async {
+  Future<String> _localPath() async {
     final directory = await getApplicationDocumentsDirectory();
 
     return directory.path;
   }
 
   Future<void> _initDB() async {
-    await api.initDb(storagePath: await _localPath);
+    await api.initDb(storagePath: await _localPath());
     await api.initCashu();
     String? key = await getNostrKey();
     String privKey =
-        await api.initNostr(storagePath: await _localPath, privateKey: key);
+        await api.initNostr(storagePath: await _localPath(), privateKey: key);
 
     saveNostrKey(privKey);
 
@@ -109,11 +109,37 @@ class MyHomePageState extends State<MyHomePage> {
     await _getBalances();
     // Set Balance
     _getBalance();
+
+    pendingTransactionStream();
   }
 
   _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+    });
+  }
+
+  void pendingTransactionStream() async {
+    api.createTransactionStream().listen((transaction) {
+      String id = transaction.when(
+        cashuTransaction: (cashu) {
+          if (cashu.id != null) {
+            return cashu.id!;
+          }
+          return ''; // or any other default value
+        },
+        lnTransaction: (ln) {
+          if (ln.id != null) {
+            return ln.id!;
+          }
+          return ''; // or any other default value
+        },
+      );
+      setState(() {
+        pendingTransactions.remove(id);
+
+        transactions[id] = transaction;
+      });
     });
   }
 

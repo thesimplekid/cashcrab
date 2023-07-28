@@ -25,6 +25,12 @@ pub enum TransactionStatus {
     Expired,
 }
 
+impl TransactionStatus {
+    pub fn is_pending(&self) -> bool {
+        matches!(self, TransactionStatus::Pending(_))
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Transaction {
     CashuTransaction(CashuTransaction),

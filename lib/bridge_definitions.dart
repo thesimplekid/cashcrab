@@ -29,6 +29,10 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kGetKeysConstMeta;
 
+  Stream<Transaction> createTransactionStream({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kCreateTransactionStreamConstMeta;
+
   Future<void> nostrLogout({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kNostrLogoutConstMeta;

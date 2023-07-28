@@ -93,6 +93,22 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Stream<Transaction> createTransactionStream({dynamic hint}) {
+    return _platform.executeStream(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_create_transaction_stream(port_),
+      parseSuccessData: _wire2api_transaction,
+      constMeta: kCreateTransactionStreamConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kCreateTransactionStreamConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "create_transaction_stream",
+        argNames: [],
+      );
+
   Future<void> nostrLogout({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_nostr_logout(port_),
@@ -1402,6 +1418,20 @@ class RustWire implements FlutterRustBridgeWireBase {
           'wire_get_keys');
   late final _wire_get_keys =
       _wire_get_keysPtr.asFunction<void Function(int)>();
+
+  void wire_create_transaction_stream(
+    int port_,
+  ) {
+    return _wire_create_transaction_stream(
+      port_,
+    );
+  }
+
+  late final _wire_create_transaction_streamPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_create_transaction_stream');
+  late final _wire_create_transaction_stream =
+      _wire_create_transaction_streamPtr.asFunction<void Function(int)>();
 
   void wire_nostr_logout(
     int port_,

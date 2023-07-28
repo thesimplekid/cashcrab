@@ -5,6 +5,7 @@ use cashu_crab::nuts::nut00::{mint_proofs_from_proofs, Token};
 use cashu_crab::Amount;
 use lightning_invoice::Invoice;
 
+use crate::types::Pending;
 use crate::{
     api::wallet_for_url,
     database,
@@ -26,6 +27,25 @@ pub(crate) async fn init_cashu() -> Result<()> {
     }
 
     Ok(())
+}
+
+pub(crate) async fn check_pending() -> Result<Vec<Transaction>> {
+    let pending = database::transactions::get_pending_transactions().await?;
+
+    let mut completed = vec![];
+    for pending_transaction in pending {
+        let status = check_transaction_status(&pending_transaction).await?;
+
+        if !status.is_pending() {
+            if let Ok(Some(trans)) =
+                database::transactions::get_transaction(&pending_transaction.id()).await
+            {
+                completed.push(trans);
+            }
+        }
+    }
+
+    Ok(completed)
 }
 
 /// Fetch Mint into

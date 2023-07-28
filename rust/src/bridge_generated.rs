@@ -89,6 +89,16 @@ fn wire_get_keys_impl(port_: MessagePort) {
         move || move |task_callback| get_keys(),
     )
 }
+fn wire_create_transaction_stream_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "create_transaction_stream",
+            port: Some(port_),
+            mode: FfiCallMode::Stream,
+        },
+        move || move |task_callback| create_transaction_stream(task_callback.stream_sink()),
+    )
+}
 fn wire_nostr_logout_impl(port_: MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
